@@ -2,6 +2,7 @@
 .vs/
 *.suo
 *.user
+*.aps
 *.userosscache
 *.sln.docstates
 
@@ -32,8 +33,15 @@ instruct.txt
 *.o
 *.obj
 *.json
+*.lib
 
 # Qt
 *.moc
+*pro.user
+*.qbs.user
 *.qrc
 *.ui
+
+# BD
+tasks.db
+*.log
