@@ -11,7 +11,7 @@ MainWindow::~MainWindow() {}
 
 void MainWindow::setupUI() {
     setWindowTitle("Task Manager");
-    setMinimumSize(800, 600);
+    setMinimumSize(801, 600);
 
     // Виджеты
     taskList_ = new QListWidget(this);
