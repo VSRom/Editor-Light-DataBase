@@ -1,5 +1,0 @@
-F:/coding/proects_С++/Task_Manager/out/build/debug/CMakeFiles/TaskManager.dir
-F:/coding/proects_С++/Task_Manager/out/build/debug/CMakeFiles/edit_cache.dir
-F:/coding/proects_С++/Task_Manager/out/build/debug/CMakeFiles/rebuild_cache.dir
-F:/coding/proects_С++/Task_Manager/out/build/debug/CMakeFiles/TaskManager_autogen_timestamp_deps.dir
-F:/coding/proects_С++/Task_Manager/out/build/debug/CMakeFiles/TaskManager_autogen.dir

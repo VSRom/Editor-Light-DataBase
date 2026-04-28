@@ -10,8 +10,8 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow() {}
 
 void MainWindow::setupUI() {
-    setWindowTitle("Task Manager - C++ Qt");
-    setMinimumSize(400, 300);
+    setWindowTitle("Task Manager");
+    setMinimumSize(800, 600);
 
     // Виджеты
     taskList_ = new QListWidget(this);
