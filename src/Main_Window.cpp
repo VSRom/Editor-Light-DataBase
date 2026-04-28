@@ -1,33 +1,36 @@
 #include "Main_Window.h"
 #include <QMessageBox>
+#include <vector>
 
-MainWindow::MainWindow(QWidget *parent)
+Main_Window::Main_Window(QWidget *parent)
     : QMainWindow(parent), db_()
 {
-    setupUI();
-    loadTasks();
+    setup_ui();
+    load_tasks();
 }
 
-MainWindow::~MainWindow() {}
+Main_Window::~Main_Window() {}
 
-void MainWindow::setupUI()
+void Main_Window::setup_ui()
 {
     setWindowTitle("Task Manager");
     setMinimumSize(800, 600);
 
-    // Виджеты
+    // Widgets
     taskList_ = new QListWidget(this);
     taskInput_ = new QLineEdit(this);
     taskInput_->setPlaceholderText("Введите задачу...");
     
     addButton_ = new QPushButton("Добавить", this);
-    deleteButton_ = new QPushButton("Удалить", this);
+    clear_all_ = new QPushButton("Удалить весь список", this);
     refreshButton_ = new QPushButton("Обновить", this);
+    clear_all_selected_ = new QPushButton("Удалить выбранные задачи", this);
 
-    // Компоновка
+    // Layout
     auto* buttonsLayout = new QHBoxLayout();
+    buttonsLayout->addWidget(clear_all_selected_);
     buttonsLayout->addWidget(addButton_);
-    buttonsLayout->addWidget(deleteButton_);
+    buttonsLayout->addWidget(clear_all_);
     buttonsLayout->addWidget(refreshButton_);
 
     auto* inputLayout = new QHBoxLayout();
@@ -43,14 +46,19 @@ void MainWindow::setupUI()
     centralWidget->setLayout(mainLayout);
     setCentralWidget(centralWidget);
 
-    // Сигналы и слоты
-    connect(addButton_, &QPushButton::clicked, this, &MainWindow::addTask);
-    connect(deleteButton_, &QPushButton::clicked, this, &MainWindow::deleteTask);
-    connect(refreshButton_, &QPushButton::clicked, this, &MainWindow::refreshTasks);
-    connect(taskInput_, &QLineEdit::returnPressed, this, &MainWindow::addTask);
+    // Signals and slots
+    connect(addButton_, &QPushButton::clicked, this, &Main_Window::add_task);
+    connect(clear_all_, &QPushButton::clicked, this, &Main_Window::clear_all_tasks);
+    connect(refreshButton_, &QPushButton::clicked, this, &Main_Window::refresh_tasks);
+    connect(clear_all_selected_, &QPushButton::clicked, this, &Main_Window::clear_all_selected_tasks);
+
+    connect(taskInput_, &QLineEdit::returnPressed, this, &Main_Window::add_task);
+
+    // Чтобы выделить все строки(элементы списка)
+    taskList_->setSelectionMode(QAbstractItemView::ExtendedSelection);
 }
 
-void MainWindow::loadTasks()
+void Main_Window::load_tasks()
 {
     taskList_->clear();
     auto tasks = db_.getAllTasks();
@@ -58,14 +66,18 @@ void MainWindow::loadTasks()
     for (const auto& task : tasks)
     {
         QString text = QString::fromStdString(task.title());
+
         if (task.completed()) {
             text += " ✓";
         }
-        taskList_->addItem(text);
+
+        auto *item = new QListWidgetItem(text);
+        item->setData(Qt::UserRole, task.id());
+        taskList_->addItem(item);
     }
 }
 
-void MainWindow::addTask()
+void Main_Window::add_task()
 {
     QString title = taskInput_->text().trimmed();
 
@@ -75,34 +87,62 @@ void MainWindow::addTask()
         return;
     }
     
-    if (db_.addTask(title.toStdString()))
+    if (db_.add_task(title.toStdString()))
     {
         taskInput_->clear();
-        refreshTasks();
+        refresh_tasks();
     }
     else
         QMessageBox::critical(this, "Ошибка", "Не удалось добавить задачу!");
-
 }
 
-void MainWindow::deleteTask()
+void Main_Window::clear_all_tasks()
 {
-    int row = taskList_->currentRow();
+    int total = taskList_->count();
 
-    if (row < 0)
+    if (total == 0)
     {
-        QMessageBox::warning(this, "Ошибка", "Выберите задачу для удаления!");
+        QMessageBox::warning(this, "Ошибка", "Нет задач для удаления");
         return;
     }
-    
-    auto tasks = db_.getAllTasks();
 
-    if (row < static_cast<int>(tasks.size()))
-        if (db_.deleteTask(tasks[row].id()))
-            refreshTasks();
+    taskList_->clear();
 }
 
-void MainWindow::refreshTasks()
+void Main_Window::clear_all_selected_tasks()
 {
-    loadTasks();
+    if (taskList_->currentRow() < 0)
+    {
+        QMessageBox::warning(this, "Ошибка", "Выберите задачи для удаления!");
+        return;
+    }
+
+    // Список выделенных элементов
+    QList<QListWidgetItem *> list_tasks = taskList_->selectedItems();
+
+    if (list_tasks.isEmpty())
+        return;
+
+    for (QListWidgetItem *temp_list : list_tasks)
+
+    {   // Берем id/text из элемента и отправляем в удаление
+        db_.delete_task(temp_list->data(Qt::UserRole).toInt());
+
+        // Получаем номер строки
+        auto indx = taskList_->row(temp_list);
+
+        // Убираем элемент из виджета
+        taskList_->takeItem(indx);
+
+        delete temp_list;
+
+    }
+
+    // Подгружаемся из БД
+    load_tasks();
+}
+
+void Main_Window::refresh_tasks()
+{
+    load_tasks();
 }

@@ -29,7 +29,7 @@ bool Database::isOpen() const
     return db_.isOpen();
 }
 
-bool Database::addTask(const std::string& title)
+bool Database::add_task(const std::string& title)
 {
     QSqlQuery query;
     query.prepare("INSERT INTO tasks (title, completed) VALUES (:title, :completed)");
@@ -64,7 +64,8 @@ bool Database::updateTask(int id, const std::string& title, bool completed)
     return query.exec();
 }
 
-bool Database::deleteTask(int id) {
+bool Database::delete_task(int id)
+{
     QSqlQuery query;
     query.prepare("DELETE FROM tasks WHERE id = :id");
     query.bindValue(":id", id);

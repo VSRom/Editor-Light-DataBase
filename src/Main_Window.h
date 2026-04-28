@@ -8,29 +8,32 @@
 #include <QVBoxLayout>
 #include "Database.h"
 
-class MainWindow : public QMainWindow
+class Main_Window : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    Main_Window(QWidget *parent = nullptr);
+    ~Main_Window();
 
+    // buttons
 private slots:
-    void addTask();
-    void refreshTasks();
-    void deleteTask();
+    void add_task();
+    void refresh_tasks();
+    void clear_all_tasks();
+    void clear_all_selected_tasks();
 
 private:
-    void setupUI();
-    void loadTasks();
+    void setup_ui();
+    void load_tasks();
     
-    Database db_;
-    QListWidget* taskList_;
-    QLineEdit* taskInput_;
-    QPushButton* addButton_;
-    QPushButton* deleteButton_;
-    QPushButton* refreshButton_;
+    Database     db_;
+    QListWidget *taskList_;
+    QLineEdit   *taskInput_;
+    QPushButton *addButton_;
+    QPushButton *clear_all_;
+    QPushButton *refreshButton_;
+    QPushButton *clear_all_selected_;
 };
 
 #endif // MAIN_WINDOW_H

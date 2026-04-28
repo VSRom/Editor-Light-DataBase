@@ -13,10 +13,10 @@ public:
     ~Database();
     
     bool isOpen() const;
-    bool addTask(const std::string& title);
+    bool add_task(const std::string& title);
     std::vector<Task> getAllTasks();
     bool updateTask(int id, const std::string& title, bool completed);
-    bool deleteTask(int id);
+    bool delete_task(int id);
 
 private:
     QSqlDatabase db_;

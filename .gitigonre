@@ -23,6 +23,7 @@ cmake_install.cmake
 Makefile
 CMakeUserPresets.json
 CMakeSettings.json
+instruct.txt
 
 # Compiled files
 *.exe
@@ -30,6 +31,7 @@ CMakeSettings.json
 *.pdb
 *.o
 *.obj
+*.json
 
 # Qt
 *.moc
