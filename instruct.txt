@@ -1,0 +1,13 @@
+Add button:
+
+1) Main_Window.h 
+- private slots: function for action
+- private: pointer to the selected widget (button)
+
+2) Main_Window.cpp
+- // Widgets ~~~ clear_all_ = new QPushButton("Удалить все задачи", this);
+- // Layout  ~~~ buttonsLayout->addWidget(clear_all_);
+
+- // Signals and slots ~~~ connect(clear_all_, &QPushButton::clicked, this, &Main_Window::clear_all_tasks);
+
+3) Add a function from 1 point 

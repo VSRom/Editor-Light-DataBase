@@ -105,7 +105,7 @@ void Main_Window::clear_all_tasks()
         QMessageBox::warning(this, "Ошибка", "Нет задач для удаления");
         return;
     }
-
+    db_.delete_all_tasks();
     taskList_->clear();
 }
 
@@ -125,7 +125,7 @@ void Main_Window::clear_all_selected_tasks()
 
     for (QListWidgetItem *temp_list : list_tasks)
 
-    {   // Берем id/text из элемента и отправляем в удаление
+    {   // Берем id/text из элемента и отправляем в удаление из БД
         db_.delete_task(temp_list->data(Qt::UserRole).toInt());
 
         // Получаем номер строки
@@ -137,9 +137,6 @@ void Main_Window::clear_all_selected_tasks()
         delete temp_list;
 
     }
-
-    // Подгружаемся из БД
-    load_tasks();
 }
 
 void Main_Window::refresh_tasks()

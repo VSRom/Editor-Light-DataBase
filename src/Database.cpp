@@ -71,3 +71,10 @@ bool Database::delete_task(int id)
     query.bindValue(":id", id);
     return query.exec();
 }
+
+bool Database::delete_all_tasks()
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM tasks");
+    return query.exec();
+}

@@ -17,6 +17,7 @@ public:
     std::vector<Task> getAllTasks();
     bool updateTask(int id, const std::string& title, bool completed);
     bool delete_task(int id);
+    bool delete_all_tasks();
 
 private:
     QSqlDatabase db_;
