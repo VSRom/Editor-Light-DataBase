@@ -4,11 +4,11 @@ Editor Light DataBase
 
 ## Технологии
 
-C++17
-Qt 6 (Widgets, Sql)
-CMake (сборка)
-Git (контроль версий)
-SQLite, Oracle, PostgreSQL, MySQL (поддерживаемые СУБД)
+    C++17
+    Qt 6 (Widgets, Sql)
+    CMake (сборка)
+    Git (контроль версий)
+    SQLite
 
 ## Планируемый функционал
 
