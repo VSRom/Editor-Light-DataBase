@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(TaskManager VERSION 1.0 LANGUAGES CXX)
+project(Editor-Light-DataBase VERSION 1.0 LANGUAGES CXX)
 
 if(DEFINED ENV{QTDIR})
     list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
