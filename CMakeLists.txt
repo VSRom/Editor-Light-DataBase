@@ -25,6 +25,7 @@ set(SOURCES
     src/Task.cpp
     src/Database.cpp
     src/Main_Window.cpp
+	src/Connection_Window.cpp
     resources.qrc
 )
 
@@ -32,6 +33,7 @@ set(HEADERS
     src/Task.h
     src/Database.h
     src/Main_Window.h
+	src/Connection_Window.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
