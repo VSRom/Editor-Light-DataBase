@@ -1,19 +1,24 @@
 #include "Main_Window.h"
 #include <QMessageBox>
 #include <vector>
-
+//===========================================================================================================
 Main_Window::Main_Window(QWidget *parent)
     : QMainWindow(parent), db_()
 {
     setup_ui();
+    if (!db_.init_db("main_connection")) {
+        QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
+        this->close(); return; };
+
     load_tasks();
+
 }
-
+//===========================================================================================================
 Main_Window::~Main_Window() {}
-
+//===========================================================================================================
 void Main_Window::setup_ui()
 {
-    setWindowTitle("Task Manager");
+    setWindowTitle("Manager DataBase");
     setMinimumSize(800, 600);
 
     // Widgets
@@ -57,7 +62,7 @@ void Main_Window::setup_ui()
     // Чтобы выделить все строки(элементы списка)
     taskList_->setSelectionMode(QAbstractItemView::ExtendedSelection);
 }
-
+//===========================================================================================================
 void Main_Window::load_tasks()
 {
     taskList_->clear();
@@ -76,7 +81,7 @@ void Main_Window::load_tasks()
         taskList_->addItem(item);
     }
 }
-
+//===========================================================================================================
 void Main_Window::add_task()
 {
     QString title = taskInput_->text().trimmed();
@@ -95,7 +100,7 @@ void Main_Window::add_task()
     else
         QMessageBox::critical(this, "Ошибка", "Не удалось добавить задачу!");
 }
-
+//===========================================================================================================
 void Main_Window::clear_all_tasks()
 {
     int total = taskList_->count();
@@ -108,7 +113,7 @@ void Main_Window::clear_all_tasks()
     db_.delete_all_tasks();
     taskList_->clear();
 }
-
+//===========================================================================================================
 void Main_Window::clear_all_selected_tasks()
 {
     if (taskList_->currentRow() < 0)
@@ -133,13 +138,11 @@ void Main_Window::clear_all_selected_tasks()
 
         // Убираем элемент из виджета
         taskList_->takeItem(indx);
-
-        delete temp_list;
-
     }
 }
-
+//===========================================================================================================
 void Main_Window::refresh_tasks()
 {
     load_tasks();
 }
+//===========================================================================================================
