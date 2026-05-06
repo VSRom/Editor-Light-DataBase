@@ -24,8 +24,8 @@ public:
 	~Connection_Window();
 
 private slots:
+						// 1.2 buttons
 
-	// 1.2 Add buttons
 	void check_con();					// 1.2.1 check the connection
 	void connection();					// 1.2.2 Connection to BD
 	void reset();						// 1.2.3 Clear enter
@@ -34,8 +34,8 @@ private slots:
 private:
 	void setupUI();
 	void UIforSqLite();
+						// 1.1 window lines
 
-	// 1.1 Add window lines
 	QComboBox *dbTypeCombo_;			// 1.1.1 DB type dropdown
 	QLineEdit *dbAddressLine_;			// 1.1.2 Address DB
 	QLineEdit *dbPortLine_;				// 1.1.2 Port DB

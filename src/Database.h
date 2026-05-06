@@ -7,6 +7,7 @@
 #include <vector>
 #include "Task.h"
 #include <QMessageBox>
+#include <QSqlQueryModel>
 //===========================================================================================================
 class Database {
 public:
@@ -20,6 +21,9 @@ public:
     bool delete_task(int id);
     bool delete_all_tasks();
     bool init_db(const QString &connect_name);
+    QStringList get_table_list();
+    QStringList get_table_col(const QString &table_name);
+    QSqlQueryModel* select_all(const QString &table_name);
 
 private:
     QSqlDatabase db_;

@@ -1,11 +1,11 @@
 #include "Connection_Window.h"
-
+//===========================================================================================================
 Connection_Window::Connection_Window(QWidget *parent)
 	: QMainWindow(parent)
 { setupUI(); adjustSize(); }
-
+//===========================================================================================================
 Connection_Window::~Connection_Window() {}
-
+//===========================================================================================================
 void Connection_Window::UIforSqLite()
 {
 	bool isSqLite = (dbTypeCombo_->currentText() == "SQLite");
@@ -17,12 +17,11 @@ void Connection_Window::UIforSqLite()
 	
 		if (isSqLite) { dbPortLine_->clear(); loginLine_->clear(); passwordLine_->clear(); }
 }
-
+//===========================================================================================================
 void Connection_Window::setupUI()
 {
 	setWindowTitle("Connection to DataBase");
-	resize(400, 300);
-
+	setMinimumSize(850, 450);
 //===========================================================================================================
 	// Create central widget
 //===========================================================================================================
@@ -31,58 +30,61 @@ void Connection_Window::setupUI()
 
 	QVBoxLayout *mainLayout = new QVBoxLayout(central);
 	mainLayout->setContentsMargins(20, 20, 20, 20);
-	mainLayout->setSpacing(3);
+	mainLayout->setSpacing(25);
 //===========================================================================================================
-	//		Database Select 1.1.1
+	//		Database Select 1.1.1	//	Enter Address:Port 1.1.2	//	Enter login:pass 1.1.3		// Select configure 1.1.4
 //===========================================================================================================
-	QHBoxLayout *topLayout = new QHBoxLayout();
-	topLayout->addWidget(new QLabel("Database Type:"));
+	//	QHBoxLayout *topLayout = new QHBoxLayout();
+	QGridLayout *aplp = new QGridLayout();
+	aplp->addWidget(new QLabel("DataBase:"), 0, 0);
 
 	dbTypeCombo_ = new QComboBox();
-	QSizePolicy policy_DB(QSizePolicy::Expanding, QSizePolicy::Fixed);
-	dbTypeCombo_->setSizePolicy(policy_DB);
-
 	dbTypeCombo_->addItems({ "SQLite", "MySQL", "PostgreSQL" }); //, "Access","Oracle" 
-	topLayout->addWidget(dbTypeCombo_);
+	aplp->addWidget(dbTypeCombo_, 0, 1, 1, 3);
+	aplp->addWidget(new QLabel("Address:"), 1, 0);
 
-	mainLayout->addLayout(topLayout);
-//===========================================================================================================
-	//	Enter Address:Port 1.1.2
-//===========================================================================================================
-	QHBoxLayout *adrport = new QHBoxLayout();
-
-	adrport->addWidget(new QLabel("Address:"));
 	dbAddressLine_ = new QLineEdit();
-	dbAddressLine_->setSizePolicy(policy_DB);
 	dbAddressLine_->setPlaceholderText("Введите IP-address...");
-	adrport->addWidget(dbAddressLine_);
+	aplp->addWidget(dbAddressLine_, 1, 1);
 
-	adrport->addWidget(new QLabel("Port:"));
+	aplp->addWidget(new QLabel("Port:"), 1, 2, Qt::AlignRight | Qt::AlignVCenter);
+
 	dbPortLine_ = new QLineEdit();
-	dbPortLine_->setSizePolicy(policy_DB);
 	dbPortLine_->setPlaceholderText("Введите Port...");
-	adrport->addWidget(dbPortLine_);
+	aplp->addWidget(dbPortLine_, 1, 3);
 
-	mainLayout->addLayout(adrport);
-//===========================================================================================================
-		// Enter login:pass 1.1.3
-//===========================================================================================================
-	QHBoxLayout *logopass = new QHBoxLayout();
+	aplp->addWidget(new QLabel("Login:"), 2, 0, Qt::AlignRight | Qt::AlignVCenter);
 
-	logopass->addWidget(new QLabel("Login:"));
 	loginLine_ = new QLineEdit();
-	loginLine_->setSizePolicy(policy_DB);
 	loginLine_->setPlaceholderText("Введите Login...");
-	logopass->addWidget(loginLine_);
+	aplp->addWidget(loginLine_, 2, 1);
 
-	logopass->addWidget(new QLabel("Password:"));
+	aplp->addWidget(new QLabel("Password:"), 2, 2);
+
 	passwordLine_ = new QLineEdit();
-	passwordLine_->setSizePolicy(policy_DB);
 	passwordLine_->setEchoMode(QLineEdit::Password);
 	passwordLine_->setPlaceholderText("Введите Password...");
-	logopass->addWidget(passwordLine_);
+	aplp->addWidget(passwordLine_, 2, 3);
 
-	mainLayout->addLayout(logopass);
+// Create dir && path && create file settings
+//=======================================================================================================
+	QString config_dir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+	QDir().mkpath(config_dir + "/Editor-Light_DataBase");
+	QString path = config_dir + "/Editor-Light_DataBase/connections.ini";
+
+	QSettings settings(path, QSettings::IniFormat);
+	QStringList config_s = settings.childGroups();
+//=======================================================================================================
+	configCombo_ = new QComboBox();
+	configCombo_->addItem("======Выберите конфигурационные настройки======");
+	configCombo_->addItems(config_s);
+	aplp->addWidget(configCombo_, 3, 0, 1, 4);
+	aplp->setHorizontalSpacing(5);
+	aplp->setVerticalSpacing(25);
+	mainLayout->addLayout(aplp);
+	//		for (int i = 0; i < configCombo_->count(); ++i) { configCombo_->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole); }
+	connect(dbTypeCombo_, QOverload<const QString &>::of(&QComboBox::currentTextChanged), this, &Connection_Window::UIforSqLite);
+	UIforSqLite();
 //===========================================================================================================
 	// 1.2 Add buttons
 //===========================================================================================================
@@ -104,33 +106,6 @@ void Connection_Window::setupUI()
 	connect(save_config_, &QPushButton::clicked, this, &Connection_Window::save_config);
 
 	mainLayout->addLayout(chrsscconnect);
-//===========================================================================================================
-	// Select configure 1.1.4
-//===========================================================================================================
-	QHBoxLayout *config = new QHBoxLayout();
-
-// Create dir && path && create file settings
-//=======================================================================================================
-	QString config_dir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
-	QDir().mkpath(config_dir + "/Editor-Light_DataBase");
-	QString path = config_dir + "/Editor-Light_DataBase/connections.ini";
-
-	QSettings settings(path, QSettings::IniFormat);
-	QStringList config_s = settings.childGroups();
-//=======================================================================================================
-	configCombo_ = new QComboBox();
-	configCombo_->setSizePolicy(policy_DB);
-	configCombo_->addItem("======Выберите конфигурационные настройки======");
-	configCombo_->addItems(config_s);
-
-	//		for (int i = 0; i < configCombo_->count(); ++i) { configCombo_->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole); }
-
-	config->addWidget(configCombo_);
-	mainLayout->addLayout(config);
-//===========================================================================================================
-
-	connect(dbTypeCombo_, QOverload<const QString &>::of(&QComboBox::currentTextChanged), this, &Connection_Window::UIforSqLite);
-	UIforSqLite();
 }
 //===========================================================================================================
 void Connection_Window::check_con()
@@ -166,7 +141,6 @@ void Connection_Window::check_con()
 		db.setUserName(log);
 		db.setPassword(pass);
 	}
-
 
 	if (!db.open())
 		qDebug() << "Ошибка подключения" << db.lastError().text();
@@ -229,11 +203,11 @@ void Connection_Window::save_config()
 {
 	QMessageBox::StandardButton reply;
 	reply = QMessageBox::question(this, "Сохранение конфигурации", "Сохраним?", QMessageBox::Yes | QMessageBox::No);
-	//	if (reply == QMessageBox::Yes)
-	//	{
-	//	
-	//	}
-	//
+	if (reply == QMessageBox::Yes)
+	{
+	
+	}
+	
 		QMessageBox::information(this, "Сохранение конфигурации", "Отменено");
 }
 //===========================================================================================================

@@ -19,21 +19,14 @@ public:
     // buttons
 private slots:
     void add_task();
-    void refresh_tasks();
-    void clear_all_tasks();
-    void clear_all_selected_tasks();
+
 
 private:
     void setup_ui();
-    void load_tasks();
+
     
     Database     db_;
-    QListWidget *taskList_;
-    QLineEdit   *taskInput_;
-    QPushButton *addButton_;
-    QPushButton *clear_all_;
-    QPushButton *refreshButton_;
-    QPushButton *clear_all_selected_;
+
 };
 
 #endif // MAIN_WINDOW_H
