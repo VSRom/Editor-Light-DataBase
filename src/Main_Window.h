@@ -1,13 +1,13 @@
-#ifndef MAIN_WINDOW_H
-#define MAIN_WINDOW_H
-
+#pragma once
+//================================================================================================================
 #include <QMainWindow>
 #include <QListWidget>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include "Database.h"
-
+#include "Table_Explorer.h"
+//================================================================================================================
 class Main_Window : public QMainWindow
 {
     Q_OBJECT
@@ -26,7 +26,6 @@ private:
 
     
     Database     db_;
-
+    Table_Explorer explorer_;
 };
-
-#endif // MAIN_WINDOW_H
+//================================================================================================================

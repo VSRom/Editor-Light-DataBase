@@ -9,12 +9,12 @@ Database::~Database()
 //===========================================================================================================
 bool Database::isOpen() const
 {
-    return db_.isOpen();
+    return db_Q.isOpen();
 }
 //===========================================================================================================
 bool Database::add_task(const std::string& title)
 {
-    QSqlQuery db(db_);
+    QSqlQuery db(db_Q);
     db.prepare("INSERT INTO tasks (title, completed) VALUES (:title, :completed)");
     db.bindValue(":title", QString::fromStdString(title));
     db.bindValue(":completed", 0);
@@ -24,7 +24,7 @@ bool Database::add_task(const std::string& title)
 std::vector<Task> Database::getAllTasks()
 {
     std::vector<Task> tasks;
-    QSqlQuery db(db_);
+    QSqlQuery db(db_Q);
     db.prepare("SELECT id, title, completed FROM tasks");
 
     while (db.next())
@@ -40,7 +40,7 @@ std::vector<Task> Database::getAllTasks()
 //===========================================================================================================
 bool Database::updateTask(int id, const std::string& title, bool completed)
 {
-    QSqlQuery db(db_);
+    QSqlQuery db(db_Q);
     db.prepare("UPDATE tasks SET title = :title, completed = :completed WHERE id = :id");
     db.bindValue(":id", id);
     db.bindValue(":title", QString::fromStdString(title));
@@ -50,7 +50,7 @@ bool Database::updateTask(int id, const std::string& title, bool completed)
 //===========================================================================================================
 bool Database::delete_task(int id)
 {
-    QSqlQuery db(db_);
+    QSqlQuery db(db_Q);
     db.prepare("DELETE FROM tasks WHERE id = :id");
     db.bindValue(":id", id);
     return db.exec();
@@ -58,16 +58,16 @@ bool Database::delete_task(int id)
 //===========================================================================================================
 bool Database::delete_all_tasks()
 {
-    QSqlQuery db(db_);
+    QSqlQuery db(db_Q);
     db.prepare("DELETE FROM tasks");
     return db.exec();
 }
 //===========================================================================================================
 bool Database::init_db(const QString &connect_name)
 {
-    db_ = QSqlDatabase::database(connect_name);
+    db_Q = QSqlDatabase::database(connect_name);
 
-    if (!db_.open())
+    if (!db_Q.open())
         return false;
 
     else

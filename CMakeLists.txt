@@ -22,19 +22,19 @@ set(CMAKE_AUTOUIC ON)
 
 set(SOURCES
     src/Main.cpp
-    src/Task.cpp
     src/Database.cpp
     src/Main_Window.cpp
 	src/Connection_Window.cpp
+	src/Table_Explorer.cpp
     resources.qrc
-)
+ )
 
 set(HEADERS
-    src/Task.h
     src/Database.h
     src/Main_Window.h
 	src/Connection_Window.h
-)
+	src/Table_Explorer.h
+ )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 

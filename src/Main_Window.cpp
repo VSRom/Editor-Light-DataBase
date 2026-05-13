@@ -3,12 +3,16 @@
 #include <vector>
 //===========================================================================================================
 Main_Window::Main_Window(QWidget *parent)
-    : QMainWindow(parent), db_()
+    : QMainWindow(parent), db_(), explorer_(QSqlDatabase::database("main_connection"))
 {
     setup_ui();
     if (!db_.init_db("main_connection")) {
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
         this->close(); return; };
+
+    explorer_ = std::make_unique<Table_Explorer>(QSqlDatabase::database("main_connection"));
+
+
 }
 //===========================================================================================================
 Main_Window::~Main_Window() {}
@@ -19,3 +23,4 @@ void Main_Window::setup_ui()
     setMinimumSize(1920, 1080);
 
 }
+//================================================================================================================

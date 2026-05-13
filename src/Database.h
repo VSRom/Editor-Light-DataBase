@@ -1,5 +1,4 @@
-#ifndef DATABASE_H
-#define DATABASE_H
+#pragma once
 //===========================================================================================================
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -14,6 +13,8 @@ public:
     Database();
     ~Database();
     
+
+
     bool isOpen() const;
     bool add_task(const std::string& title);
     std::vector<Task> getAllTasks();
@@ -26,7 +27,6 @@ public:
     QSqlQueryModel* select_all(const QString &table_name);
 
 private:
-    QSqlDatabase db_;
+    QSqlDatabase db_Q;
 };
 //===========================================================================================================
-#endif // DATABASE_H
