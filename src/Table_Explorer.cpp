@@ -44,10 +44,9 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
     if (!filters.isEmpty()) {
         sql += " WHERE ";
         QStringList conditions;
-        for (auto it = filters.constBegin(); it != filters.constEnd(); ++it) {
-
+        for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
             conditions << QString("%1 LIKE ?").arg(it.key());
-        }
+
         sql += conditions.join(" AND ");
     }
 
@@ -76,14 +75,18 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
 
     QStringList place(values.size(), "?");
     QString colum = values.keys().join(", ");
-    QString placer = place.join(", ");
+    QString placer = place.join(", ");                              // Подготовка данных
 
     QString sql = QString("INSERT INTO %1 (%2) VALUES (%3)").arg(table, colum, placer);
 
-    qs.prepare(sql);
-    const QList<QVariant> val = values.values();
+    qs.prepare(sql);                                                // Подготовка запроса
+
+
+    const QList<QVariant> val = values.values();                    // Привязка значений (Извлечение данных и привязка через bindValue)
     for (int i = 0; i < val.size(); ++i)
     qs.bindValue(i, val.at(i));
+
+
 
     bool exe = qs.exec();                                           // Один вызов!
 
@@ -97,7 +100,33 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
 //================================================================================================================
 bool Table_Explorer::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
 {
+    QSqlQuery qs(db_T);
 
+    QStringList list{};
+
+    for (auto it = newValues.constBegin(); it != newValues.constEnd(); it++)
+        list << QString("%1 = ?").arg(it.key());                // Взяли все значения в строку с разделителем %1 = ?
+
+    QString result = list.join(", ");                           // Склеили полученную выше строку с разделителем ,
+
+    QString sql = QString("UPDATE %1 SET %2 WHERE %3 = ?").arg(table, result, idColumn);
+
+    qs.prepare(sql);                                                // Подготовка запроса
+
+    const QList<QVariant> val = newValues.values();                    // Привязка значений (Извлечение данных и привязка через bindValue)
+    for (int i = 0; i < val.size(); ++i)
+        qs.bindValue(i, val.at(i));
+
+    qs.bindValue(newValues.size(), idValue);                        // Привязали idValue в запрос
+
+    bool exe = qs.exec();
+
+    if (!exe) {
+        qDebug() << "Query error:" << qs.lastError().text();
+        return false;
+    }
+
+    return exe;
 }
 //================================================================================================================
 bool Table_Explorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const
