@@ -5,6 +5,9 @@
 *.aps
 *.userosscache
 *.sln.docstates
+*.slnx
+**/.vs/
+
 
 # Build directories
 out/
@@ -16,6 +19,7 @@ Release/
 x64/
 x86/
 resources/
+*.qrc
 
 # CMake
 CMakeCache.txt
@@ -32,9 +36,10 @@ instruct.txt
 *.pdb
 *.o
 *.obj
+**/*.json
 *.json
 *.lib
-
+src/
 # Qt
 *.moc
 *pro.user
@@ -51,3 +56,4 @@ instruct.txt
 
 # word
 plan_Dev.docx
+
