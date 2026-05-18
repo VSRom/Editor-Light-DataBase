@@ -43,7 +43,6 @@ src/
 *.moc
 *pro.user
 *.qbs.user
-*.qrc
 *.ui
 
 # BD

@@ -40,20 +40,18 @@ void Connection_Window::setupUI()
 	dbTypeCombo_ = new QComboBox();
 	dbTypeCombo_->addItems({ "SQLite", "MySQL", "PostgreSQL" }); //, "Access","Oracle" 
 	aplp->addWidget(dbTypeCombo_, 0, 1, 1, 3);
-	aplp->addWidget(new QLabel("Address:"), 1, 0);
 
+	aplp->addWidget(new QLabel("Address:"), 1, 0);
 	dbAddressLine_ = new QLineEdit();
 	dbAddressLine_->setPlaceholderText("Введите IP-address...");
 	aplp->addWidget(dbAddressLine_, 1, 1);
 
 	aplp->addWidget(new QLabel("Port:"), 1, 2, Qt::AlignRight | Qt::AlignVCenter);
-
 	dbPortLine_ = new QLineEdit();
 	dbPortLine_->setPlaceholderText("Введите Port...");
 	aplp->addWidget(dbPortLine_, 1, 3);
 
 	aplp->addWidget(new QLabel("Login:"), 2, 0, Qt::AlignRight | Qt::AlignVCenter);
-
 	loginLine_ = new QLineEdit();
 	loginLine_->setPlaceholderText("Введите Login...");
 	aplp->addWidget(loginLine_, 2, 1);
@@ -81,7 +79,7 @@ void Connection_Window::setupUI()
 	aplp->setHorizontalSpacing(5);
 	aplp->setVerticalSpacing(25);
 	mainLayout->addLayout(aplp);
-	//		for (int i = 0; i < configCombo_->count(); ++i) { configCombo_->setItemData(i, Qt::AlignCenter, Qt::TextAlignmentRole); }
+
 	connect(dbTypeCombo_, QOverload<const QString &>::of(&QComboBox::currentTextChanged), this, &Connection_Window::UIforSqLite);
 	UIforSqLite();
 //===========================================================================================================

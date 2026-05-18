@@ -1,12 +1,21 @@
 #pragma once
 //================================================================================================================
-#include <QMainWindow>
-#include <QListWidget>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QVBoxLayout>
 #include "Database.h"
 #include "Table_Explorer.h"
+#include <QMainWindow>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QWidget>
+#include <QStandardPaths>
+#include <QSettings>
+#include <qdir.h>
+#include <QPushButton>
+#include <QMessageBox>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 //================================================================================================================
 class Main_Window : public QMainWindow
 {
@@ -19,8 +28,9 @@ public:
 private:
     void setup_ui();
 
-    
     Database     db_;
     Table_Explorer explorer_;
+
+    QLineEdit *search_;
 };
 //================================================================================================================
