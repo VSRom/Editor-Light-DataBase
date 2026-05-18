@@ -13,7 +13,7 @@
 class Table_Explorer
 {
 public:
-    explicit Table_Explorer(QSqlDatabase &db);
+    explicit Table_Explorer(QSqlDatabase db);
 
     struct ColumnInfo { QString name; QString type; bool isNullable; };
     QList<ColumnInfo> getColumns(const QString &tableName) const;

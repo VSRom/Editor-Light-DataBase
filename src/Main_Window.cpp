@@ -10,8 +10,6 @@ Main_Window::Main_Window(QWidget *parent)
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
         this->close(); return; };
 
-    explorer_ = std::make_unique<Table_Explorer>(QSqlDatabase::database("main_connection"));
-
 
 }
 //===========================================================================================================
@@ -20,7 +18,7 @@ Main_Window::~Main_Window() {}
 void Main_Window::setup_ui()
 {
     setWindowTitle("Manager DataBase");
-    setMinimumSize(1920, 1080);
+    setMinimumSize(800, 600);
 
 }
 //================================================================================================================

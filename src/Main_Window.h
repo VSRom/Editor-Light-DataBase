@@ -16,11 +16,6 @@ public:
     Main_Window(QWidget *parent = nullptr);
     ~Main_Window();
 
-    // buttons
-private slots:
-    void add_task();
-
-
 private:
     void setup_ui();
 

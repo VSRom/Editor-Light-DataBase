@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
 project(Editor-Light-DataBase VERSION 1.0 LANGUAGES CXX)
 
-if(DEFINED ENV{QTDIR})
-    list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DQT_NO_UNSAFE_ITERATORS")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Od")
+    add_compile_definitions(_ITERATOR_DEBUG_LEVEL=2)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")
-    add_definitions(-D_ITERATOR_DEBUG_LEVEL=2)
+if(DEFINED ENV{QTDIR})
+    list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
 endif()
 
 find_package(Qt6 COMPONENTS Widgets Sql REQUIRED)
@@ -37,6 +37,8 @@ set(HEADERS
  )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE QT_NO_UNSAFE_ITERATORS)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     Qt6::Widgets 

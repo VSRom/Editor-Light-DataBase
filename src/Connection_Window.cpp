@@ -34,7 +34,6 @@ void Connection_Window::setupUI()
 //===========================================================================================================
 	//		Database Select 1.1.1	//	Enter Address:Port 1.1.2	//	Enter login:pass 1.1.3		// Select configure 1.1.4
 //===========================================================================================================
-	//	QHBoxLayout *topLayout = new QHBoxLayout();
 	QGridLayout *aplp = new QGridLayout();
 	aplp->addWidget(new QLabel("DataBase:"), 0, 0);
 

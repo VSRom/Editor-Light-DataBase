@@ -1,6 +1,7 @@
 #include "Table_Explorer.h"
+#include <QSqlError>
 //================================================================================================================
-Table_Explorer::Table_Explorer(QSqlDatabase &db) : db_T(db)
+Table_Explorer::Table_Explorer(QSqlDatabase db) : db_T(db)
 {
 }
 //================================================================================================================
@@ -39,6 +40,7 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
 }
 //================================================================================================================
 QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString, QString> &filters) const {
+    
     QString sql = QString("SELECT * FROM %1").arg(table);
 
     if (!filters.isEmpty()) {
@@ -81,12 +83,9 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
 
     qs.prepare(sql);                                                // Подготовка запроса
 
-
     const QList<QVariant> val = values.values();                    // Привязка значений (Извлечение данных и привязка через bindValue)
     for (int i = 0; i < val.size(); ++i)
     qs.bindValue(i, val.at(i));
-
-
 
     bool exe = qs.exec();                                           // Один вызов!
 
@@ -111,13 +110,13 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
 
     QString sql = QString("UPDATE %1 SET %2 WHERE %3 = ?").arg(table, result, idColumn);
 
-    qs.prepare(sql);                                                // Подготовка запроса
+    qs.prepare(sql);                                            // Подготовка запроса
 
-    const QList<QVariant> val = newValues.values();                    // Привязка значений (Извлечение данных и привязка через bindValue)
+    const QList<QVariant> val = newValues.values();             // Привязка значений (Извлечение данных и привязка через bindValue)
     for (int i = 0; i < val.size(); ++i)
         qs.bindValue(i, val.at(i));
 
-    qs.bindValue(newValues.size(), idValue);                        // Привязали idValue в запрос
+    qs.bindValue(newValues.size(), idValue);                    // Привязали idValue в запрос = ?
 
     bool exe = qs.exec();
 
@@ -131,6 +130,21 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
 //================================================================================================================
 bool Table_Explorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const
 {
+    QSqlQuery qs(db_T);
 
+    QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(table, idColumn);
+
+    qs.prepare(sql);
+
+    qs.bindValue(0, idValue);               // привязка значения к (= ?[0])
+
+    bool exe = qs.exec();
+
+    if (!exe) {
+        qDebug() << "Query error:" << qs.lastError().text();
+        return false;
+    }
+
+    return exe;
 }
 //================================================================================================================

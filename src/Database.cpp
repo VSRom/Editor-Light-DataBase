@@ -21,23 +21,6 @@ bool Database::add_task(const std::string& title)
     return db.exec();
 }
 //===========================================================================================================
-std::vector<Task> Database::getAllTasks()
-{
-    std::vector<Task> tasks;
-    QSqlQuery db(db_Q);
-    db.prepare("SELECT id, title, completed FROM tasks");
-
-    while (db.next())
-    {
-        tasks.emplace_back(
-            db.value(0).toInt(),
-            db.value(1).toString().toStdString(),
-            db.value(2).toBool()
-        );
-    }
-    return tasks;
-}
-//===========================================================================================================
 bool Database::updateTask(int id, const std::string& title, bool completed)
 {
     QSqlQuery db(db_Q);
