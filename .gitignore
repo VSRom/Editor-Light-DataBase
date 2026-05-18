@@ -19,7 +19,6 @@ Release/
 x64/
 x86/
 resources/
-*.qrc
 
 # CMake
 CMakeCache.txt
