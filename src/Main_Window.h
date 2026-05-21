@@ -16,6 +16,9 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QListWidget>
+#include <QTableView>
+#include <QSqlQueryModel>
 //================================================================================================================
 class Main_Window : public QMainWindow
 {
@@ -25,6 +28,11 @@ public:
     Main_Window(QWidget *parent = nullptr);
     ~Main_Window();
 
+    void onTableSelected(const QString &tableName);
+
+private slots:
+    void onSearch();
+
 private:
     void setup_ui();
 
@@ -32,5 +40,9 @@ private:
     Table_Explorer explorer_;
 
     QLineEdit *search_;
+    QListWidget *table_list_;
+    QTableView *data_view_;
+
+    QString current_table_;
 };
 //================================================================================================================

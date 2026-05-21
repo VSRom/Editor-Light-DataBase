@@ -73,7 +73,8 @@ void Connection_Window::setupUI()
 	QStringList config_s = settings.childGroups();
 //=======================================================================================================
 	configCombo_ = new QComboBox();
-	configCombo_->addItem("======Выберите конфигурационные настройки======");
+	configCombo_->addItem("Выберите конфигурационные настройки");
+	configCombo_->setItemData(0, Qt::AlignCenter, Qt::TextAlignmentRole);			// Центровка текста addItem
 	configCombo_->addItems(config_s);
 	aplp->addWidget(configCombo_, 3, 0, 1, 4);
 	aplp->setHorizontalSpacing(5);
@@ -87,22 +88,31 @@ void Connection_Window::setupUI()
 //===========================================================================================================
 	QHBoxLayout *chrsscconnect = new QHBoxLayout();
 
-	check_con_ = new QPushButton("Проверка соединения", this);
-	connection_ = new QPushButton("Соединение", this);
 	reset_ = new QPushButton("Очистка ввода", this);
 	save_config_ = new QPushButton("Сохранение конфигурации", this);
+	check_con_ = new QPushButton("Проверка соединения", this);
+	connection_ = new QPushButton("Соединение", this);
 
-	chrsscconnect->addWidget(check_con_);
-	chrsscconnect->addWidget(connection_);
 	chrsscconnect->addWidget(reset_);
 	chrsscconnect->addWidget(save_config_);
+	chrsscconnect->addWidget(check_con_);
+	chrsscconnect->addWidget(connection_);
 
-	connect(check_con_, &QPushButton::clicked, this, &Connection_Window::check_con);
-	connect(connection_, &QPushButton::clicked, this, &Connection_Window::connection);
 	connect(reset_, &QPushButton::clicked, this, &Connection_Window::reset);
 	connect(save_config_, &QPushButton::clicked, this, &Connection_Window::save_config);
+	connect(check_con_, &QPushButton::clicked, this, &Connection_Window::check_con);
+	connect(connection_, &QPushButton::clicked, this, &Connection_Window::connection);
 
 	mainLayout->addLayout(chrsscconnect);
+
+//===========================================================================================================
+	// 1.1.9 Add QTextEdit
+//===========================================================================================================
+	text_edit_ = new QTextEdit(this);
+
+	mainLayout->addWidget(text_edit_);
+
+//===========================================================================================================
 }
 //===========================================================================================================
 void Connection_Window::check_con()
@@ -140,9 +150,9 @@ void Connection_Window::check_con()
 	}
 
 	if (!db.open())
-		qDebug() << "Ошибка подключения" << db.lastError().text();
+		text_edit_->append(QString("Ошибка подключения: ") + db.lastError().text());
 	else
-		qDebug() << "Подключено!";
+		text_edit_->append(QString("Подключено!"));
 }
 //===========================================================================================================
 void Connection_Window::connection()
@@ -180,7 +190,7 @@ void Connection_Window::connection()
 	}
 
 	if (!db.open())
-		qDebug() << "Ошибка подключения" << db.lastError().text();
+		text_edit_->append(QString("Ошибка подключения: ") + db.lastError().text());
 	else
 	{
 		Main_Window *win = new Main_Window();
@@ -201,10 +211,8 @@ void Connection_Window::save_config()
 	QMessageBox::StandardButton reply;
 	reply = QMessageBox::question(this, "Сохранение конфигурации", "Сохраним?", QMessageBox::Yes | QMessageBox::No);
 	if (reply == QMessageBox::Yes)
-	{
-	
-	}
-	
+		text_edit_->append(QString("Успешное сохранение конфигурации"));
+
 		QMessageBox::information(this, "Сохранение конфигурации", "Отменено");
 }
 //===========================================================================================================

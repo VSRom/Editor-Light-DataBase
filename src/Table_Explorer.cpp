@@ -1,19 +1,19 @@
 #include "Table_Explorer.h"
 #include <QSqlError>
 //================================================================================================================
-Table_Explorer::Table_Explorer(QSqlDatabase db) : db_T(db)
+Table_Explorer::Table_Explorer(const QString &connectionName) : connectionName_(connectionName)
 {
 }
 //================================================================================================================
 QStringList Table_Explorer::getTables() const {
-    return db_T.tables(QSql::Tables);
+    return QSqlDatabase::database(connectionName_).tables(QSql::Tables);
 }
 //================================================================================================================
 QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tableName) const {
     QList<ColumnInfo> cols;
 
-    QString driver = db_T.driverName();
-    QSqlQuery q(db_T);
+    QString driver = QSqlDatabase::database(connectionName_).driverName();
+    QSqlQuery q(QSqlDatabase::database(connectionName_));
 
     if (driver == "QSQLITE") {
         q.exec(QString("PRAGMA table_info(%1)").arg(tableName));
@@ -39,7 +39,7 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
     return cols;
 }
 //================================================================================================================
-QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString, QString> &filters) const {
+QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString, QString> &filters, const QString &logic) const {
     
     QString sql = QString("SELECT * FROM %1").arg(table);
 
@@ -49,31 +49,32 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
         for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
             conditions << QString("%1 LIKE ?").arg(it.key());
 
-        sql += conditions.join(" AND ");
+        sql += conditions.join(logic);                                      // Для использования OR или AND
     }
 
     auto *model = new QSqlQueryModel();
-    QSqlQuery q(db_T);
-    q.prepare(sql);
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+    qs.prepare(sql);
 
     if (!filters.isEmpty()) {
         int idx = 0;
         for (auto it = filters.constBegin(); it != filters.constEnd(); ++it, ++idx) {
-            q.bindValue(idx, "%" + it.value() + "%");
+            qs.bindValue(idx, "%" + it.value() + "%");
         }
     }
 
-    if (!q.exec()) {
-        qDebug() << "Query error:" << q.lastError().text();
+    if (!qs.exec()) {
+        qDebug() << "Query error:" << qs.lastError().text();
     }
 
-    model->setQuery(q);
+    model->setQuery(qs);
+    //  qDebug() << model->rowCount();  // Сколько выдаёт строк после поиска
     return model;
 }
 //================================================================================================================
 bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> &values) const
 {
-    QSqlQuery qs(db_T);
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QStringList place(values.size(), "?");
     QString colum = values.keys().join(", ");
@@ -99,7 +100,7 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
 //================================================================================================================
 bool Table_Explorer::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
 {
-    QSqlQuery qs(db_T);
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QStringList list{};
 
@@ -130,7 +131,7 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
 //================================================================================================================
 bool Table_Explorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const
 {
-    QSqlQuery qs(db_T);
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(table, idColumn);
 

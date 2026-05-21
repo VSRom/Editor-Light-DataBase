@@ -13,6 +13,7 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QTextEdit>
 #include "Main_Window.h"
 
 class Connection_Window : public QMainWindow
@@ -47,5 +48,6 @@ private:
 	QPushButton *connection_;			// 1.2.2 Connection to BD;
 	QPushButton *reset_;				// 1.2.3 Clear enter
 	QPushButton *save_config_;			// 1.2.4 save configure to *.ini_;
-
+						// 1.1.9 Text Edit
+	QTextEdit *text_edit_;
 };
