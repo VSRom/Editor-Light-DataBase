@@ -9,6 +9,10 @@
     Git (контроль версий)
     SQLite
 
+## Рабочий функционал
+	
+	Подключение к БД SQLite по локальному пути, список таблиц, вывод данных и поиск по любому из значений.
+	
 ## Планируемый функционал
 
 Подключение к базам данных:
@@ -39,3 +43,15 @@
     Локальные заметки (хранятся отдельно от БД)
     Автосохранение состояния при закрытии
     Экспорт данных (в разработке)
+
+Сборка:
+	
+	x64 Native Tools Command Prompt for VS
+	set QTDIR=C:\QT\*.*.*\msvc2019_64
+	echo %QTDIR%
+	git clone https://github.com/VSRom/Editor-Light-DataBase
+	cmake --preset=Qt-Release
+	cmake --build out/build/release
+	cd out/build/release
+	"%QTDIR%\bin\windeployqt.exe" Editor-Light-DataBase.exe	// ELDB.exe
+	

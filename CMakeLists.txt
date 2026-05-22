@@ -2,9 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(Editor-Light-DataBase VERSION 1.0 LANGUAGES CXX)
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DQT_NO_UNSAFE_ITERATORS")
+    add_compile_definitions(QT_NO_UNSAFE_ITERATORS)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Od")
-    add_compile_definitions(_ITERATOR_DEBUG_LEVEL=2)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
