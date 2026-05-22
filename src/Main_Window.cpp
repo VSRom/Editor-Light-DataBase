@@ -38,20 +38,26 @@ void Main_Window::setup_ui()
 
     QGridLayout *sw = new QGridLayout();
 
+    // Поисковая строка
     search_ = new QLineEdit();
     search_->setPlaceholderText("Search...");
-    sw->addWidget(search_, 0, 0, 1, 3); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
-
+    sw->addWidget(search_, 0, 0, 1, 3);
+    
+    // Данные
     data_view_ = new QTableView();
-    sw->addWidget(data_view_, 1, 0, 1, 3); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
+    sw->addWidget(data_view_, 1, 0, 1, 3);
 
+    // Список таблиц
     table_list_ = new QListWidget();
-    for (const QString &stroke : explorer_.getTables())
+    for (const QString &stroke : explorer_.getTables()) {
+        if (!stroke.startsWith("sqlite_"))      // Исключаем системные объекты из списка таблиц
         table_list_->addItem(stroke);
+    }
+
     sw->addWidget(table_list_, 0, 3, 1, 1); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
     
     sw->setRowStretch(1, 1);
-    sw->setColumnStretch(0, 1);  // или sw->setColumnStretch(0, 3);
+    sw->setColumnStretch(0, 1);
     sw->setColumnStretch(1, 1);
     sw->setColumnStretch(2, 1);
     sw->setColumnStretch(3, 1);
@@ -59,13 +65,11 @@ void Main_Window::setup_ui()
 
     connect(table_list_, &QListWidget::currentTextChanged, this, &Main_Window::onTableSelected);
     connect(search_, &QLineEdit::returnPressed, this, &Main_Window::onSearch); 
-    //  Кто отправляет // Сигнал // Кто принимает // Слот
+    //  Кто отправляет       // Сигнал     // Кто принимает // Слот
 }
 //================================================================================================================
 void Main_Window::onSearch()
 {
-
-
     QString stroke = search_->text();                     // Берем введеное пользователем значение
 
     if (stroke.isEmpty()) {
