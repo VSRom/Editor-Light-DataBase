@@ -47,7 +47,7 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
         sql += " WHERE ";
         QStringList conditions;
         for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
-            conditions << QString("%1 LIKE ?").arg(it.key());
+            conditions << QString("%1 LIKE ? COLLATE NOCASE").arg(it.key());
 
         sql += conditions.join(logic);                                      // Для использования OR или AND
     }

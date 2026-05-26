@@ -21,7 +21,9 @@ void Main_Window::onTableSelected(const QString &tableName)
 
     QSqlQueryModel *model = explorer_.select(tableName);    // Получаем данные
 
-    data_view_->setModel(model);
+    // Новый источник
+    proxyModel_->setSourceModel(model);
+    proxyModel_->setFilterFixedString("");
 }
 //===========================================================================================================
 void Main_Window::setup_ui()
@@ -46,6 +48,12 @@ void Main_Window::setup_ui()
     // Данные
     data_view_ = new QTableView();
     sw->addWidget(data_view_, 1, 0, 1, 3);
+
+    // Для поиска по любому регистру
+    proxyModel_ = new QSortFilterProxyModel(this);
+    proxyModel_->setFilterCaseSensitivity(Qt::CaseInsensitive); // Игнор регистра
+    proxyModel_->setFilterKeyColumn(-1); // Поиск по всем колонкам
+    data_view_->setModel(proxyModel_);
 
     // Список таблиц
     table_list_ = new QListWidget();
@@ -77,14 +85,9 @@ void Main_Window::onSearch()
         return;
     }
 
-    auto colum = explorer_.getColumns(current_table_); // Получаем колонки
+    QSqlQueryModel *model = explorer_.select(current_table_);  // Отправляем готовые параметры в подготовку и исполнение
 
-    QMap<QString, QString> filters;
-    for (const auto &col : colum)
-        filters[col.name] = stroke;                     // Готовим параметры для поиска
-
-    QSqlQueryModel *model = explorer_.select(current_table_, filters, " OR ");  // Отправляем готовые параметры в подготовку и исполнение
-
-    data_view_->setModel(model);
+    proxyModel_->setSourceModel(model);
+    proxyModel_->setFilterFixedString(stroke);
 }
 //================================================================================================================
