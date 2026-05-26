@@ -20,6 +20,7 @@
 #include <QTableView>
 #include <QSqlQueryModel>
 #include <QSortFilterProxyModel>
+#include <QHeaderView>
 //================================================================================================================
 class Main_Window : public QMainWindow
 {

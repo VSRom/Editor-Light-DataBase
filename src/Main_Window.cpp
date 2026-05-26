@@ -49,6 +49,9 @@ void Main_Window::setup_ui()
     data_view_ = new QTableView();
     sw->addWidget(data_view_, 1, 0, 1, 3);
 
+    // Скрыть заголовок с дублированием id
+    data_view_->verticalHeader()->setVisible(false);
+
     // Для поиска по любому регистру
     proxyModel_ = new QSortFilterProxyModel(this);
     proxyModel_->setFilterCaseSensitivity(Qt::CaseInsensitive); // Игнор регистра

@@ -26,6 +26,7 @@ set(SOURCES
 	src/Connection_Window.cpp
 	src/Table_Explorer.cpp
     resources.qrc
+	app.rc
  )
 
 set(HEADERS
