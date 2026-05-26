@@ -49,6 +49,16 @@ void Main_Window::setup_ui()
     data_view_ = new QTableView();
     sw->addWidget(data_view_, 1, 0, 1, 3);
 
+    // Прогресс бар
+    progress_ = new QProgressBar();
+    progress_->setRange(0, 0);        //Режим "бегущей строки"
+    progress_->setTextVisible(true);
+    progress_->hide();                // Скрыт по умолчанию
+    sw->addWidget(progress_, 2, 0, 1, 3);
+    //sw->addWidget(new QLabel("ПРОГРЕСС"), 2, 0, 1, 3);
+    // Стилизация прогресс бара
+    progress_->setAlignment(Qt::AlignCenter);
+
     // Скрыть заголовок с дублированием id
     data_view_->verticalHeader()->setVisible(false);
 
@@ -65,7 +75,14 @@ void Main_Window::setup_ui()
         table_list_->addItem(stroke);
     }
 
-    sw->addWidget(table_list_, 0, 3, 1, 1); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
+    // Окно заметок
+    notepad_ = new QPlainTextEdit();
+
+    // Добавить шрифты пользователю на выбор // Mono ( Hack Feronoma Anonimus ) //////////////////////////////////////////////////////////////////
+
+    sw->addWidget(notepad_, 3, 3, 2, 1);
+
+    sw->addWidget(table_list_, 0, 3, 2, 1); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
     
     sw->setRowStretch(1, 1);
     sw->setColumnStretch(0, 1);
@@ -88,9 +105,38 @@ void Main_Window::onSearch()
         return;
     }
 
+    startProgressBar(PB_Status::Searching);
+
+    // Исправление утечки данных
+    if (const_ptr_) const_ptr_->clear();
+
     QSqlQueryModel *model = explorer_.select(current_table_);  // Отправляем готовые параметры в подготовку и исполнение
 
-    proxyModel_->setSourceModel(model);
+    const_ptr_ = model;
+
+    proxyModel_->setSourceModel(const_ptr_);
     proxyModel_->setFilterFixedString(stroke);
+
+    stopProgressBar();
+}
+//================================================================================================================
+void Main_Window::startProgressBar(PB_Status pbs) {
+    current_pb_ = pbs;
+
+    switch (pbs) {
+        case PB_Status::Searching: progress_->setFormat("Поиск"); break;
+        case PB_Status::Saving: progress_->setFormat("Сохранение"); break;
+        case PB_Status::Loading: progress_->setFormat("Загрузка"); break;
+        default: progress_->setFormat("");
+    }
+
+    //  Idle, Searching, Saving, Loading
+    progress_->show();
+}
+//================================================================================================================
+void Main_Window::stopProgressBar() {
+    progress_->reset(); // Сбросывает значение и остановка анимации
+    progress_->hide();
+    current_pb_ = PB_Status::Idle;
 }
 //================================================================================================================

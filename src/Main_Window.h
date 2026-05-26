@@ -21,6 +21,13 @@
 #include <QSqlQueryModel>
 #include <QSortFilterProxyModel>
 #include <QHeaderView>
+#include <QPlainTextEdit>
+#include <QProgressBar>
+//================================================================================================================
+// Состояния для QProgressBar
+enum class PB_Status {
+    Idle, Searching, Saving, Loading
+};
 //================================================================================================================
 class Main_Window : public QMainWindow
 {
@@ -34,18 +41,23 @@ public:
 
 private slots:
     void onSearch();
+    void startProgressBar(PB_Status pbs);
+    void stopProgressBar();
 
 private:
     void setup_ui();
 
-    Database     db_;
-    Table_Explorer explorer_;
+    Database     db_;                           // База Данных
+    Table_Explorer explorer_;                   // Обозреватель
+    QLineEdit* search_;                         // Поиск
+    QListWidget* table_list_;                   // Список таблиц
+    QTableView* data_view_;                     // Данные
+    QPlainTextEdit* notepad_;                   // Заметки
+    QProgressBar* progress_;                    // Прогресс Бар
+    PB_Status current_pb_ = PB_Status::Idle;    // Текущее состояние прогресс Бара
+    QString current_table_;                     // Текущая таблица
+    QSortFilterProxyModel* proxyModel_;         // Для поиска в любом регистра
 
-    QLineEdit* search_;
-    QListWidget* table_list_;
-    QTableView* data_view_;
-
-    QString current_table_;
-    QSortFilterProxyModel* proxyModel_; // Для поиска в любом регистра
+    QSqlQueryModel* const_ptr_ = nullptr;       // Чистка моделей
 };
 //================================================================================================================

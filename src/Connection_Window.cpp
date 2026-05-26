@@ -38,7 +38,7 @@ void Connection_Window::setupUI()
 	aplp->addWidget(new QLabel("DataBase:"), 0, 0);
 
 	dbTypeCombo_ = new QComboBox();
-	dbTypeCombo_->addItems({ "SQLite", "MySQL", "PostgreSQL" }); //, "Access","Oracle" 
+	dbTypeCombo_->addItems({ "SQLite", "MySQL", "PostgreSQL", "Access", "Oracle"});
 	aplp->addWidget(dbTypeCombo_, 0, 1, 1, 3);
 
 	aplp->addWidget(new QLabel("Address:"), 1, 0);
@@ -127,10 +127,11 @@ void Connection_Window::check_con()
 	switch (dbTypeCombo_->currentIndex())
 	{
 		case 0: driver_db = "QSQLITE"; break;
-		//case 1: driver_db = "ACCESS"; break;
-		case 1: driver_db = "QMYSQL"; break;
-		//case 3: driver_db = "ORACLE"; break;
-		case 2: driver_db = "QPSQL"; break;
+		case 1: driver_db = "QACCESS"; break;
+		case 2: driver_db = "QMYSQL"; break;
+		case 3: driver_db = "QOCI"; break;
+		case 4: driver_db = "QPSQL"; break;
+		default: text_edit_->append("Неизвестный тип БД"); break;
 	}
 
 	QSqlDatabase db = QSqlDatabase::addDatabase(driver_db, "test_connection");
@@ -167,10 +168,10 @@ void Connection_Window::connection()
 	switch (dbTypeCombo_->currentIndex())
 	{
 		case 0: driver_db = "QSQLITE"; break;
-		//case 1: driver_db = "ACCESS"; break;
-		case 1: driver_db = "QMYSQL"; break;
-		//case 3: driver_db = "ORACLE"; break;
-		case 2: driver_db = "QPSQL"; break;
+		case 1: driver_db = "QACCESS"; break;
+		case 2: driver_db = "QMYSQL"; break;
+		case 3: driver_db = "QOCI"; break;
+		case 4: driver_db = "QPSQL"; break;
 	}
 
 	QSqlDatabase db = QSqlDatabase::addDatabase(driver_db, "main_connection");
