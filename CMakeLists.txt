@@ -25,6 +25,7 @@ set(SOURCES
     src/Main_Window.cpp
 	src/Connection_Window.cpp
 	src/Table_Explorer.cpp
+	src/Create_Table.cpp
     resources.qrc
 	app.rc
  )
@@ -34,6 +35,7 @@ set(HEADERS
     src/Main_Window.h
 	src/Connection_Window.h
 	src/Table_Explorer.h
+	src/Create_Table.h
  )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})

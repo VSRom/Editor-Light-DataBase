@@ -1,4 +1,5 @@
 #include "Main_Window.h"
+#include "Create_Table.h"
 //===========================================================================================================
 Main_Window::Main_Window(QWidget *parent)
     : QMainWindow(parent), db_(), explorer_("main_connection")
@@ -78,6 +79,28 @@ void Main_Window::setup_ui()
     // Окно заметок
     notepad_ = new QPlainTextEdit();
 
+    // 4 кнопки(Объединить, Создать, Переименовать, Удалить) "Между Заметками и Окном списка таблиц"
+
+    QHBoxLayout* ucrd = new QHBoxLayout();
+
+    unitedT_ = new QPushButton("Объединить таблицы", this);
+    createT_ = new QPushButton("Создать таблицу", this);
+    renameT_ = new QPushButton("Переименовать таблицу", this);
+    deleteT_ = new QPushButton("Удалить таблицу", this);
+
+    ucrd->addWidget(unitedT_);
+    ucrd->addWidget(createT_);
+    ucrd->addWidget(renameT_);
+    ucrd->addWidget(deleteT_);
+
+    //  connect(unitedT_, &QPushButton::clicked, this, &Create_Table::tab_united);
+    connect(createT_, &QPushButton::clicked, this, &Create_Table::tab_create);
+    //  connect(renameT_, &QPushButton::clicked, this, &Create_Table::tab_rename);
+    //  connect(deleteT_, &QPushButton::clicked, this, &Create_Table::tab_delete);
+
+
+    sw->addLayout(ucrd, 2, 3, 1, 1);
+
     // Добавить шрифты пользователю на выбор // Mono ( Hack Feronoma Anonimus ) //////////////////////////////////////////////////////////////////
 
     sw->addWidget(notepad_, 3, 3, 2, 1);
@@ -107,7 +130,7 @@ void Main_Window::onSearch()
 
     startProgressBar(PB_Status::Searching);
 
-    // Исправление утечки данных
+    // Исправление утечки памяти
     if (const_ptr_) const_ptr_->clear();
 
     QSqlQueryModel *model = explorer_.select(current_table_);  // Отправляем готовые параметры в подготовку и исполнение

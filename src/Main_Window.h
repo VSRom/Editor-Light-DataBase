@@ -23,6 +23,7 @@
 #include <QHeaderView>
 #include <QPlainTextEdit>
 #include <QProgressBar>
+#include <QPushButton>
 //================================================================================================================
 // Состояния для QProgressBar
 enum class PB_Status {
@@ -34,7 +35,7 @@ class Main_Window : public QMainWindow
     Q_OBJECT
 
 public:
-    Main_Window(QWidget *parent = nullptr);
+    explicit Main_Window(QWidget *parent = nullptr);
     ~Main_Window();
 
     void onTableSelected(const QString &tableName);
@@ -59,5 +60,10 @@ private:
     QSortFilterProxyModel* proxyModel_;         // Для поиска в любом регистра
 
     QSqlQueryModel* const_ptr_ = nullptr;       // Чистка моделей
+
+    QPushButton* unitedT_;                      // 2.2.1 united tables
+    QPushButton* createT_;			            // 2.2.2 create table
+    QPushButton* renameT_;                      // 2.2.3 rename table
+    QPushButton* deleteT_;                      // 2.2.4 delete table
 };
 //================================================================================================================
