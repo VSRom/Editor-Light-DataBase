@@ -20,15 +20,14 @@ public:
 
 	QString get_sql() const;
 
-	// Добавить столбец/строку
+
 private slots:
-	void add_col_row();
+	void add_col_row();				// Добавить столбец/строку
 
 private:
 	void setup_ui();
-	
 
-	struct Col_Row {
+	struct Col_Row {				// Структура для создаваемых столбцов
 		QHBoxLayout* layout_;
 		QComboBox* typeCombo_;
 		QLineEdit* nameEdit_;
