@@ -1,6 +1,15 @@
 #pragma once
+#include <QScrollArea>
 #include <QDialog>
 #include <QPushButton>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QList>
+#include <QLabel>
+#include <QHBoxLayout>
+
 //===========================================================================================================
 class Create_Table : public QDialog {
 	Q_OBJECT
@@ -11,7 +20,25 @@ public:
 
 	QString get_sql() const;
 
+	// Добавить столбец/строку
+private slots:
+	void add_col_row();
+
 private:
 	void setup_ui();
+	
+
+	struct Col_Row {
+		QHBoxLayout* layout_;
+		QComboBox* typeCombo_;
+		QLineEdit* nameEdit_;
+		QPushButton* removeBtn_;
+	};
+
+	QLineEdit* tableName_;			// задаваемое имя таблицы
+	QVBoxLayout* col_layout_;		// внутри ScrollArea
+	QList<Col_Row> col_row_;		// список строк/столбцов
+	QPushButton* add_col_;
+	
 };
 //===========================================================================================================
