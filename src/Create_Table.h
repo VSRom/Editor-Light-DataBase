@@ -1,6 +1,5 @@
 #pragma once
 #include <QDialog>
-#include <QString>
 #include <QPushButton>
 //===========================================================================================================
 class Create_Table : public QDialog {
@@ -10,7 +9,7 @@ public:
 	explicit Create_Table(QWidget* parent = nullptr);
 	~Create_Table();
 
-	QString tab_create() const;
+	QString get_sql() const;
 
 private:
 	void setup_ui();

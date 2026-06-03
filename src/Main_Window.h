@@ -44,6 +44,10 @@ private slots:
     void onSearch();
     void startProgressBar(PB_Status pbs);
     void stopProgressBar();
+    void tab_create();
+    void tab_united();
+    void tab_rename();
+    void tab_delete();
 
 private:
     void setup_ui();

@@ -11,9 +11,7 @@ void Create_Table::setup_ui() {
 	setWindowTitle("Создание таблицы");
 }
 //===========================================================================================================
-QString Create_Table::tab_create() const {
-
-
+QString Create_Table::get_sql() const {
 
 	return QString();
 }

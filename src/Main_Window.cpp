@@ -81,22 +81,22 @@ void Main_Window::setup_ui()
 
     // 4 кнопки(Объединить, Создать, Переименовать, Удалить) "Между Заметками и Окном списка таблиц"
 
-    QHBoxLayout* ucrd = new QHBoxLayout();
+    QGridLayout* ucrd = new QGridLayout();
 
-    unitedT_ = new QPushButton("Объединить таблицы", this);
-    createT_ = new QPushButton("Создать таблицу", this);
-    renameT_ = new QPushButton("Переименовать таблицу", this);
-    deleteT_ = new QPushButton("Удалить таблицу", this);
+    unitedT_ = new QPushButton("Объединить\n таблицы", this);
+    createT_ = new QPushButton("Создать\n таблицу", this);
+    renameT_ = new QPushButton("Переименовать\n таблицу", this);
+    deleteT_ = new QPushButton("Удалить\n таблицу", this);
 
-    ucrd->addWidget(unitedT_);
-    ucrd->addWidget(createT_);
-    ucrd->addWidget(renameT_);
-    ucrd->addWidget(deleteT_);
+    ucrd->addWidget(unitedT_, 0, 0);
+    ucrd->addWidget(createT_, 0, 1);
+    ucrd->addWidget(renameT_, 1, 0);
+    ucrd->addWidget(deleteT_, 1, 1);
 
-    //  connect(unitedT_, &QPushButton::clicked, this, &Create_Table::tab_united);
-    connect(createT_, &QPushButton::clicked, this, &Create_Table::tab_create);
-    //  connect(renameT_, &QPushButton::clicked, this, &Create_Table::tab_rename);
-    //  connect(deleteT_, &QPushButton::clicked, this, &Create_Table::tab_delete);
+    connect(unitedT_, &QPushButton::clicked, this, &Main_Window::tab_united);
+    connect(createT_, &QPushButton::clicked, this, &Main_Window::tab_create);
+    connect(renameT_, &QPushButton::clicked, this, &Main_Window::tab_rename);
+    connect(deleteT_, &QPushButton::clicked, this, &Main_Window::tab_delete);
 
 
     sw->addLayout(ucrd, 2, 3, 1, 1);
@@ -161,5 +161,27 @@ void Main_Window::stopProgressBar() {
     progress_->reset(); // Сбросывает значение и остановка анимации
     progress_->hide();
     current_pb_ = PB_Status::Idle;
+}
+//================================================================================================================
+void Main_Window::tab_create() {
+    Create_Table dialog(this);                      // Создаём диалог
+    if (dialog.exec() == QDialog::Accepted) {       // Показываем и ждём результат
+        QString sql = dialog.get_sql();
+        if (!sql.isEmpty()) {
+
+        }
+    }
+}
+//================================================================================================================
+void Main_Window::tab_united() {
+
+}
+//================================================================================================================
+void Main_Window::tab_rename() {
+
+}
+//================================================================================================================
+void Main_Window::tab_delete() {
+
 }
 //================================================================================================================
