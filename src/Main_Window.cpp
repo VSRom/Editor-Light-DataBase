@@ -1,8 +1,8 @@
 #include "Main_Window.h"
 #include "Create_Table.h"
 //===========================================================================================================
-Main_Window::Main_Window(QWidget *parent)
-    : QMainWindow(parent), db_(), explorer_("main_connection")
+Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *parent)
+    : QMainWindow(parent), db_(), explorer_("main_connection", db_type)
 {
     setup_ui();
     if (!db_.init_db("main_connection")) {
@@ -133,9 +133,8 @@ void Main_Window::onSearch()
     // Исправление утечки памяти
     if (const_ptr_) const_ptr_->clear();
 
-    QSqlQueryModel *model = explorer_.select(current_table_);  // Отправляем готовые параметры в подготовку и исполнение
-
-    const_ptr_ = model;
+    const_ptr_ = explorer_.select(current_table_);  // Отправляем готовые параметры в подготовку и исполнение
+    //////////////////////////////////const_ptr
 
     proxyModel_->setSourceModel(const_ptr_);
     proxyModel_->setFilterFixedString(stroke);
@@ -164,10 +163,12 @@ void Main_Window::stopProgressBar() {
 }
 //================================================================================================================
 void Main_Window::tab_create() {
-    Create_Table dialog(this);                      // Создаём диалог
-    if (dialog.exec() == QDialog::Accepted) {       // Показываем и ждём результат
+    Create_Table dialog(explorer_.get_types_db(), this);                      // Создаём диалог
+    if (dialog.exec() == QDialog::Accepted) {                                 // Показываем и ждём результат
         QString sql = dialog.get_sql();
-        if (!sql.isEmpty()) {
+        if (!sql.isEmpty())
+            QMessageBox::warning(this, "Ошибка", "Недостаточно данных для создания таблицы!");
+        else {
 
         }
     }

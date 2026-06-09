@@ -10,7 +10,7 @@ void Connection_Window::UIforSqLite()
 {
 	bool isSqLite = (dbTypeCombo_->currentText() == "SQLite");
 
-		dbAddressLine_->setPlaceholderText(isSqLite ? "Путь к файлу .db..." : "IP-address...");
+		dbAddressLine_->setPlaceholderText(isSqLite ? "Path to .db..." : "IP...");
 		dbPortLine_->setEnabled(!isSqLite);
 		loginLine_->setEnabled(!isSqLite);
 		passwordLine_->setEnabled(!isSqLite);
@@ -43,31 +43,31 @@ void Connection_Window::setupUI()
 
 	aplp->addWidget(new QLabel("Address:"), 1, 0);
 	dbAddressLine_ = new QLineEdit();
-	dbAddressLine_->setPlaceholderText("Введите IP-address...");
+	dbAddressLine_->setPlaceholderText("IP...");
 	aplp->addWidget(dbAddressLine_, 1, 1);
 
 	aplp->addWidget(new QLabel("Port:"), 1, 2, Qt::AlignRight | Qt::AlignVCenter);
 	dbPortLine_ = new QLineEdit();
-	dbPortLine_->setPlaceholderText("Введите Port...");
+	dbPortLine_->setPlaceholderText("Port...");
 	aplp->addWidget(dbPortLine_, 1, 3);
 
 	aplp->addWidget(new QLabel("Login:"), 2, 0, Qt::AlignRight | Qt::AlignVCenter);
 	loginLine_ = new QLineEdit();
-	loginLine_->setPlaceholderText("Введите Login...");
+	loginLine_->setPlaceholderText("ogin...");
 	aplp->addWidget(loginLine_, 2, 1);
 
 	aplp->addWidget(new QLabel("Password:"), 2, 2);
 
 	passwordLine_ = new QLineEdit();
 	passwordLine_->setEchoMode(QLineEdit::Password);
-	passwordLine_->setPlaceholderText("Введите Password...");
+	passwordLine_->setPlaceholderText("Password...");
 	aplp->addWidget(passwordLine_, 2, 3);
 
 // Create dir && path && create file settings
 //=======================================================================================================
 	QString config_dir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
-	QDir().mkpath(config_dir + "/Editor-Light_DataBase");
-	QString path = config_dir + "/Editor-Light_DataBase/connections.ini";
+	QDir().mkpath(config_dir + "/Editor Light DataBase");
+	QString path = config_dir + "/Editor Light DataBase/connections.ini";
 
 	QSettings settings(path, QSettings::IniFormat);
 	QStringList config_s = settings.childGroups();
@@ -111,7 +111,6 @@ void Connection_Window::setupUI()
 	text_edit_ = new QTextEdit(this);
 
 	mainLayout->addWidget(text_edit_);
-
 }
 //===========================================================================================================
 void Connection_Window::check_con()
@@ -121,19 +120,18 @@ void Connection_Window::check_con()
 	QString log = loginLine_->text();
 	QString	pass = passwordLine_->text();
 
-	QString driver_db;
 
 	switch (dbTypeCombo_->currentIndex())
 	{
-		case 0: driver_db = "QSQLITE"; break;
-		case 1: driver_db = "QACCESS"; break;
-		case 2: driver_db = "QMYSQL"; break;
-		case 3: driver_db = "QOCI"; break;
-		case 4: driver_db = "QPSQL"; break;
+		case 0: driver_ = "QSQLITE"; break;
+		case 1: driver_ = "QODBC";  break;
+		case 2: driver_ = "QMYSQL"; break;
+		case 3: driver_ = "QOCI"; break;
+		case 4: driver_ = "QPSQL"; break;
 		default: text_edit_->append("Неизвестный тип БД"); break;
 	}
 
-	QSqlDatabase db = QSqlDatabase::addDatabase(driver_db, "test_connection");
+	QSqlDatabase db = QSqlDatabase::addDatabase(driver_, "test_connection");
 
 	db.setDatabaseName(dbAddressLine_->text());
 	db.setHostName(host);
@@ -141,7 +139,7 @@ void Connection_Window::check_con()
 	db.setUserName(log);
 	db.setPassword(pass);
 
-	if (driver_db != "QSQLITE")
+	if (driver_ != "QSQLITE")
 	{
 		db.setHostName(host);
 		db.setPort(port);
@@ -162,18 +160,17 @@ void Connection_Window::connection()
 	QString log = loginLine_->text();
 	QString	pass = passwordLine_->text();
 
-	QString driver_db;
-
 	switch (dbTypeCombo_->currentIndex())
 	{
-		case 0: driver_db = "QSQLITE"; break;
-		case 1: driver_db = "QACCESS"; break;
-		case 2: driver_db = "QMYSQL"; break;
-		case 3: driver_db = "QOCI"; break;
-		case 4: driver_db = "QPSQL"; break;
+		case 0: driver_ = "QSQLITE"; dbType_ = "sqlite";   break;
+		case 1: driver_ = "QODBC"; dbType_ = "access";	   break;
+		case 2: driver_ = "QMYSQL"; dbType_ = "mysql";     break;
+		case 3: driver_ = "QOCI"; dbType_ = "oracle";      break;
+		case 4: driver_ = "QPSQL"; dbType_ = "postgresql"; break;
+		default: text_edit_->append("Неизвестный тип БД"); return;
 	}
 
-	QSqlDatabase db = QSqlDatabase::addDatabase(driver_db, "main_connection");
+	QSqlDatabase db = QSqlDatabase::addDatabase(driver_, "main_connection");
 
 	db.setDatabaseName(dbAddressLine_->text());
 	db.setHostName(host);
@@ -181,7 +178,7 @@ void Connection_Window::connection()
 	db.setUserName(log);
 	db.setPassword(pass);
 
-	if (driver_db != "QSQLITE")
+	if (driver_ != "QSQLITE")
 	{
 		db.setHostName(host);
 		db.setPort(port);
@@ -193,7 +190,7 @@ void Connection_Window::connection()
 		text_edit_->append(QString("Ошибка подключения: ") + db.lastError().text());
 	else
 	{
-		Main_Window *win = new Main_Window();
+		Main_Window *win = new Main_Window(driver_, dbType_);	// Передали в основное окно данные о типе БД
 		win->show();
 		this->close();
 		win->setWindowIcon(QIcon(":/icons/app_icon.ico"));
@@ -212,7 +209,7 @@ void Connection_Window::save_config()
 	reply = QMessageBox::question(this, "Сохранение конфигурации", "Сохраним?", QMessageBox::Yes | QMessageBox::No);
 	if (reply == QMessageBox::Yes)
 		text_edit_->append(QString("Успешное сохранение конфигурации"));
-
+	else
 		QMessageBox::information(this, "Сохранение конфигурации", "Отменено");
 }
 //===========================================================================================================

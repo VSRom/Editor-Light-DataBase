@@ -1,8 +1,20 @@
 #include "Table_Explorer.h"
 #include <QSqlError>
 //================================================================================================================
-Table_Explorer::Table_Explorer(const QString &connectionName) : connectionName_(connectionName)
+Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
 {
+    if (dbType_ == "sqlite")
+        types_db_ = { "INTEGER", "REAL", "TEXT", "BLOB" };
+    else if (dbType_ == "mysql")
+        types_db_ = { "INT", "BIGINT", "VARCHAR(255)", "TEXT", "BLOB", "DATE", "DATETIME", "BOOLEAN" };
+    else if (dbType_ == "postgresql")
+        types_db_ = { "INTEGER", "SERIAL", "VARCHAR(255)", "TEXT", "BOOLEAN", "DATE", "TIMESTAMP" };
+    else if (dbType_ == "access")
+        types_db_ = { "INTEGER", "LONG", "TEXT", "MEMO", "YESNO","DATETIME" };
+    else if (dbType_ == "oracle")
+        types_db_ = { "NUMBER", "VARCHAR2(255)", "CLOB", "BLOB", "DATE", "TIMESTAMP" };
+    else
+        types_db_ = { "INTEGER", "TEXT", "REAL", "BLOB" };
 }
 //================================================================================================================
 QStringList Table_Explorer::getTables() const {
@@ -36,7 +48,11 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
             cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES" });
         }
     }
-    return cols;
+    else if (driver == "QOCI") {
+
+    }
+    else
+        return cols;
 }
 //================================================================================================================
 QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString, QString> &filters, const QString &logic) const {

@@ -15,6 +15,7 @@
 #include <QSqlQuery>
 #include <QTextEdit>
 #include "Main_Window.h"
+#include "Table_Explorer.h"
 
 class Connection_Window : public QMainWindow
 {
@@ -22,6 +23,9 @@ class Connection_Window : public QMainWindow
 
 public:
 	explicit Connection_Window(QWidget *parent = nullptr);
+	QString get_dbType() const { return dbType_; }
+	QString get_driver() const { return driver_; }
+
 	~Connection_Window();
 
 private slots:
@@ -31,6 +35,7 @@ private slots:
 	void connection();					// 1.2.2 Connection to BD
 	void reset();						// 1.2.3 Clear enter
 	void save_config();					// 1.2.4 save configure to *.ini
+
 
 private:
 	void setupUI();
@@ -50,4 +55,6 @@ private:
 	QPushButton *save_config_;			// 1.2.4 save configure to *.ini_;
 						// 1.1.9 Text Edit
 	QTextEdit *text_edit_;
+	QString dbType_;            // Определение типа БД для определения списка поддерживаемых типов столбцов таблицы
+	QString driver_;			// Драйвер БД
 };

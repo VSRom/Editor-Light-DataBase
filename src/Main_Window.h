@@ -35,7 +35,7 @@ class Main_Window : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Main_Window(QWidget *parent = nullptr);
+    explicit Main_Window(const QString db_type, const QString driver, QWidget* parent = nullptr);
     ~Main_Window();
 
     void onTableSelected(const QString &tableName);

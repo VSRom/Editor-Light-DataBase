@@ -13,18 +13,23 @@
 class Table_Explorer
 {
 public:
-    explicit Table_Explorer(const QString &connectionName);
+    explicit Table_Explorer(const QString &connectionName, const QString& dbType = "sqlite");
 
     struct ColumnInfo { QString name; QString type; bool isNullable; };
     QList<ColumnInfo> getColumns(const QString &tableName) const;
     QStringList getTables() const;
+    QStringList get_types_db() { return types_db_; }
 
     QSqlQueryModel *select(const QString &table, const QMap<QString, QString> &filters = {}, const QString &logic = {}) const;
     bool insert(const QString &table, const QMap<QString, QVariant> &values) const;
     bool update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const;
     bool remove(const QString &table, const QString &idColumn, const QVariant &idValue) const;
 
+
 private:
     QString connectionName_;
+    QString dbType_;
+    QStringList types_db_;
+
 };
 //================================================================================================================
