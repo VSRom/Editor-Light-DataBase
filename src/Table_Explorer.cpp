@@ -5,20 +5,38 @@ Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbT
 {
     if (dbType_ == "sqlite")
         types_db_ = { "INTEGER", "REAL", "TEXT", "BLOB" };
+
     else if (dbType_ == "mysql")
         types_db_ = { "INT", "BIGINT", "VARCHAR(255)", "TEXT", "BLOB", "DATE", "DATETIME", "BOOLEAN" };
+
     else if (dbType_ == "postgresql")
         types_db_ = { "INTEGER", "SERIAL", "VARCHAR(255)", "TEXT", "BOOLEAN", "DATE", "TIMESTAMP" };
+
     else if (dbType_ == "access")
         types_db_ = { "INTEGER", "LONG", "TEXT", "MEMO", "YESNO","DATETIME" };
+
     else if (dbType_ == "oracle")
         types_db_ = { "NUMBER", "VARCHAR2(255)", "CLOB", "BLOB", "DATE", "TIMESTAMP" };
+
     else
         types_db_ = { "INTEGER", "TEXT", "REAL", "BLOB" };
 }
 //================================================================================================================
-QStringList Table_Explorer::getTables() const {
-    return QSqlDatabase::database(connectionName_).tables(QSql::Tables);
+QStringList Table_Explorer::getUserTables() const {
+    QStringList AllTables = QSqlDatabase::database(connectionName_).tables(QSql::Tables);
+    QStringList userTables = {};
+
+    for (const QString& temp : AllTables) {
+        if (dbType_ == "sqlite" && temp.startsWith("sqlite_"))
+            continue;
+        if (dbType_ == "access" && temp.startsWith("MSys_"))
+            continue;
+        if (dbType_ == "oracle" && (temp.startsWith("SYS_") || temp.startsWith("BIN$")))
+            continue;
+
+        userTables.append(temp);
+    }
+    return userTables;
 }
 //================================================================================================================
 QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tableName) const {
@@ -41,15 +59,24 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
     }
     else if (driver == "QPSQL") {
         q.exec(QString(
-            "SELECT column_name, data_type, is_nullable "
-            "FROM information_schema.columns "
+            "SELECT column_name, data_type, is_nullable"
+            "FROM information_schema.columns"
             "WHERE table_name = '%1'").arg(tableName));
         while (q.next()) {
             cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES" });
         }
     }
     else if (driver == "QOCI") {
+        q.exec(QString(
+            "SELECT column_name, data_type, nullable "
+            "FROM user_tab_columns "
+            "WHERE table_name = '%1' "
+            "ORDER BY column_id").arg(tableName.toUpper()));
 
+        while (q.next()) {
+            cols.append({
+                q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y" });
+        }
     }
     else
         return cols;

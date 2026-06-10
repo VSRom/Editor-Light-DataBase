@@ -1,12 +1,25 @@
-QProgressBar {
-	color: white;
-    border-radius: 8px;
-    background: #143E1D;
+QComboBox::down-arrow {
+    image: url(:/icons/arr-down.png);
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
 }
 
-QProgressBar::chunk {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #143E1D, stop:1 #249D45);
-    border-radius: 8px;
+QPushButton.del-btn {
+    background-color: transparent;
+    color: #ff4444;
+    font-weight: bold;
+    font-size: 12px;
+    border: none;
+    padding: 0px;
+}
+
+QPushButton.del-btn:hover {
+    color: #ff6666;
+}
+
+QPushButton.del-btn:pressed {
+    color: #cc0000;
 }
 
 QWidget {
@@ -131,14 +144,6 @@ QComboBox:hover {
 QComboBox::drop-down {
     border: none;
     width: 20px;
-}
-
-QComboBox::down-arrow {
-    image: none;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 6px solid #249D45;
-    margin-right: 8px;
 }
 
 QComboBox QAbstractItemView {

@@ -10,15 +10,16 @@
 #include <QLabel>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QGroupBox>
 //===========================================================================================================
 class Create_Table : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit Create_Table(QWidget* parent = nullptr, const QStringList& types);
+	explicit Create_Table(const QStringList& types, QWidget* parent = nullptr);
 	~Create_Table();
 
-	QString get_sql const();
+	QString get_sql() const;
 
 
 private slots:
@@ -28,18 +29,21 @@ private:
 	void setup_ui();
 
 	struct Col_Row {				// Структура для создаваемых столбцов
-		QHBoxLayout* layout_;
+		QWidget* container_;
 		QComboBox* typeCombo_;
 		QLineEdit* nameEdit_;
 		QPushButton* removeBtn_;
 	};
 
 	QLineEdit* tableName_;			// задаваемое имя таблицы
-	QVBoxLayout* col_layout_;		// внутри ScrollArea
+	QGridLayout* col_layout_;		// внутри ScrollArea
 	QList<Col_Row> col_row_;		// список строк/столбцов
 	QPushButton* add_col_;
 	QStringList types_db_;			// Типы БД принимаем из Main_Window->Table_Explorer->Create_Table
 	QStringList sql_get_;			// Для сборки запроса добавления
+
+	QPushButton* btn_ok_;
+	QPushButton* btn_canc_;
 
 };
 //===========================================================================================================

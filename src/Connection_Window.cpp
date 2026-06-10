@@ -53,7 +53,7 @@ void Connection_Window::setupUI()
 
 	aplp->addWidget(new QLabel("Login:"), 2, 0, Qt::AlignRight | Qt::AlignVCenter);
 	loginLine_ = new QLineEdit();
-	loginLine_->setPlaceholderText("ogin...");
+	loginLine_->setPlaceholderText("Login...");
 	aplp->addWidget(loginLine_, 2, 1);
 
 	aplp->addWidget(new QLabel("Password:"), 2, 2);

@@ -71,7 +71,7 @@ void Main_Window::setup_ui()
 
     // Список таблиц
     table_list_ = new QListWidget();
-    for (const QString &stroke : explorer_.getTables()) {
+    for (const QString &stroke : explorer_.getUserTables()) {
         if (!stroke.startsWith("sqlite_"))      // Исключаем системные объекты из списка таблиц
         table_list_->addItem(stroke);
     }
@@ -111,7 +111,7 @@ void Main_Window::setup_ui()
     sw->setColumnStretch(0, 1);
     sw->setColumnStretch(1, 1);
     sw->setColumnStretch(2, 1);
-    sw->setColumnStretch(3, 1);
+    sw->setColumnStretch(3, 1); 
     mainLayout->addLayout(sw);
 
     connect(table_list_, &QListWidget::currentTextChanged, this, &Main_Window::onTableSelected);
@@ -166,11 +166,24 @@ void Main_Window::tab_create() {
     Create_Table dialog(explorer_.get_types_db(), this);                      // Создаём диалог
     if (dialog.exec() == QDialog::Accepted) {                                 // Показываем и ждём результат
         QString sql = dialog.get_sql();
-        if (!sql.isEmpty())
+        if (sql.isEmpty()) {
             QMessageBox::warning(this, "Ошибка", "Недостаточно данных для создания таблицы!");
-        else {
-
+            return;
         }
+
+            QSqlQuery qs(QSqlDatabase::database("main_connection"));
+            bool exe = qs.exec(sql);
+
+            if (!exe) {
+                QMessageBox::critical(this, "Ошибка", qs.lastError().text());
+                return;
+            }
+
+                table_list_->clear();
+                for (const QString& name : explorer_.getUserTables())
+                        table_list_->addItem(name);
+
+                QMessageBox::information(this, "Успех", "Таблица успешно создана!");
     }
 }
 //================================================================================================================

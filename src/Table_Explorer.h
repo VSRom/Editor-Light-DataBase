@@ -17,7 +17,7 @@ public:
 
     struct ColumnInfo { QString name; QString type; bool isNullable; };
     QList<ColumnInfo> getColumns(const QString &tableName) const;
-    QStringList getTables() const;
+    QStringList getUserTables() const;
     QStringList get_types_db() { return types_db_; }
 
     QSqlQueryModel *select(const QString &table, const QMap<QString, QString> &filters = {}, const QString &logic = {}) const;
