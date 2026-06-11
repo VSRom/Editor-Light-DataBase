@@ -28,10 +28,14 @@ void Create_Table::setup_ui() {
 
 	QWidget* scroll_content = new QWidget();
 	col_layout_ = new QGridLayout(scroll_content);
-	col_layout_->setSpacing(10);
+	col_layout_->setSpacing(15);
+	col_layout_->setContentsMargins(15, 15, 15, 15);
 
-	scroll_content->setMinimumWidth(400);
-	scroll_content->setMinimumHeight(200);
+	col_layout_->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+	scroll_content->setMinimumWidth(800);
+	scroll_content->setMinimumHeight(100);
+
 
 	scroll->setWidget(scroll_content);
 	layout->addWidget(scroll);
@@ -57,9 +61,6 @@ void Create_Table::setup_ui() {
 	setLayout(layout);
 
 	add_col_row();
-
-	col_layout_->setRowStretch(10, 1);
-	col_layout_->setColumnStretch(5, 1);
 }
 //===========================================================================================================
 QString Create_Table::get_sql() const {	// Сборка запроса для создания таблицы
@@ -88,32 +89,31 @@ void Create_Table::add_col_row() {
 	Col_Row colrow;
 
 	QGroupBox* group = new QGroupBox();
-	group->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-	group->setMinimumWidth(110);
-	group->setMinimumHeight(60);
+	group->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	group->setMinimumWidth(200);
+	group->setMaximumWidth(220);
+	group->setFixedHeight(80);
 
 	QComboBox* box = new QComboBox();
 	box->setEditable(true);	// Редактируем бокс
 	box->addItems(types_db_);
-	box->setMinimumWidth(80);
-
 
 	QLineEdit* line = new QLineEdit();
 	line->setPlaceholderText("Название");
-	line->setMinimumWidth(90);
 
-	QPushButton* btn = new QPushButton("X", this);
-	btn->setFixedSize(25, 20);
+	QPushButton* btn = new QPushButton("X"); // Привязываем к очищаемому объекту внутри окна Создания таблицы(устранение утечки)
+	btn->setFixedSize(20, 20);
 	btn->setProperty("class", "del-btn");  // Применяем стиль из QSS
-
 	btn->setText("X");
-
 	btn->setToolTip("Удалить столбец");
 
 	QGridLayout* grid = new QGridLayout(group);
-	grid->addWidget(line, 0, 0);
-	grid->addWidget(box, 1, 0);
-	grid->addWidget(btn, 0, 2, 2, 1);
+	grid->setContentsMargins(6, 6, 6, 6);
+	grid->setSpacing(4);
+
+	grid->addWidget(line, 0, 0, 1, 1);
+	grid->addWidget(box, 1, 0, 1, 1);
+	grid->addWidget(btn, 0, 1, 2, 1, Qt::AlignCenter);
 
 	// Лямбда-удаление строки, с защитой
 	connect(btn, &QPushButton::clicked, this, [this, group]() {
@@ -121,7 +121,6 @@ void Create_Table::add_col_row() {
 			QMessageBox::warning(this, "Внимание", "Нельзя удалить последнюю строку!");
 			return;
 		}
-
 		int rem_index = -1;
 		for (int i = 0; i < col_row_.size(); i++) {
 			if (col_row_[i].container_ == group) {	// Удаляем структуру
@@ -139,23 +138,34 @@ void Create_Table::add_col_row() {
 		}
 
 		for (int i = 0; i < col_row_.size(); i++) {
-			int row = i / 6;
-			int col = i % 6;
+			int row = i / 5;
+			int col = i % 5;
 			col_layout_->addWidget(col_row_[i].container_, row, col, Qt::AlignTop | Qt::AlignLeft);
 		}
 		group->deleteLater();
-	});
 
-		colrow.container_ = group;
-		colrow.typeCombo_ = box;
-		colrow.nameEdit_ = line;
-		colrow.removeBtn_ = btn;
+		col_layout_->removeWidget(group);	// Удаляем из layout
 
-		int index = col_row_.size();
-		int row = index / 6;
-		int col = index % 6;
+		for (int i = 0; i < col_row_.size(); i++) {
+			if (col_row_[i].container_ == group) {	// Удаляем из списка
+				col_row_.removeAt(i);
+				break;
+			}
+		}
 
-		col_layout_->addWidget(group, row, col, Qt::AlignTop | Qt::AlignLeft);
-		col_row_.append(colrow);
+		});
+
+colrow.container_ = group;
+colrow.typeCombo_ = box;
+colrow.nameEdit_ = line;
+colrow.removeBtn_ = btn;
+
+int index = col_row_.size();
+int row = index / 5;
+int col = index % 5;
+
+col_layout_->addWidget(group, row, col, Qt::AlignTop | Qt::AlignLeft);
+col_row_.append(colrow);
+
 }
 //===========================================================================================================
