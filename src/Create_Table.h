@@ -11,6 +11,8 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QGroupBox>
+#include <QTimer>
+#include <QApplication>
 //===========================================================================================================
 class Create_Table : public QDialog {
 	Q_OBJECT
@@ -36,6 +38,7 @@ private:
 	};
 
 	QLineEdit* tableName_;			// задаваемое имя таблицы
+	QWidget* scroll_content_;
 	QGridLayout* col_layout_;		// внутри ScrollArea
 	QList<Col_Row> col_row_;		// список строк/столбцов
 	QPushButton* add_col_;

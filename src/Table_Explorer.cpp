@@ -29,8 +29,10 @@ QStringList Table_Explorer::getUserTables() const {
     for (const QString& temp : AllTables) {
         if (dbType_ == "sqlite" && temp.startsWith("sqlite_"))
             continue;
+
         if (dbType_ == "access" && temp.startsWith("MSys_"))
             continue;
+
         if (dbType_ == "oracle" && (temp.startsWith("SYS_") || temp.startsWith("BIN$")))
             continue;
 
