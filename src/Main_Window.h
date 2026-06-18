@@ -24,6 +24,7 @@
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
+#include <memory>
 //================================================================================================================
 // Состояния для QProgressBar
 enum class PB_Status {
@@ -63,7 +64,7 @@ private:
     QString current_table_;                     // Текущая таблица
     QSortFilterProxyModel* proxyModel_;         // Для поиска в любом регистра
 
-    QSqlQueryModel* const_ptr_ = nullptr;       // Чистка моделей
+    std::unique_ptr<QSqlQueryModel> const_ptr_;
 
     QPushButton* unitedT_;                      // 2.2.1 united tables
     QPushButton* createT_;			            // 2.2.2 create table

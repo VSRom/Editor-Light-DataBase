@@ -7,7 +7,7 @@ Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *p
     setup_ui();
     if (!db_.init_db("main_connection")) {
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
-        this->close(); return; };
+        this->close(); return; }
 }
 //===========================================================================================================
 Main_Window::~Main_Window() {}
@@ -15,15 +15,10 @@ Main_Window::~Main_Window() {}
 void Main_Window::onTableSelected(const QString &tableName)
 {
     current_table_ = tableName;     // Сохраним текущую таблицу
-
     search_->clear();               // Очистим поиск
 
-    // Шаги выше относятся к подключению onSearch!
-
-    QSqlQueryModel *model = explorer_.select(tableName);    // Получаем данные
-
-    // Новый источник
-    proxyModel_->setSourceModel(model);
+    const_ptr_.reset(explorer_.select(current_table_));
+    proxyModel_->setSourceModel(const_ptr_.get());
     proxyModel_->setFilterFixedString("");
 }
 //===========================================================================================================
@@ -130,13 +125,9 @@ void Main_Window::onSearch()
 
     startProgressBar(PB_Status::Searching);
 
-    // Исправление утечки памяти
-    if (const_ptr_) const_ptr_->clear();
+    const_ptr_.reset(explorer_.select(current_table_));
 
-    const_ptr_ = explorer_.select(current_table_);  // Отправляем готовые параметры в подготовку и исполнение
-    //////////////////////////////////const_ptr
-
-    proxyModel_->setSourceModel(const_ptr_);
+    proxyModel_->setSourceModel(const_ptr_.get());
     proxyModel_->setFilterFixedString(stroke);
 
     stopProgressBar();

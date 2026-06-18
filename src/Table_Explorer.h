@@ -25,11 +25,9 @@ public:
     bool update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const;
     bool remove(const QString &table, const QString &idColumn, const QVariant &idValue) const;
 
-
 private:
     QString connectionName_;
     QString dbType_;
     QStringList types_db_;
-
 };
 //================================================================================================================

@@ -16,7 +16,10 @@
 #include <QTextEdit>
 #include "Main_Window.h"
 #include "Table_Explorer.h"
-
+#include <QCheckBox>
+#include <QInputDialog>
+#include <QStandardPaths>
+//===========================================================================================================
 class Connection_Window : public QMainWindow
 {
 	Q_OBJECT
@@ -39,7 +42,6 @@ private slots:
 
 private:
 	void setupUI();
-	void UIforSqLite();
 						// 1.1 window lines
 
 	QComboBox *dbTypeCombo_;			// 1.1.1 DB type dropdown
@@ -57,4 +59,12 @@ private:
 	QTextEdit *text_edit_;
 	QString dbType_;            // Определение типа БД для определения списка поддерживаемых типов столбцов таблицы
 	QString driver_;			// Драйвер БД
+
+	QCheckBox* remoteCheck_;		// Переключатель local/net db
+
+	// Для скрытия лейблов
+	QLabel* login_;
+	QLabel* pass_;
+	QLabel* port_;
 };
+//===========================================================================================================
