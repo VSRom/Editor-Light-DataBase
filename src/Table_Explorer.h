@@ -24,6 +24,8 @@ public:
     bool insert(const QString &table, const QMap<QString, QVariant> &values) const;
     bool update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const;
     bool remove(const QString &table, const QString &idColumn, const QVariant &idValue) const;
+    bool drop_table(const QString& table) const;
+    bool rename_table(const QString& table, const QString& new_name_table) const;
 
 private:
     QString connectionName_;

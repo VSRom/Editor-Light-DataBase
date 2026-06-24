@@ -23,21 +23,48 @@ Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbT
 }
 //================================================================================================================
 QStringList Table_Explorer::getUserTables() const {
-    QStringList AllTables = QSqlDatabase::database(connectionName_).tables(QSql::Tables);
-    QStringList userTables = {};
+    QStringList userTables;
+    qDebug() << "dbType_:" << dbType_;  // Для настройки фильтрации
+    if (dbType_ == "postgresql") {
 
-    for (const QString& temp : AllTables) {
-        if (dbType_ == "sqlite" && temp.startsWith("sqlite_"))
-            continue;
+        QSqlQuery query(QSqlDatabase::database(connectionName_));
+        bool success = query.exec(R"(
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+        )");
 
-        if (dbType_ == "access" && temp.startsWith("MSys_"))
-            continue;
+        if (!success) {
+            qDebug() << "Ошибка запроса таблиц:" << query.lastError().text();
+            return userTables;
+        }
 
-        if (dbType_ == "oracle" && (temp.startsWith("SYS_") || temp.startsWith("BIN$")))
-            continue;
+        while (query.next()) {
+            userTables.append(query.value(0).toString());
+        }
 
-        userTables.append(temp);
+        qDebug() << "PostgreSQL: найдено таблиц:" << userTables.size();
+
     }
+    else {
+        QStringList AllTables = QSqlDatabase::database(connectionName_).tables(QSql::Tables);
+
+        for (const QString& temp : AllTables) {
+            if ((dbType_ == "sqlite" || dbType_ == "QSQLITE") && temp.startsWith("sqlite_"))
+                continue;
+
+            if (dbType_ == "access" && temp.startsWith("MSys_"))
+                continue;
+
+            if (dbType_ == "oracle" && (temp.startsWith("SYS_") || temp.startsWith("BIN$")))
+                continue;
+
+            userTables.append(temp);
+        }
+    }
+
     return userTables;
 }
 //================================================================================================================
@@ -48,13 +75,13 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
     QSqlQuery q(QSqlDatabase::database(connectionName_));
 
     if (driver == "QSQLITE") {
-        q.exec(QString("PRAGMA table_info(%1)").arg(tableName));
+        q.exec(QString("PRAGMA table_info(\"%1\")").arg(tableName));
         while (q.next()) {
             cols.append({ q.value(1).toString(), q.value(2).toString(), !q.value(3).toBool() });
         }
     }
     else if (driver == "QMYSQL") {
-        q.exec(QString("SHOW COLUMNS FROM %1").arg(tableName));
+        q.exec(QString("SHOW COLUMNS FROM `%1`").arg(tableName));
         while (q.next()) {
             cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES" });
         }
@@ -86,13 +113,13 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
 //================================================================================================================
 QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString, QString> &filters, const QString &logic) const {
     
-    QString sql = QString("SELECT * FROM %1").arg(table);
+    QString sql = QString("SELECT * FROM \"%1\"").arg(table);
 
     if (!filters.isEmpty()) {
         sql += " WHERE ";
         QStringList conditions;
         for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
-            conditions << QString("%1 LIKE ? COLLATE NOCASE").arg(it.key());
+            conditions << QString("\"%1\" LIKE ? COLLATE NOCASE").arg(it.key());
 
         sql += conditions.join(logic);                                      // Для использования OR или AND
     }
@@ -122,10 +149,10 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QStringList place(values.size(), "?");
-    QString colum = values.keys().join(", ");
+    QString colum = values.keys().join("\", \"");
     QString placer = place.join(", ");                              // Подготовка данных
 
-    QString sql = QString("INSERT INTO %1 (%2) VALUES (%3)").arg(table, colum, placer);
+    QString sql = QString("INSERT INTO \"%1\" (\"%2\") VALUES (%3)").arg(table, colum, placer);
 
     qs.prepare(sql);                                                // Подготовка запроса
 
@@ -150,11 +177,11 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
     QStringList list{};
 
     for (auto it = newValues.constBegin(); it != newValues.constEnd(); it++)
-        list << QString("%1 = ?").arg(it.key());                // Взяли все значения в строку с разделителем %1 = ?
+        list << QString("\"%1\" = ?").arg(it.key());            // Взяли все значения в строку с разделителем %1 = ?
 
     QString result = list.join(", ");                           // Склеили полученную выше строку с разделителем ,
 
-    QString sql = QString("UPDATE %1 SET %2 WHERE %3 = ?").arg(table, result, idColumn);
+    QString sql = QString("UPDATE \"%1\" SET %2 WHERE \"%3\" = ?").arg(table, result, idColumn);
 
     qs.prepare(sql);                                            // Подготовка запроса
 
@@ -174,17 +201,45 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
     return exe;
 }
 //================================================================================================================
-bool Table_Explorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const
-{
+bool Table_Explorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
-    QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(table, idColumn);
-
+    QString sql = QString("DELETE FROM \"%1\" WHERE \"%2\" = ?").arg(table, idColumn);
     qs.prepare(sql);
 
     qs.bindValue(0, idValue);               // привязка значения к (= ?[0])
 
     bool exe = qs.exec();
+
+    if (!exe) {
+        qDebug() << "Query error:" << qs.lastError().text();
+        return false;
+    }
+
+    return exe;
+}
+//================================================================================================================
+bool Table_Explorer::drop_table(const QString& table) const {
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+
+    QString sql = QString("DROP TABLE \"%1\"").arg(table);
+
+    bool exe = qs.exec(sql);
+
+    if (!exe) {
+        qDebug() << "Query error:" << qs.lastError().text();
+        return false;
+    }
+
+    return exe;
+}
+//================================================================================================================
+bool Table_Explorer::rename_table(const QString& table, const QString& new_name_table) const {
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+
+    QString sql = QString("ALTER TABLE \"%1\" RENAME TO \"%2\"").arg(table, new_name_table);
+
+    bool exe = qs.exec(sql);
 
     if (!exe) {
         qDebug() << "Query error:" << qs.lastError().text();

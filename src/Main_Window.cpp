@@ -1,13 +1,38 @@
 #include "Main_Window.h"
 #include "Create_Table.h"
+#include <QFontDatabase>
+#include <QInputDialog>
 //===========================================================================================================
 Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *parent)
-    : QMainWindow(parent), db_(), explorer_("main_connection", db_type)
+    : QMainWindow(parent), db_(), explorer_("main_connection", db_type), isModifyNote_(false)
 {
-    setup_ui();
     if (!db_.init_db("main_connection")) {
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
-        this->close(); return; }
+        this->close();
+        return;
+    }
+
+    //Загрузка шрифтов!
+
+    int Hack = QFontDatabase::addApplicationFont(":/resources/fonts/Hack.ttf");
+    int Fira = QFontDatabase::addApplicationFont(":/resources/fonts/Fira.ttf");
+    int Anon = QFontDatabase::addApplicationFont(":/resources/fonts/Anon.ttf");
+
+    if (Hack == -1) qDebug() << "Ошибка загрузки Hack.ttf";
+    if (Fira == -1) qDebug() << "Ошибка загрузки Fira.ttf";
+    if (Anon == -1) qDebug() << "Ошибка загрузки Anon.ttf";
+
+    hack_ = QFontDatabase::applicationFontFamilies(Hack).at(0);
+    fira_ = QFontDatabase::applicationFontFamilies(Fira).at(0);
+    anon_ = QFontDatabase::applicationFontFamilies(Anon).at(0);
+    
+    qDebug() << "Hack: " << hack_;
+    qDebug() << "Fira: " << fira_;
+    qDebug() << "Anon: " << anon_;
+
+    notePath_ = QCoreApplication::applicationDirPath() + "/notepad.ini"; // Получили путь к папке для заметок
+
+    setup_ui();
 }
 //===========================================================================================================
 Main_Window::~Main_Window() {}
@@ -71,18 +96,56 @@ void Main_Window::setup_ui()
         table_list_->addItem(stroke);
     }
 
-    // Окно заметок
-    notepad_ = new QPlainTextEdit();
+    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
+    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
+    // Полный вывод того, что видит QSqlDatabase
+    QStringList allTables = QSqlDatabase::database("main_connection").tables(QSql::Tables);
+    qDebug() << "=== ВСЕ таблицы (QSqlDatabase::tables) ===";
+    qDebug() << "Всего найдено:" << allTables.size();
+    for (const QString& t : allTables) {
+        qDebug() << "  [" << t << "]";
+    }
 
-    // 4 кнопки(Объединить, Создать, Переименовать, Удалить) "Между Заметками и Окном списка таблиц"
+    // Что возвращает getUserTables
+    QStringList userTables = explorer_.getUserTables();
+    qDebug() << "\n=== После фильтрации ===";
+    qDebug() << "Всего:" << userTables.size();
+    for (const QString& t : userTables) {
+        qDebug() << "  " << t;
+    }
+
+    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
+    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
 
     QGridLayout* ucrd = new QGridLayout();
 
+    // Окно заметок + сохранение в notepad.ini файл + 3 варианта при закрытие приложения
+    notepad_ = new QPlainTextEdit();
+    font_select_ = new QComboBox();
+    font_select_->addItems({ hack_, fira_, anon_ });
+    font_select_->setToolTip("Выберите шрифт");
+
+    notepad_->setFont(QFont(hack_, 12));
+    connect(font_select_, &QComboBox::currentTextChanged, this, &Main_Window::onFontChanged);
+    connect(notepad_, &QPlainTextEdit::textChanged, this, &Main_Window::onTextChanged);
+
+   
+    QSettings settings(notePath_, QSettings::IniFormat);
+    QString text = settings.value("notepad/text", "").toString();
+    QString font = settings.value("notepad/font", hack_).toString();
+    int size = settings.value("notepad/size", 12).toInt();
+    notepad_->setPlainText(text);
+    notepad_->setFont(QFont(font, size));
+    font_select_->setCurrentText(font);
+
+    // 4 кнопки(Объединить, Создать, Переименовать, Удалить) "Между Заметками и Окном списка таблиц"
+    
     unitedT_ = new QPushButton("Объединить\n таблицы", this);
     createT_ = new QPushButton("Создать\n таблицу", this);
     renameT_ = new QPushButton("Переименовать\n таблицу", this);
     deleteT_ = new QPushButton("Удалить\n таблицу", this);
 
+    ucrd->addWidget(font_select_, 2, 0, 1, 2);
     ucrd->addWidget(unitedT_, 0, 0);
     ucrd->addWidget(createT_, 0, 1);
     ucrd->addWidget(renameT_, 1, 0);
@@ -93,20 +156,15 @@ void Main_Window::setup_ui()
     connect(renameT_, &QPushButton::clicked, this, &Main_Window::tab_rename);
     connect(deleteT_, &QPushButton::clicked, this, &Main_Window::tab_delete);
 
-
     sw->addLayout(ucrd, 2, 3, 1, 1);
-
-    // Добавить шрифты пользователю на выбор // Mono ( Hack Feronoma Anonimus ) //////////////////////////////////////////////////////////////////
-
     sw->addWidget(notepad_, 3, 3, 2, 1);
-
     sw->addWidget(table_list_, 0, 3, 2, 1); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
-    
     sw->setRowStretch(1, 1);
     sw->setColumnStretch(0, 1);
     sw->setColumnStretch(1, 1);
     sw->setColumnStretch(2, 1);
-    sw->setColumnStretch(3, 1); 
+    sw->setColumnStretch(3, 1);
+
     mainLayout->addLayout(sw);
 
     connect(table_list_, &QListWidget::currentTextChanged, this, &Main_Window::onTableSelected);
@@ -183,10 +241,85 @@ void Main_Window::tab_united() {
 }
 //================================================================================================================
 void Main_Window::tab_rename() {
+    QListWidgetItem* temp = table_list_->currentItem();
+    bool ok;
+    if (temp) {
+        QString tabName = temp->text();
+        QString newTabName = QInputDialog::getText(this, "Новое имя таблицы", "Ввод", QLineEdit::Normal, "", &ok);		//Встроенное окошко, что будет введено будет возвращено
 
+        if (!ok || newTabName.isEmpty()) return; // Если нажал отмена или ничего не ввел
+
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Предупреждение", QString("<p>После подтверждения имя таблицы '%1' изменится на '%2'</p>" "<p align='center'>Вы уверены?</p>").arg(tabName, newTabName), QMessageBox::Yes | QMessageBox::No);
+        
+        if (reply == QMessageBox::Yes) {
+            explorer_.rename_table(tabName, newTabName);
+
+            table_list_->clear();
+            for (const QString& name : explorer_.getUserTables())
+                table_list_->addItem(name);
+        }
+        else
+            QMessageBox::information(this, "Отмена", "Операция отменена!");
+    }
+    else
+        QMessageBox::warning(this, "Ошибка", "Таблица для изменение имени не выбрана!");
 }
 //================================================================================================================
-void Main_Window::tab_delete() {
+void Main_Window::tab_delete(){
 
+    QListWidgetItem* temp = table_list_->currentItem();
+    if (temp) {
+        QString tabName = temp->text();
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Предупреждение", QString("После подтверждения все данные таблицы '%1' удалятся!\n Вы уверены?").arg(tabName), QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            explorer_.drop_table(tabName);
+
+            table_list_->clear();
+            for (const QString& name : explorer_.getUserTables())
+                table_list_->addItem(name);
+        }
+        else 
+            QMessageBox::information(this, "Отмена", "Операция отменена!");
+    }
+    else
+        QMessageBox::warning(this, "Ошибка", "Таблица для удаления не выбрана!");
+}
+//================================================================================================================
+void Main_Window::onFontChanged(const QString& fontName) {
+    QFont font(fontName, 12);
+    notepad_->setFont(font);
+    isModifyNote_ = true;
+}
+//================================================================================================================
+void Main_Window::closeEvent(QCloseEvent* event) {
+    QMessageBox msgBox(this);
+
+    if (isModifyNote_ == true) {
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Сохранение заметок", QString("Заметки были изменены\n Сохранить?"), QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
+
+        if (reply == QMessageBox::Save) {
+            save_note();
+            event->accept();
+        }
+        if (reply == QMessageBox::Discard)
+            event->accept();
+        if (reply == QMessageBox::Cancel)
+            event->ignore();
+    }
+    else event->accept();
+}
+//================================================================================================================
+void Main_Window::onTextChanged() {
+    isModifyNote_ = true;
+}
+//================================================================================================================
+void Main_Window::save_note() {
+    QSettings settings(notePath_, QSettings::IniFormat);
+    settings.setValue("notepad/text", notepad_->toPlainText());
+    settings.setValue("notepad/font", notepad_->font().family());
+    settings.setValue("notepad/size", notepad_->font().pointSize());
+    settings.sync();
+
+    isModifyNote_ = false;
 }
 //================================================================================================================

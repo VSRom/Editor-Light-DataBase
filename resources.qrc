@@ -4,5 +4,8 @@
 		<file>icons/app_icon.ico</file>
 		<file>icons/arr-down.png</file>
 		<file>resources/style.qss</file>
+		<file>resources/fonts/Anon.ttf</file>
+		<file>resources/fonts/Fira.ttf</file>
+		<file>resources/fonts/Hack.ttf</file>
 	</qresource> 
  </RCC>

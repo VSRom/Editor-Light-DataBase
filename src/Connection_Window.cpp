@@ -290,10 +290,7 @@ void Connection_Window::save_config()
 	}
 	// Выбрал существующую конфигурацию
 	else {
-		QMessageBox::StandardButton reply = QMessageBox::question(this, "Перезапись"
-			,QString("Перезаписать конфигурацию '%1'?").arg(configName)
-			,QMessageBox::Yes | QMessageBox::No);
-
+		QMessageBox::StandardButton reply = QMessageBox::question(this, "Перезапись" ,QString("Перезаписать конфигурацию '%1'?").arg(configName) ,QMessageBox::Yes | QMessageBox::No);
 		// Если нажал Нет
 		if (reply != QMessageBox::Yes) return;
 
