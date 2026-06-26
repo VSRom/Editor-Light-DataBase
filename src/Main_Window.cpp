@@ -343,7 +343,6 @@ void Main_Window::save_note() {
 }
 //================================================================================================================
 void Main_Window::doubleClick(const QModelIndex& index) {
-    bool ok;
     if (index.column() == 0)
         QMessageBox::warning(this, "Ошибка", "Нельзя изменить id");
     else {
