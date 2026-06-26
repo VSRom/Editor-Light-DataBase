@@ -5,26 +5,12 @@
 #include <QMainWindow>
 #include <QComboBox>
 #include <QLineEdit>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QWidget>
-#include <QStandardPaths>
-#include <QSettings>
-#include <qdir.h>
 #include <QPushButton>
-#include <QMessageBox>
-#include <QSqlDatabase>
-#include <QSqlError>
-#include <QSqlQuery>
 #include <QListWidget>
 #include <QTableView>
-#include <QSqlQueryModel>
 #include <QSortFilterProxyModel>
-#include <QHeaderView>
 #include <QPlainTextEdit>
 #include <QProgressBar>
-#include <QPushButton>
-#include <memory>
 //================================================================================================================
 // Состояния для QProgressBar
 enum class PB_Status {
@@ -39,8 +25,6 @@ public:
     explicit Main_Window(const QString db_type, const QString driver, QWidget* parent = nullptr);
     ~Main_Window();
 
-    void onTableSelected(const QString &tableName);
-
 private slots:
     void onSearch();
     void startProgressBar(PB_Status pbs);
@@ -51,11 +35,12 @@ private slots:
     void tab_delete();
     void onFontChanged(const QString& fontName);
     void onTextChanged();
+    void onTableSelected(const QString& tableName);
 
 private:
     void setup_ui();
     void save_note();
-    QString notePath_;                          // Путь для заметок
+    void refresh_table();
 
     Database     db_;                           // База Данных
     Table_Explorer explorer_;                   // Обозреватель
@@ -70,8 +55,9 @@ private:
     QSortFilterProxyModel* proxyModel_;         // Для поиска в любом регистра
 
     QPlainTextEdit* notepad_;                   // Заметки
+    QString notePath_;                          // Путь для заметок
     QComboBox* font_select_;                    // Выбор шрифта для заметок
-    bool isModifyNote_;                         // В заметках пусто
+    bool isModifyNote_;                         // Заметки изменены
 
     std::unique_ptr<QSqlQueryModel> const_ptr_;
 

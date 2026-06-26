@@ -1,4 +1,11 @@
 #include "Create_Table.h"
+#include <QScrollArea>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QLabel>
+#include <QMessageBox>
+#include <QGroupBox>
 //===========================================================================================================
 Create_Table::Create_Table(const QStringList& types, QWidget* parent)
 	: types_db_(types), QDialog(parent) {

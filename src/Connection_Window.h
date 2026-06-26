@@ -3,22 +3,9 @@
 #include <QComboBox>
 #include <QLineEdit>
 #include <QLabel>
-#include <QVBoxLayout>
-#include <QWidget>
-#include <QStandardPaths>
-#include <QSettings>
-#include <qdir.h>
 #include <QPushButton>
-#include <QMessageBox>
-#include <QSqlDatabase>
-#include <QSqlError>
-#include <QSqlQuery>
 #include <QTextEdit>
-#include "Main_Window.h"
-#include "Table_Explorer.h"
 #include <QCheckBox>
-#include <QInputDialog>
-#include <QStandardPaths>
 //===========================================================================================================
 class Connection_Window : public QMainWindow
 {
@@ -26,14 +13,10 @@ class Connection_Window : public QMainWindow
 
 public:
 	explicit Connection_Window(QWidget *parent = nullptr);
-	QString get_dbType() const { return dbType_; }
-	QString get_driver() const { return driver_; }
-
 	~Connection_Window();
 
 private slots:
 						// 1.2 buttons
-
 	void check_con();					// 1.2.1 check the connection
 	void connection();					// 1.2.2 Connection to BD
 	void reset();						// 1.2.3 Clear enter
@@ -42,6 +25,7 @@ private slots:
 
 private:
 	void setupUI();
+	bool setDriverDB();
 						// 1.1 window lines
 
 	QComboBox *dbTypeCombo_;			// 1.1.1 DB type dropdown

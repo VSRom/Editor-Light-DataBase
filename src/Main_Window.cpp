@@ -1,7 +1,18 @@
 #include "Main_Window.h"
 #include "Create_Table.h"
-#include <QFontDatabase>
 #include <QInputDialog>
+#include <QLabel>
+#include <QSettings>
+#include <QCoreApplication>
+#include <QMessageBox>
+#include <QCloseEvent>
+#include <QSqlDatabase>
+#include <QFontDatabase>
+#include <QGridLayout>
+#include <QVBoxLayout>
+#include <QDebug>
+#include <QSqlQueryModel>
+#include <QHeaderView>
 //===========================================================================================================
 Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *parent)
     : QMainWindow(parent), db_(), explorer_("main_connection", db_type), isModifyNote_(false)
@@ -70,13 +81,19 @@ void Main_Window::setup_ui()
     data_view_ = new QTableView();
     sw->addWidget(data_view_, 1, 0, 1, 3);
 
+///////////========================================================Онлайн редактирование БД========================================================///////////
+
+
+
+
+///////////========================================================Онлайн редактирование БД========================================================///////////
+
     // Прогресс бар
     progress_ = new QProgressBar();
     progress_->setRange(0, 0);        //Режим "бегущей строки"
     progress_->setTextVisible(true);
     progress_->hide();                // Скрыт по умолчанию
     sw->addWidget(progress_, 2, 0, 1, 3);
-    //sw->addWidget(new QLabel("ПРОГРЕСС"), 2, 0, 1, 3);
     // Стилизация прогресс бара
     progress_->setAlignment(Qt::AlignCenter);
 
@@ -220,17 +237,12 @@ void Main_Window::tab_create() {
             return;
         }
 
-            QSqlQuery qs(QSqlDatabase::database("main_connection"));
-            bool exe = qs.exec(sql);
-
-            if (!exe) {
-                QMessageBox::critical(this, "Ошибка", qs.lastError().text());
+            if (!explorer_.exeQuery(sql)) {
+                QMessageBox::critical(this, "Ошибка", "Не удалось создать таблицу");
                 return;
             }
 
-                table_list_->clear();
-                for (const QString& name : explorer_.getUserTables())
-                        table_list_->addItem(name);
+            refresh_table();
 
                 QMessageBox::information(this, "Успех", "Таблица успешно создана!");
     }
@@ -254,9 +266,7 @@ void Main_Window::tab_rename() {
         if (reply == QMessageBox::Yes) {
             explorer_.rename_table(tabName, newTabName);
 
-            table_list_->clear();
-            for (const QString& name : explorer_.getUserTables())
-                table_list_->addItem(name);
+            refresh_table();
         }
         else
             QMessageBox::information(this, "Отмена", "Операция отменена!");
@@ -270,19 +280,24 @@ void Main_Window::tab_delete(){
     QListWidgetItem* temp = table_list_->currentItem();
     if (temp) {
         QString tabName = temp->text();
-        QMessageBox::StandardButton reply = QMessageBox::question(this, "Предупреждение", QString("После подтверждения все данные таблицы '%1' удалятся!\n Вы уверены?").arg(tabName), QMessageBox::Yes | QMessageBox::No);
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Предупреждение", QString("<p>После подтверждения все данные таблицы '%1' удалятся!</p>" "<p align='center'>Вы уверены?</p>").arg(tabName), QMessageBox::Yes | QMessageBox::No);
         if (reply == QMessageBox::Yes) {
             explorer_.drop_table(tabName);
 
-            table_list_->clear();
-            for (const QString& name : explorer_.getUserTables())
-                table_list_->addItem(name);
+            refresh_table();
         }
         else 
             QMessageBox::information(this, "Отмена", "Операция отменена!");
     }
     else
         QMessageBox::warning(this, "Ошибка", "Таблица для удаления не выбрана!");
+}
+//================================================================================================================
+void Main_Window::refresh_table() {
+table_list_->clear();
+for (const QString& name : explorer_.getUserTables())
+if (!name.startsWith("sqlite_"))
+table_list_->addItem(name);
 }
 //================================================================================================================
 void Main_Window::onFontChanged(const QString& fontName) {
@@ -292,7 +307,6 @@ void Main_Window::onFontChanged(const QString& fontName) {
 }
 //================================================================================================================
 void Main_Window::closeEvent(QCloseEvent* event) {
-    QMessageBox msgBox(this);
 
     if (isModifyNote_ == true) {
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Сохранение заметок", QString("Заметки были изменены\n Сохранить?"), QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
@@ -301,9 +315,9 @@ void Main_Window::closeEvent(QCloseEvent* event) {
             save_note();
             event->accept();
         }
-        if (reply == QMessageBox::Discard)
+        else if (reply == QMessageBox::Discard)
             event->accept();
-        if (reply == QMessageBox::Cancel)
+        else if (reply == QMessageBox::Cancel)
             event->ignore();
     }
     else event->accept();

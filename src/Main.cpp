@@ -1,7 +1,7 @@
+#include "Connection_Window.h"
 #include <QApplication>
 #include <qfile.h>
-#include <QTextStream>
-#include "Connection_Window.h"
+#include <QIcon> 
 //===========================================================================================================
 int main(int argc, char *argv[])
 {

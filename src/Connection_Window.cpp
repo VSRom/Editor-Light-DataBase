@@ -1,4 +1,18 @@
 #include "Connection_Window.h"
+#include "Main_Window.h"
+#include <QVBoxLayout>
+#include <QStandardPaths>
+#include <QSettings>
+#include <qdir.h>
+#include <QMessageBox>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QInputDialog>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QFileInfo>
+#include <QIcon>
 //===========================================================================================================
 Connection_Window::Connection_Window(QWidget *parent)
 	: QMainWindow(parent)
@@ -154,17 +168,7 @@ void Connection_Window::check_con()
 	QString log = loginLine_->text();
 	QString	pass = passwordLine_->text();
 
-
-	switch (dbTypeCombo_->currentIndex())
-	{
-		case 0: driver_ = "QSQLITE"; break;
-		case 1: driver_ = "QODBC";  break;
-		case 2: driver_ = "QMYSQL"; break;
-		case 3: driver_ = "QOCI"; break;
-		case 4: driver_ = "QPSQL"; break;
-		default: text_edit_->append("Неизвестный тип БД"); return;
-	}
-
+	setDriverDB();
 
 	QString conName = "test_connection";
 	bool isRemote = remoteCheck_->isChecked();
@@ -219,15 +223,7 @@ void Connection_Window::connection()
 	QString log = loginLine_->text();
 	QString	pass = passwordLine_->text();
 
-	switch (dbTypeCombo_->currentIndex())
-	{
-		case 0: driver_ = "QSQLITE"; dbType_ = "sqlite";   break;
-		case 1: driver_ = "QODBC"; dbType_ = "access";	   break;
-		case 2: driver_ = "QMYSQL"; dbType_ = "mysql";     break;
-		case 3: driver_ = "QOCI"; dbType_ = "oracle";      break;
-		case 4: driver_ = "QPSQL"; dbType_ = "postgresql"; break;
-		default: text_edit_->append("Неизвестный тип БД"); return;
-	}
+	setDriverDB();
 
 	QString conName = "main_connection";
 
@@ -325,5 +321,17 @@ void Connection_Window::save_config()
 	configCombo_->addItems(settings.childGroups());	// Читаем ini-file, и возвращаем список всех секций
 	configCombo_->setCurrentText(configName);		// Делает активным текст что сохранен в configName
 	text_edit_->append("Конфигурационные настройки сохранены!");
+}
+//===========================================================================================================
+bool Connection_Window::setDriverDB() {
+	switch (dbTypeCombo_->currentIndex())
+	{
+		case 0: driver_ = "QSQLITE"; dbType_ = "sqlite";   return true;
+		case 1: driver_ = "QODBC"; dbType_ = "access";	   return true;
+		case 2: driver_ = "QMYSQL"; dbType_ = "mysql";     return true;
+		case 3: driver_ = "QOCI"; dbType_ = "oracle";      return true;
+		case 4: driver_ = "QPSQL"; dbType_ = "postgresql"; return true;
+		default: text_edit_->append("Неизвестный тип БД"); return false;
+	}
 }
 //===========================================================================================================

@@ -2,17 +2,13 @@
 #include <QScrollArea>
 #include <QDialog>
 #include <QPushButton>
-#include <QWidget>
 #include <QVBoxLayout>
 #include <QComboBox>
 #include <QLineEdit>
 #include <QList>
-#include <QLabel>
-#include <QHBoxLayout>
-#include <QMessageBox>
-#include <QGroupBox>
-#include <QTimer>
-#include <QApplication>
+#include <QWidget>
+#include <QStringList>
+#include <QGridLayout>
 //===========================================================================================================
 class Create_Table : public QDialog {
 	Q_OBJECT
@@ -43,7 +39,6 @@ private:
 	QList<Col_Row> col_row_;		// список строк/столбцов
 	QPushButton* add_col_;
 	QStringList types_db_;			// Типы БД принимаем из Main_Window->Table_Explorer->Create_Table
-	QStringList sql_get_;			// Для сборки запроса добавления
 
 	QPushButton* btn_ok_;
 	QPushButton* btn_canc_;

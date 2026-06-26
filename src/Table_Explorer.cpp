@@ -1,5 +1,8 @@
 #include "Table_Explorer.h"
 #include <QSqlError>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QDebug>
 //================================================================================================================
 Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
 {
@@ -24,7 +27,7 @@ Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbT
 //================================================================================================================
 QStringList Table_Explorer::getUserTables() const {
     QStringList userTables;
-    qDebug() << "dbType_:" << dbType_;  // Для настройки фильтрации
+
     if (dbType_ == "postgresql") {
 
         QSqlQuery query(QSqlDatabase::database(connectionName_));
@@ -44,9 +47,6 @@ QStringList Table_Explorer::getUserTables() const {
         while (query.next()) {
             userTables.append(query.value(0).toString());
         }
-
-        qDebug() << "PostgreSQL: найдено таблиц:" << userTables.size();
-
     }
     else {
         QStringList AllTables = QSqlDatabase::database(connectionName_).tables(QSql::Tables);
@@ -88,8 +88,8 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
     }
     else if (driver == "QPSQL") {
         q.exec(QString(
-            "SELECT column_name, data_type, is_nullable"
-            "FROM information_schema.columns"
+            "SELECT column_name, data_type, is_nullable "
+            "FROM information_schema.columns "
             "WHERE table_name = '%1'").arg(tableName));
         while (q.next()) {
             cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES" });
@@ -136,7 +136,9 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
     }
 
     if (!qs.exec()) {
+#ifdef QT_DEBUG
         qDebug() << "Query error:" << qs.lastError().text();
+#endif
     }
 
     model->setQuery(qs);
@@ -163,7 +165,9 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
     bool exe = qs.exec();                                           // Один вызов!
 
     if (!exe) {
+#ifdef QT_DEBUG
         qDebug() << "Query error:" << qs.lastError().text();
+#endif
         return false;
     }
 
@@ -194,7 +198,9 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
     bool exe = qs.exec();
 
     if (!exe) {
+#ifdef QT_DEBUG
         qDebug() << "Query error:" << qs.lastError().text();
+#endif
         return false;
     }
 
@@ -212,7 +218,9 @@ bool Table_Explorer::remove(const QString &table, const QString &idColumn, const
     bool exe = qs.exec();
 
     if (!exe) {
+#ifdef QT_DEBUG
         qDebug() << "Query error:" << qs.lastError().text();
+#endif
         return false;
     }
 
@@ -227,7 +235,9 @@ bool Table_Explorer::drop_table(const QString& table) const {
     bool exe = qs.exec(sql);
 
     if (!exe) {
+#ifdef QT_DEBUG
         qDebug() << "Query error:" << qs.lastError().text();
+#endif
         return false;
     }
 
@@ -242,10 +252,18 @@ bool Table_Explorer::rename_table(const QString& table, const QString& new_name_
     bool exe = qs.exec(sql);
 
     if (!exe) {
+#ifdef QT_DEBUG
         qDebug() << "Query error:" << qs.lastError().text();
+#endif
         return false;
     }
 
+    return exe;
+}
+//================================================================================================================
+bool Table_Explorer::exeQuery(const QString& sql) const {
+    QSqlQuery qs(QSqlDatabase::database("main_connection"));
+    bool exe = qs.exec(sql);
     return exe;
 }
 //================================================================================================================
