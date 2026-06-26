@@ -355,10 +355,10 @@ void Main_Window::doubleClick(const QModelIndex& index) {
         inDialog.resize(500, 150);
         
         if (inDialog.exec() == QDialog::Accepted) {
+            QString newData = inDialog.textValue();
             QString nameRow = proxyModel_->headerData(index.column(), Qt::Horizontal).toString();
-            QString newData = QInputDialog::getText(this, "Новое значение", "Ввод", QLineEdit::Normal, data, &ok);
 
-            if (!ok || newData.isEmpty() || newData == data) return;
+            if (newData.isEmpty() || newData == data) return;
             else {
                 QVariant idRow = proxyModel_->index(index.row(), 0).data();
                 QMap<QString, QVariant> newVal;
