@@ -13,6 +13,8 @@
 #include <QDebug>
 #include <QSqlQueryModel>
 #include <QHeaderView>
+#include <QModelIndex>
+#include <QMap>
 //===========================================================================================================
 Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *parent)
     : QMainWindow(parent), db_(), explorer_("main_connection", db_type), isModifyNote_(false)
@@ -82,6 +84,9 @@ void Main_Window::setup_ui()
     sw->addWidget(data_view_, 1, 0, 1, 3);
 
 ///////////========================================================Онлайн редактирование БД========================================================///////////
+    // Подключение сигнала двойного клика ЛКМ
+    connect(data_view_, &QTableView::doubleClicked, this, &Main_Window::doubleClick);
+
 
 
 
@@ -335,5 +340,37 @@ void Main_Window::save_note() {
     settings.sync();
 
     isModifyNote_ = false;
+}
+//================================================================================================================
+void Main_Window::doubleClick(const QModelIndex& index) {
+    bool ok;
+    if (index.column() == 0)
+        QMessageBox::warning(this, "Ошибка", "Нельзя изменить id");
+    else {
+        QString data = index.data().toString();
+        QInputDialog inDialog(this);
+        inDialog.setWindowTitle("Новое значение");
+        inDialog.setLabelText("Ввод");
+        inDialog.setTextValue(data);
+        inDialog.resize(500, 150);
+        
+        if (inDialog.exec() == QDialog::Accepted) {
+            QString nameRow = proxyModel_->headerData(index.column(), Qt::Horizontal).toString();
+            QString newData = QInputDialog::getText(this, "Новое значение", "Ввод", QLineEdit::Normal, data, &ok);
+
+            if (!ok || newData.isEmpty() || newData == data) return;
+            else {
+                QVariant idRow = proxyModel_->index(index.row(), 0).data();
+                QMap<QString, QVariant> newVal;
+                newVal[nameRow] = newData;
+                if (!explorer_.update(current_table_, "id", idRow, newVal)) {
+                    QMessageBox::critical(this, "Ошибка", "Новые данные не сохранились");
+                    return;
+                }
+                const_ptr_.reset(explorer_.select(current_table_));
+                proxyModel_->setSourceModel(const_ptr_.get());
+            }
+        }
+    }
 }
 //================================================================================================================

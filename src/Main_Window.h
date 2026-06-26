@@ -36,6 +36,8 @@ private slots:
     void onFontChanged(const QString& fontName);
     void onTextChanged();
     void onTableSelected(const QString& tableName);
+    void doubleClick(const QModelIndex& index);         // Дабл клик ЛКМ редактирование БД
+    //void onContextMenu(const QPoint& pos);              // Дабл клик ЛКМ окна таблиц
 
 private:
     void setup_ui();
