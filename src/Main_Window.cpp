@@ -15,6 +15,8 @@
 #include <QHeaderView>
 #include <QModelIndex>
 #include <QMap>
+#include <QMenu>
+#include <QHash>
 //===========================================================================================================
 Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *parent)
     : QMainWindow(parent), db_(), explorer_("main_connection", db_type), isModifyNote_(false)
@@ -117,6 +119,14 @@ void Main_Window::setup_ui()
         if (!stroke.startsWith("sqlite_"))      // Исключаем системные объекты из списка таблиц
         table_list_->addItem(stroke);
     }
+///////////========================================================Онлайн редактирование БД========================================================///////////
+
+///////////==========================================================Контекстное меню БД========================================================///////////
+
+    data_view_->setContextMenuPolicy(Qt::CustomContextMenu);    // Сами будем обрабатывать ПКМ
+    connect(data_view_, &QTableView::customContextMenuRequested, this, &Main_Window::onDBContextMenu);
+
+///////////==========================================================Контекстное меню БД========================================================///////////
 
     ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
     ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
@@ -357,7 +367,7 @@ void Main_Window::doubleClick(const QModelIndex& index) {
             QString newData = inDialog.textValue();
             QString nameRow = proxyModel_->headerData(index.column(), Qt::Horizontal).toString();
 
-            if (newData.isEmpty() || newData == data) return;
+            if (newData == data) return;
             else {
                 QVariant idRow = proxyModel_->index(index.row(), 0).data();
                 QMap<QString, QVariant> newVal;
@@ -371,5 +381,92 @@ void Main_Window::doubleClick(const QModelIndex& index) {
             }
         }
     }
+}
+//================================================================================================================
+void Main_Window::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Delete) {                                           // Проверка на нажатие кнопки Delete
+        QModelIndexList selectRows = data_view_->selectionModel()->selectedRows();  // Получили список выделенных строк
+        if (selectRows.isEmpty()) {
+            QMessageBox::warning(this, "Ошибка", "Строка для удаления не выделена");
+            return;
+        }
+        // Список выделенных строк
+        QList<QVariant> delRows;
+        for (int i = 0; i < selectRows.size(); i++) {
+            QModelIndex idIdx = proxyModel_->index(selectRows[i].row(), 0);     // Получаем индекс в колонке 0 для текущей строки
+            QVariant idVal = proxyModel_->data(idIdx);                          // Извлекаем значение ID из этой ячейки
+            delRows.append(idVal);
+        }
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Подтверждение удаления", "Удалить выбранную(ые) строку(и)?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            for (const QVariant& idVal : delRows) {
+                if (!explorer_.remove(current_table_, "id", idVal)) {
+                    QMessageBox::critical(this, "Ошибка", "Невозможно удалить строку: " + idVal.toString());
+                    return;
+                }
+            }// Обновление БД
+            const_ptr_.reset(explorer_.select(current_table_));
+            proxyModel_->setSourceModel(const_ptr_.get());
+            return;
+        }
+        QMainWindow::keyPressEvent(event);
+    }
+}
+//================================================================================================================
+void Main_Window::onDBContextMenu(const QPoint& pos) {
+    QMenu menu(this);
+
+    menu.addAction("Добавить строку", this, &Main_Window::onAddRow);
+    menu.addSeparator();
+    menu.addAction("Добавить столбец", this, &Main_Window::onAddCol);
+
+    menu.exec(data_view_->viewport()->mapToGlobal(pos));    //Показывает меню по координатам из pos на видимой области(viewport())
+}
+//================================================================================================================
+void Main_Window::onAddRow() {
+    QHash<QString, QVariant> newRow;
+    QList<Table_Explorer::ColumnInfo> cols = explorer_.getColumns(current_table_);  // Получили структуру таблицы
+
+    for (const auto& col : cols) {
+        if (col.name != "id")
+            newRow.insert(col.name, QVariant());
+    }
+    
+    if (!explorer_.insert(current_table_, newRow)) {
+        QMessageBox::critical(this, "Ошибка", "Не удаётся добавить строку");
+        return;
+    }
+    int lastRow = proxyModel_->rowCount() - 1;  // Количество строк
+    QModelIndex lastIdx = proxyModel_->index(lastRow, 0);
+
+    // Сброс фильтра перед прокруткой
+    proxyModel_->setFilterFixedString("");
+    search_->clear();
+
+    data_view_->scrollTo(lastIdx, QAbstractItemView::PositionAtCenter); // Прокрутка таблицы
+    data_view_->selectRow(lastRow); // Выделение строки
+
+    const_ptr_.reset(explorer_.select(current_table_));
+    proxyModel_->setSourceModel(const_ptr_.get());
+}
+//================================================================================================================
+void Main_Window::onAddCol() {
+    bool ok;
+    QString nameCol = QInputDialog::getText(this, "Новый столбец", "Имя", QLineEdit::Normal, "", &ok);  // Ввели имя
+    if (!ok || nameCol.isEmpty()) return;
+
+    QStringList types = explorer_.get_types_db();
+    QString colType = QInputDialog::getItem(this, "Тип данных", "Выберите тип: ", types, 0, false, &ok);    // Выбор типа столбца
+    if (!ok) return;
+
+    QString sql = QString("ALTER TABLE \"%1\" ADD COLUMN \"%2\" %3").arg(current_table_, nameCol, colType); // Запрос на добавление столбца
+
+    if (!explorer_.exeQuery(sql)) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось создать столбец");
+        return;
+    }
+
+    const_ptr_.reset(explorer_.select(current_table_));
+    proxyModel_->setSourceModel(const_ptr_.get());
 }
 //================================================================================================================

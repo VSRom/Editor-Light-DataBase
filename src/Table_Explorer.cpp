@@ -107,7 +107,7 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
                 q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y" });
         }
     }
-    else
+
         return cols;
 }
 //================================================================================================================
@@ -146,8 +146,7 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
     return model;
 }
 //================================================================================================================
-bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> &values) const
-{
+bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> &values) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QStringList place(values.size(), "?");
@@ -172,6 +171,14 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
     }
 
     return exe;
+}
+//================================================================================================================
+bool Table_Explorer::insert(const QString& table, const QHash<QString, QVariant>& values) const {
+    QMap<QString, QVariant> map;
+    for (auto it = values.begin(); it != values.end(); it++)
+        map[it.key()] = it.value();
+
+    return insert(table, map);
 }
 //================================================================================================================
 bool Table_Explorer::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
