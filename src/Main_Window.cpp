@@ -115,6 +115,7 @@ void Main_Window::setup_ui()
 
     // Список таблиц
     table_list_ = new QListWidget();
+    table_list_->setSelectionMode(QAbstractItemView::ExtendedSelection);    // Для диапозонного выделения чз Shift и одиночного чз Ctrl
     for (const QString &stroke : explorer_.getUserTables()) {
         if (!stroke.startsWith("sqlite_"))      // Исключаем системные объекты из списка таблиц
         table_list_->addItem(stroke);
@@ -264,6 +265,12 @@ void Main_Window::tab_create() {
 }
 //================================================================================================================
 void Main_Window::tab_united() {
+    QList<QListWidgetItem*> selTables = table_list_->selectedItems();   // Получили список выделенных таблиц
+
+    if (selTables.size() < 2) {
+        QMessageBox::warning(this, "Ошибка", "Невозможно объединить менее 2 таблиц");
+        return;
+    }
 
 }
 //================================================================================================================

@@ -26,6 +26,7 @@ set(SOURCES
 	src/Connection_Window.cpp
 	src/Table_Explorer.cpp
 	src/Create_Table.cpp
+	src/Merge_Tables.cpp
     resources.qrc
 	app.rc
  )
@@ -36,9 +37,10 @@ set(HEADERS
 	src/Connection_Window.h
 	src/Table_Explorer.h
 	src/Create_Table.h
+	src/Merge_Tables.h
  )
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 
