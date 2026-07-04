@@ -39,7 +39,7 @@ instruct.txt
 **/*.json
 *.json
 *.lib
-src/
+
 # Qt
 *.moc
 *pro.user
@@ -57,3 +57,4 @@ instruct.txt
 plan_Dev.docx
 
 dist/
+git
