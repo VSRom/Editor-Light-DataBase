@@ -269,7 +269,7 @@ bool Table_Explorer::rename_table(const QString& table, const QString& new_name_
 }
 //================================================================================================================
 bool Table_Explorer::exeQuery(const QString& sql) const {
-    QSqlQuery qs(QSqlDatabase::database("main_connection"));
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
     bool exe = qs.exec(sql);
     return exe;
 }

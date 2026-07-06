@@ -27,6 +27,7 @@ set(SOURCES
 	src/Table_Explorer.cpp
 	src/Create_Table.cpp
 	src/Merge_Tables.cpp
+	src/Database_Worker.cpp
     resources.qrc
 	app.rc
  )
@@ -38,6 +39,7 @@ set(HEADERS
 	src/Table_Explorer.h
 	src/Create_Table.h
 	src/Merge_Tables.h
+	src/Database_Worker.h
  )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} )

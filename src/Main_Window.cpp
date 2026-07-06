@@ -19,13 +19,30 @@
 #include <QHash>
 //===========================================================================================================
 Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *parent)
-    : QMainWindow(parent), db_(), explorer_("main_connection", db_type), isModifyNote_(false)
+    : QMainWindow(parent), db_(), isModifyNote_(false)
 {
     if (!db_.init_db("main_connection")) {
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
         this->close();
         return;
     }
+
+    qRegisterMetaType<Hash>("Hash");
+    qRegisterMetaType<Map>("Map");
+
+    // Поток
+    worker_thread_ = new QThread(this);
+    worker_ = new Database_Worker("main_connection", db_type);
+    worker_->moveToThread(worker_thread_);
+
+    connect(worker_, &Database_Worker::columnsLoaded, this, &Main_Window::onColumnsLoaded);
+    connect(worker_, &Database_Worker::typesDbLoaded, this, &Main_Window::onTypesDbLoaded);
+    connect(worker_, &Database_Worker::operationCompleted, this, &Main_Window::onOperationCompleted);
+    connect(worker_thread_, &QThread::started, worker_, &Database_Worker::loadTables);
+    connect(worker_thread_, &QThread::finished, worker_, &QObject::deleteLater);
+    connect(worker_, &Database_Worker::tablesLoaded, this, &Main_Window::onTablesLoaded);
+
+    worker_thread_->start();
 
     //Загрузка шрифтов!
 
@@ -52,14 +69,28 @@ Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *p
 //===========================================================================================================
 Main_Window::~Main_Window() {}
 //===========================================================================================================
-void Main_Window::onTableSelected(const QString &tableName)
-{
-    current_table_ = tableName;     // Сохраним текущую таблицу
-    search_->clear();               // Очистим поиск
-
-    const_ptr_.reset(explorer_.select(current_table_));
-    proxyModel_->setSourceModel(const_ptr_.get());
+void Main_Window::onTableSelected(const QString &tableName) {
+    current_table_ = tableName;
+    search_text_.clear();              // Очистим поиск
+    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
     proxyModel_->setFilterFixedString("");
+}
+//===========================================================================================================
+void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList headers) {
+
+    QStandardItemModel* model = new QStandardItemModel();
+    model->setHorizontalHeaderLabels(headers); 
+
+    for (int row = 0; row < data.size(); row++) {
+        QList<QStandardItem*> text;
+        for (int col = 0; col < data[row].size(); col++) {
+            text.append(new QStandardItem(data[row][col].toString()));
+        }
+        model->appendRow(text);
+    }
+    const_ptr_.reset(model);
+    proxyModel_->setSourceModel(const_ptr_.get());
+    proxyModel_->setFilterFixedString(search_text_);
 }
 //===========================================================================================================
 void Main_Window::setup_ui()
@@ -89,21 +120,6 @@ void Main_Window::setup_ui()
     // Подключение сигнала двойного клика ЛКМ
     connect(data_view_, &QTableView::doubleClicked, this, &Main_Window::doubleClick);
 
-
-
-
-
-///////////========================================================Онлайн редактирование БД========================================================///////////
-
-    // Прогресс бар
-    progress_ = new QProgressBar();
-    progress_->setRange(0, 0);        //Режим "бегущей строки"
-    progress_->setTextVisible(true);
-    progress_->hide();                // Скрыт по умолчанию
-    sw->addWidget(progress_, 2, 0, 1, 3);
-    // Стилизация прогресс бара
-    progress_->setAlignment(Qt::AlignCenter);
-
     // Скрыть заголовок с дублированием id
     data_view_->verticalHeader()->setVisible(false);
 
@@ -116,10 +132,6 @@ void Main_Window::setup_ui()
     // Список таблиц
     table_list_ = new QListWidget();
     table_list_->setSelectionMode(QAbstractItemView::ExtendedSelection);    // Для диапозонного выделения чз Shift и одиночного чз Ctrl
-    for (const QString &stroke : explorer_.getUserTables()) {
-        if (!stroke.startsWith("sqlite_"))      // Исключаем системные объекты из списка таблиц
-        table_list_->addItem(stroke);
-    }
 ///////////========================================================Онлайн редактирование БД========================================================///////////
 
 ///////////==========================================================Контекстное меню БД========================================================///////////
@@ -128,27 +140,6 @@ void Main_Window::setup_ui()
     connect(data_view_, &QTableView::customContextMenuRequested, this, &Main_Window::onDBContextMenu);
 
 ///////////==========================================================Контекстное меню БД========================================================///////////
-
-    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
-    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
-    // Полный вывод того, что видит QSqlDatabase
-    QStringList allTables = QSqlDatabase::database("main_connection").tables(QSql::Tables);
-    qDebug() << "=== ВСЕ таблицы (QSqlDatabase::tables) ===";
-    qDebug() << "Всего найдено:" << allTables.size();
-    for (const QString& t : allTables) {
-        qDebug() << "  [" << t << "]";
-    }
-
-    // Что возвращает getUserTables
-    QStringList userTables = explorer_.getUserTables();
-    qDebug() << "\n=== После фильтрации ===";
-    qDebug() << "Всего:" << userTables.size();
-    for (const QString& t : userTables) {
-        qDebug() << "  " << t;
-    }
-
-    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
-    ///////////========================================================TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST
 
     QGridLayout* ucrd = new QGridLayout();
 
@@ -205,8 +196,7 @@ void Main_Window::setup_ui()
     //  Кто отправляет       // Сигнал     // Кто принимает // Слот
 }
 //================================================================================================================
-void Main_Window::onSearch()
-{
+void Main_Window::onSearch() {
     QString stroke = search_->text();                     // Берем введеное пользователем значение
 
     if (stroke.isEmpty()) {
@@ -214,54 +204,14 @@ void Main_Window::onSearch()
         return;
     }
 
-    startProgressBar(PB_Status::Searching);
+    search_text_ = stroke;
 
-    const_ptr_.reset(explorer_.select(current_table_));
-
-    proxyModel_->setSourceModel(const_ptr_.get());
-    proxyModel_->setFilterFixedString(stroke);
-
-    stopProgressBar();
-}
-//================================================================================================================
-void Main_Window::startProgressBar(PB_Status pbs) {
-    current_pb_ = pbs;
-
-    switch (pbs) {
-        case PB_Status::Searching: progress_->setFormat("Поиск"); break;
-        case PB_Status::Saving: progress_->setFormat("Сохранение"); break;
-        case PB_Status::Loading: progress_->setFormat("Загрузка"); break;
-        default: progress_->setFormat("");
-    }
-
-    //  Idle, Searching, Saving, Loading
-    progress_->show();
-}
-//================================================================================================================
-void Main_Window::stopProgressBar() {
-    progress_->reset(); // Сбросывает значение и остановка анимации
-    progress_->hide();
-    current_pb_ = PB_Status::Idle;
+    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
 }
 //================================================================================================================
 void Main_Window::tab_create() {
-    Create_Table dialog(explorer_.get_types_db(), this);                      // Создаём диалог
-    if (dialog.exec() == QDialog::Accepted) {                                 // Показываем и ждём результат
-        QString sql = dialog.get_sql();
-        if (sql.isEmpty()) {
-            QMessageBox::warning(this, "Ошибка", "Недостаточно данных для создания таблицы!");
-            return;
-        }
-
-            if (!explorer_.exeQuery(sql)) {
-                QMessageBox::critical(this, "Ошибка", "Не удалось создать таблицу");
-                return;
-            }
-
-            refresh_table();
-
-                QMessageBox::information(this, "Успех", "Таблица успешно создана!");
-    }
+    pending_action_ = "create_table";
+    QMetaObject::invokeMethod(worker_, "getTypesDb", Qt::QueuedConnection);
 }
 //================================================================================================================
 void Main_Window::tab_united() {
@@ -285,11 +235,8 @@ void Main_Window::tab_rename() {
 
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Предупреждение", QString("<p>После подтверждения имя таблицы '%1' изменится на '%2'</p>" "<p align='center'>Вы уверены?</p>").arg(tabName, newTabName), QMessageBox::Yes | QMessageBox::No);
         
-        if (reply == QMessageBox::Yes) {
-            explorer_.rename_table(tabName, newTabName);
-
-            refresh_table();
-        }
+        if (reply == QMessageBox::Yes)
+            QMetaObject::invokeMethod(worker_, "renameTable", Qt::QueuedConnection, Q_ARG(QString, tabName), Q_ARG(QString, newTabName));
         else
             QMessageBox::information(this, "Отмена", "Операция отменена!");
     }
@@ -303,11 +250,8 @@ void Main_Window::tab_delete(){
     if (temp) {
         QString tabName = temp->text();
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Предупреждение", QString("<p>После подтверждения все данные таблицы '%1' удалятся!</p>" "<p align='center'>Вы уверены?</p>").arg(tabName), QMessageBox::Yes | QMessageBox::No);
-        if (reply == QMessageBox::Yes) {
-            explorer_.drop_table(tabName);
-
-            refresh_table();
-        }
+        if (reply == QMessageBox::Yes)
+            QMetaObject::invokeMethod(worker_, "dropTable", Qt::QueuedConnection, Q_ARG(QString, tabName));
         else 
             QMessageBox::information(this, "Отмена", "Операция отменена!");
     }
@@ -316,10 +260,7 @@ void Main_Window::tab_delete(){
 }
 //================================================================================================================
 void Main_Window::refresh_table() {
-table_list_->clear();
-for (const QString& name : explorer_.getUserTables())
-if (!name.startsWith("sqlite_"))
-table_list_->addItem(name);
+    QMetaObject::invokeMethod(worker_, "loadTables", Qt::QueuedConnection);
 }
 //================================================================================================================
 void Main_Window::onFontChanged(const QString& fontName) {
@@ -369,7 +310,7 @@ void Main_Window::doubleClick(const QModelIndex& index) {
         inDialog.setLabelText("Ввод");
         inDialog.setTextValue(data);
         inDialog.resize(500, 150);
-        
+
         if (inDialog.exec() == QDialog::Accepted) {
             QString newData = inDialog.textValue();
             QString nameRow = proxyModel_->headerData(index.column(), Qt::Horizontal).toString();
@@ -379,12 +320,8 @@ void Main_Window::doubleClick(const QModelIndex& index) {
                 QVariant idRow = proxyModel_->index(index.row(), 0).data();
                 QMap<QString, QVariant> newVal;
                 newVal[nameRow] = newData;
-                if (!explorer_.update(current_table_, "id", idRow, newVal)) {
-                    QMessageBox::critical(this, "Ошибка", "Новые данные не сохранились");
-                    return;
-                }
-                const_ptr_.reset(explorer_.select(current_table_));
-                proxyModel_->setSourceModel(const_ptr_.get());
+
+                QMetaObject::invokeMethod(worker_, "updateRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(QString, "id"), Q_ARG(QVariant, idRow), Q_ARG(Map, newVal));
             }
         }
     }
@@ -406,14 +343,8 @@ void Main_Window::keyPressEvent(QKeyEvent* event) {
         }
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Подтверждение удаления", "Удалить выбранную(ые) строку(и)?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (reply == QMessageBox::Yes) {
-            for (const QVariant& idVal : delRows) {
-                if (!explorer_.remove(current_table_, "id", idVal)) {
-                    QMessageBox::critical(this, "Ошибка", "Невозможно удалить строку: " + idVal.toString());
-                    return;
-                }
-            }// Обновление БД
-            const_ptr_.reset(explorer_.select(current_table_));
-            proxyModel_->setSourceModel(const_ptr_.get());
+            for (const QVariant& idVal : delRows)
+                QMetaObject::invokeMethod(worker_, "removeRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(QString, "id"), Q_ARG(QVariant, idVal));
             return;
         }
         QMainWindow::keyPressEvent(event);
@@ -431,30 +362,9 @@ void Main_Window::onDBContextMenu(const QPoint& pos) {
 }
 //================================================================================================================
 void Main_Window::onAddRow() {
-    QHash<QString, QVariant> newRow;
-    QList<Table_Explorer::ColumnInfo> cols = explorer_.getColumns(current_table_);  // Получили структуру таблицы
+    pending_action_ = "add_row";
+    QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, current_table_));
 
-    for (const auto& col : cols) {
-        if (col.name != "id")
-            newRow.insert(col.name, QVariant());
-    }
-    
-    if (!explorer_.insert(current_table_, newRow)) {
-        QMessageBox::critical(this, "Ошибка", "Не удаётся добавить строку");
-        return;
-    }
-    int lastRow = proxyModel_->rowCount() - 1;  // Количество строк
-    QModelIndex lastIdx = proxyModel_->index(lastRow, 0);
-
-    // Сброс фильтра перед прокруткой
-    proxyModel_->setFilterFixedString("");
-    search_->clear();
-
-    data_view_->scrollTo(lastIdx, QAbstractItemView::PositionAtCenter); // Прокрутка таблицы
-    data_view_->selectRow(lastRow); // Выделение строки
-
-    const_ptr_.reset(explorer_.select(current_table_));
-    proxyModel_->setSourceModel(const_ptr_.get());
 }
 //================================================================================================================
 void Main_Window::onAddCol() {
@@ -462,18 +372,74 @@ void Main_Window::onAddCol() {
     QString nameCol = QInputDialog::getText(this, "Новый столбец", "Имя", QLineEdit::Normal, "", &ok);  // Ввели имя
     if (!ok || nameCol.isEmpty()) return;
 
-    QStringList types = explorer_.get_types_db();
-    QString colType = QInputDialog::getItem(this, "Тип данных", "Выберите тип: ", types, 0, false, &ok);    // Выбор типа столбца
-    if (!ok) return;
-
-    QString sql = QString("ALTER TABLE \"%1\" ADD COLUMN \"%2\" %3").arg(current_table_, nameCol, colType); // Запрос на добавление столбца
-
-    if (!explorer_.exeQuery(sql)) {
-        QMessageBox::critical(this, "Ошибка", "Не удалось создать столбец");
+    pending_column_name_ = nameCol;
+    pending_action_ = "add_col";
+    QMetaObject::invokeMethod(worker_, "getTypesDb", Qt::QueuedConnection);
+}
+//================================================================================================================
+void Main_Window::onTablesLoaded(QStringList tables) {
+    table_list_->clear();
+    for (const QString& stroke : tables) {
+        if (!stroke.startsWith("sqlite_"))      // Исключаем системные объекты из списка таблиц
+            table_list_->addItem(stroke);
+    }
+}
+//================================================================================================================
+void Main_Window::onOperationCompleted(bool success, const QString& message) {
+    if (!success) {
+        QMessageBox::critical(this, "Ошибка", message);
         return;
     }
 
-    const_ptr_.reset(explorer_.select(current_table_));
-    proxyModel_->setSourceModel(const_ptr_.get());
+    // После любой успешной операции обновляем список таблиц
+    refresh_table();
+
+    // Если есть текущая таблица — перезагружаем её
+    if (!current_table_.isEmpty()) {
+        QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
+    }
+}
+//================================================================================================================
+void Main_Window::onTypesDbLoaded(QStringList types) {
+
+    if (pending_action_ == "create_table") {
+        Create_Table dialog(types, this);
+
+        if (dialog.exec() == QDialog::Accepted) {
+            QString sql = dialog.get_sql();
+
+            if (!sql.isEmpty()) {
+                QMetaObject::invokeMethod(worker_, "executeQuery", Qt::QueuedConnection, Q_ARG(QString, sql));
+                pending_action_ = "";
+            }
+        }
+    }
+
+    if (pending_action_ == "add_col") {
+        bool ok;
+        QString colType = QInputDialog::getItem(this, "Тип данных", "Выберите тип: ", types, 0, false, &ok);    // Выбор типа столбца
+        if (!ok) {
+            pending_action_ = "";
+            return;
+        }
+
+        QString sql = QString("ALTER TABLE \"%1\" ADD COLUMN \"%2\" %3").arg(current_table_, pending_column_name_, colType); // Запрос на добавление столбца
+
+        QMetaObject::invokeMethod(worker_, "executeQuery", Qt::QueuedConnection, Q_ARG(QString, sql));
+        pending_action_ = "";
+    }
+}
+//================================================================================================================
+void Main_Window::onColumnsLoaded(QList<Table_Explorer::ColumnInfo> cols) {
+    if (pending_action_ == "add_row") {
+
+        QHash<QString, QVariant> newRow;
+
+        for (const auto& col : cols) {
+            if (col.name != "id")
+                newRow.insert(col.name, QVariant());
+        }
+        QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(Hash, newRow));
+    }
 }
 //================================================================================================================

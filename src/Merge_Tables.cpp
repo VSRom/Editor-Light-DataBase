@@ -1,3 +1,4 @@
+/*
 #include "Merge_Tables.h"
 #include "Table_Explorer.h"
 #include <QTabWidget>
@@ -46,9 +47,8 @@ QString Merge_Tables::get_sql() const {	// Сборка запроса для с
 	return QString("CREATE TABLE IF NOT EXISTS \"%1\" (%2);").arg(nameTab, temp_sql_get.join(", "));
 }
 //================================================================================================================
-void updateComKeys() {
+void Merge_Tables::updateComKeys() {
 
 }
 //================================================================================================================
-
-
+*/
