@@ -26,6 +26,8 @@ Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbT
 }
 //================================================================================================================
 QStringList Table_Explorer::getUserTables() const {
+    QSqlDatabase db = QSqlDatabase::database(connectionName_);
+    QStringList AllTables = db.tables(QSql::Tables);
     QStringList userTables;
 
     if (dbType_ == "postgresql") {

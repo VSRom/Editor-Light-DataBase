@@ -18,7 +18,7 @@
 #include <QMenu>
 #include <QHash>
 //===========================================================================================================
-Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *parent)
+Main_Window::Main_Window(const QString driver, const QString db_type,  QWidget *parent)
     : QMainWindow(parent), db_(), isModifyNote_(false)
 {
     if (!db_.init_db("main_connection")) {
@@ -26,9 +26,9 @@ Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *p
         this->close();
         return;
     }
-
-    qRegisterMetaType<Hash>("Hash");
-    qRegisterMetaType<Map>("Map");
+    // Получаем пути БД и Драйвера
+    db_path_ = QSqlDatabase::database("main_connection").databaseName();
+    driver_ = QSqlDatabase::database("main_connection").driverName();
 
     // Поток
     worker_thread_ = new QThread(this);
@@ -38,38 +38,45 @@ Main_Window::Main_Window(const QString db_type, const QString driver, QWidget *p
     connect(worker_, &Database_Worker::columnsLoaded, this, &Main_Window::onColumnsLoaded);
     connect(worker_, &Database_Worker::typesDbLoaded, this, &Main_Window::onTypesDbLoaded);
     connect(worker_, &Database_Worker::operationCompleted, this, &Main_Window::onOperationCompleted);
-    connect(worker_thread_, &QThread::started, worker_, &Database_Worker::loadTables);
     connect(worker_thread_, &QThread::finished, worker_, &QObject::deleteLater);
     connect(worker_, &Database_Worker::tablesLoaded, this, &Main_Window::onTablesLoaded);
+    connect(worker_, &Database_Worker::selectFinished, this, &Main_Window::onSelectFinished);
+
+    qRegisterMetaType<Hash>("Hash");
+    qRegisterMetaType<Map>("Map");
 
     worker_thread_->start();
 
+    QMetaObject::invokeMethod(worker_, "initConnection", Qt::QueuedConnection, Q_ARG(QString, driver_), Q_ARG(QString, db_path_));
     //Загрузка шрифтов!
 
     int Hack = QFontDatabase::addApplicationFont(":/resources/fonts/Hack.ttf");
     int Fira = QFontDatabase::addApplicationFont(":/resources/fonts/Fira.ttf");
     int Anon = QFontDatabase::addApplicationFont(":/resources/fonts/Anon.ttf");
 
-    if (Hack == -1) qDebug() << "Ошибка загрузки Hack.ttf";
-    if (Fira == -1) qDebug() << "Ошибка загрузки Fira.ttf";
-    if (Anon == -1) qDebug() << "Ошибка загрузки Anon.ttf";
-
     hack_ = QFontDatabase::applicationFontFamilies(Hack).at(0);
     fira_ = QFontDatabase::applicationFontFamilies(Fira).at(0);
     anon_ = QFontDatabase::applicationFontFamilies(Anon).at(0);
-    
-    qDebug() << "Hack: " << hack_;
-    qDebug() << "Fira: " << fira_;
-    qDebug() << "Anon: " << anon_;
+
 
     notePath_ = QCoreApplication::applicationDirPath() + "/notepad.ini"; // Получили путь к папке для заметок
 
     setup_ui();
 }
 //===========================================================================================================
-Main_Window::~Main_Window() {}
+Main_Window::~Main_Window() {
+    // Остановка потока
+    if (worker_thread_->isRunning()) {
+        worker_thread_->quit();
+        worker_thread_->wait(3000);
+    }
+}
 //===========================================================================================================
 void Main_Window::onTableSelected(const QString &tableName) {
+    qDebug() << "=== onTableSelected ===";
+    qDebug() << "Table name:" << tableName;
+
+
     current_table_ = tableName;
     search_text_.clear();              // Очистим поиск
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
@@ -77,6 +84,12 @@ void Main_Window::onTableSelected(const QString &tableName) {
 }
 //===========================================================================================================
 void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList headers) {
+    qDebug() << "=== onSelectFinished ===";
+    qDebug() << "Headers:" << headers;
+    qDebug() << "Data rows:" << data.size();
+    if (!data.isEmpty())
+        qDebug() << "Data cols in first row:" << data[0].size();
+
 
     QStandardItemModel* model = new QStandardItemModel();
     model->setHorizontalHeaderLabels(headers); 

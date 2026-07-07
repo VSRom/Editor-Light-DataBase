@@ -1,16 +1,17 @@
 #include "Database_Worker.h"
+#include <QSqlError>
 //================================================================================================================
 Database_Worker::Database_Worker(const QString& connectionName, const QString& dbType, QObject* parent)
-	: QObject(parent), explorer_(connectionName, dbType) 
+	: QObject(parent), explorer_(nullptr), dbType_(dbType)
 { }
 //================================================================================================================
 void Database_Worker::loadTables() {
-	QStringList tables = explorer_.getUserTables();
+	QStringList tables = explorer_->getUserTables();
 	emit tablesLoaded(tables);
 }
 //================================================================================================================
 void Database_Worker::selectTable(const QString& table) {
-	QSqlQueryModel* model = explorer_.select(table);
+	QSqlQueryModel* model = explorer_->select(table);
 	QList<QList<QVariant>> data;
 	QStringList headers;
 
@@ -28,41 +29,57 @@ void Database_Worker::selectTable(const QString& table) {
 }
 //================================================================================================================
 void Database_Worker::executeQuery(const QString& sql) {
-	bool success = explorer_.exeQuery(sql);
+	bool success = explorer_->exeQuery(sql);
 	emit operationCompleted(success, success ? "Запрос выполнен" : "Ошибка: " + sql);
 }
 //================================================================================================================
 void Database_Worker::getColumns(const QString& table) {
-	QList<Table_Explorer::ColumnInfo> cols = explorer_.getColumns(table);
+	QList<Table_Explorer::ColumnInfo> cols = explorer_->getColumns(table);
 	emit columnsLoaded(cols);
 }
 //================================================================================================================
 void Database_Worker::insertRow(const QString& table, const QHash<QString, QVariant>& values) {
-	bool success = explorer_.insert(table, values);
+	bool success = explorer_->insert(table, values);
 	emit operationCompleted(success, success ? "Строка добавлена" : "Ошибка добавления строки");
 }
 //================================================================================================================
 void Database_Worker::updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues) {
-	bool success = explorer_.update(table, idColumn, idValue, newValues);
+	bool success = explorer_->update(table, idColumn, idValue, newValues);
 	emit operationCompleted(success, success ? "Строка обновлена" : "Ошибка обновления строки");
 }
 //================================================================================================================
 void Database_Worker::removeRow(const QString& table, const QString& idColumn, const QVariant& idValue) {
-	bool success = explorer_.remove(table, idColumn, idValue);
+	bool success = explorer_->remove(table, idColumn, idValue);
 	emit operationCompleted(success, success ? "Строка удалена" : "Ошибка удаления строки");
 }
 //================================================================================================================
 void Database_Worker::getTypesDb() {
-	emit typesDbLoaded(explorer_.get_types_db());
+	emit typesDbLoaded(explorer_->get_types_db());
 }
 //================================================================================================================
 void Database_Worker::dropTable(const QString& table) {
-	bool success = explorer_.drop_table(table);
+	bool success = explorer_->drop_table(table);
 	emit operationCompleted(success, success ? "Таблица удалена" : "Ошибка удаления таблицы");
 }
 //================================================================================================================
 void Database_Worker::renameTable(const QString& oldName, const QString& newName) {
-	bool success = explorer_.rename_table(oldName, newName);
+	bool success = explorer_->rename_table(oldName, newName);
 	emit operationCompleted(success, success ? "Таблица переименована" : "Ошибка переименования");
+}
+//================================================================================================================
+void Database_Worker::initConnection(const QString& driver, const QString& dbPath) {
+	connection_name_ = "worker_connection";
+	db_path_ = dbPath;
+	driver_ = driver;
+	QSqlDatabase db = QSqlDatabase::addDatabase(driver_, connection_name_);
+	db.setDatabaseName(db_path_);
+
+	if (!db.open()) {
+		emit errorOccurred("Не удалось открыть БД в воркере: " + db.lastError().text());
+		return;
+	}
+
+	explorer_ = new Table_Explorer(connection_name_, dbType_);
+	loadTables();
 }
 //================================================================================================================

@@ -26,7 +26,7 @@ public slots:
     void updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues);
     void removeRow(const QString& table, const QString& idColumn, const QVariant& idValue);
     void getTypesDb();
-
+    void initConnection(const QString& driver, const QString& dbPath);
     void dropTable(const QString& table);
     void renameTable(const QString& oldName, const QString& newName);
 
@@ -39,6 +39,10 @@ signals:
     void errorOccurred(const QString& error);
 
 private:
-    Table_Explorer explorer_;
+    Table_Explorer* explorer_;
+    QString connection_name_;
+    QString driver_;
+    QString db_path_;
+    QString dbType_;
 };
 //================================================================================================================

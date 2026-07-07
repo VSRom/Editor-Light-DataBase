@@ -19,7 +19,7 @@ class Main_Window : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit Main_Window(const QString db_type, const QString driver, QWidget* parent = nullptr);
+    explicit Main_Window(const QString driver, const QString db_type, QWidget* parent = nullptr);
     ~Main_Window();
 
 private slots:
@@ -88,6 +88,9 @@ private:
     QString pending_action_;
     // Запоминание колонки
     QString pending_column_name_;
+    // БД и Драйвер
+    QString db_path_;
+    QString driver_;
 
 protected:
     void closeEvent(QCloseEvent* event) override;
