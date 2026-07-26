@@ -1,7 +1,6 @@
 #pragma once
 //================================================================================================================
-#include "Database.h"
-#include "Table_Explorer.h"
+#include "Database_Worker.h"
 #include <QMainWindow>
 #include <QComboBox>
 #include <QLineEdit>
@@ -11,24 +10,19 @@
 #include <QSortFilterProxyModel>
 #include <QPlainTextEdit>
 #include <QProgressBar>
-//================================================================================================================
-// Состояния для QProgressBar
-enum class PB_Status {
-    Idle, Searching, Saving, Loading
-};
+#include <QStandardItemModel>
+#include <QThread>
 //================================================================================================================
 class Main_Window : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit Main_Window(const QString db_type, const QString driver, QWidget* parent = nullptr);
+    explicit Main_Window(const QString driver, const QString db_type, QWidget* parent = nullptr);
     ~Main_Window();
 
 private slots:
     void onSearch();
-    void startProgressBar(PB_Status pbs);
-    void stopProgressBar();
     void tab_create();
     void tab_united();
     void tab_rename();
@@ -42,19 +36,28 @@ private slots:
     void onAddCol();
     //void onTableContextMenu(const QPoint& pos);       // Клик ПКМ окна таблиц
 
+    // Поток
+    void onTablesLoaded(QStringList tables);
+    void onSelectFinished(QList<QList<QVariant>> data, QStringList headers);
+    void onColumnsLoaded(QList<Table_Explorer::ColumnInfo> cols);
+    //void onErrorOccurred(QString);
+    void onOperationCompleted(bool success, const QString& message);
+    void onTypesDbLoaded(QStringList types);
+
 private:
     void setup_ui();
     void save_note();
     void refresh_table();
 
-    Database     db_;                           // База Данных
-    Table_Explorer explorer_;                   // Обозреватель
+    // Поток
+    QThread* worker_thread_;
+    Database_Worker* worker_;
+    //Table_Explorer explorer_;                   // Обозреватель
+
+
     QLineEdit* search_;                         // Поиск
     QListWidget* table_list_;                   // Список таблиц
     QTableView* data_view_;                     // Данные
-
-    QProgressBar* progress_;                    // Прогресс Бар
-    PB_Status current_pb_ = PB_Status::Idle;    // Текущее состояние прогресс Бара
 
     QString current_table_;                     // Текущая таблица
     QSortFilterProxyModel* proxyModel_;         // Для поиска в любом регистра
@@ -64,7 +67,7 @@ private:
     QComboBox* font_select_;                    // Выбор шрифта для заметок
     bool isModifyNote_;                         // Заметки изменены
 
-    std::unique_ptr<QSqlQueryModel> const_ptr_;
+    std::unique_ptr<QStandardItemModel> const_ptr_;
 
     QPushButton* unitedT_;                      // 2.2.1 united tables
     QPushButton* createT_;			            // 2.2.2 create table
@@ -75,6 +78,16 @@ private:
     QString hack_;
     QString fira_;
     QString anon_;
+
+    // Запоминание текста поиска
+    QString search_text_;
+    // Запоминание операции
+    QString pending_action_;
+    // Запоминание колонки
+    QString pending_column_name_;
+    // БД и Драйвер
+    QString db_path_;
+    QString driver_;
 
 protected:
     void closeEvent(QCloseEvent* event) override;

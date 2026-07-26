@@ -26,6 +26,8 @@ Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbT
 }
 //================================================================================================================
 QStringList Table_Explorer::getUserTables() const {
+    QSqlDatabase db = QSqlDatabase::database(connectionName_);
+    QStringList AllTables = db.tables(QSql::Tables);
     QStringList userTables;
 
     if (dbType_ == "postgresql") {
@@ -142,7 +144,6 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
     }
 
     model->setQuery(qs);
-    //  qDebug() << model->rowCount();  // Сколько выдаёт строк после поиска
     return model;
 }
 //================================================================================================================
@@ -269,7 +270,7 @@ bool Table_Explorer::rename_table(const QString& table, const QString& new_name_
 }
 //================================================================================================================
 bool Table_Explorer::exeQuery(const QString& sql) const {
-    QSqlQuery qs(QSqlDatabase::database("main_connection"));
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
     bool exe = qs.exec(sql);
     return exe;
 }

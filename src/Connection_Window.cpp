@@ -248,10 +248,10 @@ void Connection_Window::connection()
 	db.setDatabaseName(dbAddressLine_->text());
 
 	if (isRemote) {
-		db.setHostName(dbAddressLine_->text());
-		db.setPort(dbPortLine_->text().toInt());
-		db.setUserName(loginLine_->text());
-		db.setPassword(passwordLine_->text());
+        db.setHostName(host);
+        db.setPort(port);
+        db.setUserName(log);
+        db.setPassword(pass);
 	}
 
 	if (!db.open())
@@ -295,7 +295,7 @@ void Connection_Window::save_config()
 
 	QString configDir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation); // Получили путь к папке для конфигов
 
-	QString path = configDir + "/Editor Light DataBase/connections.ini";					// Формируем путь
+    QString path = configDir + "/configs/connections.ini";					// Формируем путь
 
 	QSettings settings(path, QSettings::IniFormat);
 
