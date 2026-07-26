@@ -7,8 +7,10 @@
 #include <QMap>
 #include <QHash>
 #include "Table_Explorer.h"
+//================================================================================================================
 typedef QHash<QString, QVariant> Hash;
 typedef QMap<QString, QVariant> Map;
+//================================================================================================================
 Q_DECLARE_METATYPE(Hash)
 Q_DECLARE_METATYPE(Map)
 //================================================================================================================
@@ -17,6 +19,7 @@ class Database_Worker : public QObject {
 public:
     explicit Database_Worker(const QString& connectionName, const QString& dbType, QObject* parent = nullptr);
     ~Database_Worker();
+
 public slots:
     void loadTables();
     void selectTable(const QString& table);

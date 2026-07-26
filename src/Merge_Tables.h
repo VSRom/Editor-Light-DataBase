@@ -15,7 +15,7 @@ class Merge_Tables : public QDialog {
 public:
     explicit Merge_Tables(const QStringList& selectTables, const QList<QList<Table_Explorer::ColumnInfo>> allColumns, QWidget* parent = nullptr);
 
-    virtual ~Merge_Tables();
+    ~Merge_Tables();
 
     struct TableMergeInfo {
         QString tableName;
@@ -49,3 +49,6 @@ private:
     QComboBox *joinTypeCombo_ = nullptr;
 };
 //================================================================================================================
+
+//================================================================================================================
+

@@ -1,5 +1,9 @@
 #pragma once
 //================================================================================================================
+<<<<<<< HEAD
+=======
+#include "Database.h"
+>>>>>>> 3a56454da39a6d64ff1b1b81e712c6821c2174bb
 #include "Database_Worker.h"
 #include <QMainWindow>
 #include <QComboBox>
@@ -49,6 +53,11 @@ private:
     void save_note();
     void refresh_table();
 
+<<<<<<< HEAD
+=======
+    Database     db_;                           // База Данных
+
+>>>>>>> 3a56454da39a6d64ff1b1b81e712c6821c2174bb
     // Поток
     QThread* worker_thread_;
     Database_Worker* worker_;

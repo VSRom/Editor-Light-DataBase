@@ -20,6 +20,7 @@
 //===========================================================================================================
 Main_Window::Main_Window(const QString driver, const QString db_type,  QWidget *parent)
     : QMainWindow(parent), isModifyNote_(false)
+
 {
     if (!QSqlDatabase::database("main_connection").isOpen()) {
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
@@ -73,10 +74,6 @@ Main_Window::~Main_Window() {
 }
 //===========================================================================================================
 void Main_Window::onTableSelected(const QString &tableName) {
-    qDebug() << "=== onTableSelected ===";
-    qDebug() << "Table name:" << tableName;
-
-
     current_table_ = tableName;
     search_text_.clear();              // Очистим поиск
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
@@ -84,9 +81,6 @@ void Main_Window::onTableSelected(const QString &tableName) {
 }
 //===========================================================================================================
 void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList headers) {
-    qDebug() << "=== onSelectFinished ===";
-    qDebug() << "Headers:" << headers;
-    qDebug() << "Data rows:" << data.size();
     if (!data.isEmpty())
         qDebug() << "Data cols in first row:" << data[0].size();
 
@@ -234,9 +228,6 @@ void Main_Window::tab_united() {
         QMessageBox::warning(this, "Ошибка", "Невозможно объединить менее 2 таблиц");
         return;
     }
-
-
-
 }
 //================================================================================================================
 void Main_Window::tab_rename() {
@@ -451,7 +442,9 @@ void Main_Window::onColumnsLoaded(QList<Table_Explorer::ColumnInfo>& cols) {
 
 
     // Добавление для мерджа таблиц
-
+}
+//================================================================================================================
+void Main_Window::onColumnsLoaded(QList<Table_Explorer::ColumnInfo> cols) {
     if (pending_action_ == "add_row") {
 
         QHash<QString, QVariant> newRow;
