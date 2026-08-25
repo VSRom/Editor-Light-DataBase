@@ -37,7 +37,7 @@ signals:
     void tablesLoaded(QStringList tables);
     void selectFinished(QList<QList<QVariant>> data, QStringList headers);
     void operationCompleted(bool success, const QString& message);
-    void columnsLoaded(QList<Table_Explorer::ColumnInfo> columns);
+    void columnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
     void typesDbLoaded(QStringList types);
     void errorOccurred(const QString& error);
 

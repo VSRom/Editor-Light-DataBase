@@ -1,5 +1,6 @@
 #include "Main_Window.h"
 #include "Create_Table.h"
+#include "Merge_Tables.h"
 #include <QInputDialog>
 #include <QLabel>
 #include <QSettings>
@@ -228,6 +229,18 @@ void Main_Window::tab_united() {
         QMessageBox::warning(this, "Ошибка", "Невозможно объединить менее 2 таблиц");
         return;
     }
+
+    m_pendingMergeTables.clear();
+    m_mergeTablesNames.clear();
+
+    for (auto* item : selTables) {
+        m_mergeTablesNames << item->text();
+    }
+
+    pending_action_ = "mergeTables";
+    for (QString item : m_mergeTablesNames)
+        QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, item));
+
 }
 //================================================================================================================
 void Main_Window::tab_rename() {
@@ -368,7 +381,7 @@ void Main_Window::onDBContextMenu(const QPoint& pos) {
 }
 //================================================================================================================
 void Main_Window::onAddRow() {
-    pending_action_ = "add_row";
+    pending_action_ = "addRow";
     QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, current_table_));
 
 }
@@ -436,16 +449,8 @@ void Main_Window::onTypesDbLoaded(QStringList types) {
     }
 }
 //================================================================================================================
-void Main_Window::onColumnsLoaded(QList<Table_Explorer::ColumnInfo>& cols) {
-    // Добавление для мерджа таблиц
-
-
-
-    // Добавление для мерджа таблиц
-}
-//================================================================================================================
-void Main_Window::onColumnsLoaded(QList<Table_Explorer::ColumnInfo> cols) {
-    if (pending_action_ == "add_row") {
+void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> cols) {
+    if (pending_action_ == "addRow") {
 
         QHash<QString, QVariant> newRow;
 
@@ -454,6 +459,24 @@ void Main_Window::onColumnsLoaded(QList<Table_Explorer::ColumnInfo> cols) {
                 newRow.insert(col.name, QVariant());
         }
         QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(Hash, newRow));
+    }
+
+    else if (pending_action_ == "mergeTables") {
+        m_pendingMergeTables.insert(tableName, cols);   // Сохранить пришедшие колонки
+        // Проверяем все ли колонки загружены
+        if (m_pendingMergeTables.size() == m_mergeTablesNames.size()) {
+            Merge_Tables dialog(m_pendingMergeTables, this);
+
+            if (dialog.exec() == QDialog::Accepted) {
+                QString sql = dialog.get_sql();
+
+                if (!sql.isEmpty())
+                    QMetaObject::invokeMethod(worker_, "executeQuery", Qt::QueuedConnection, Q_ARG(QString, sql));
+            }
+        }
+        pending_action_ = "";
+        m_pendingMergeTables.clear();
+        m_mergeTablesNames.clear();
     }
 }
 //================================================================================================================

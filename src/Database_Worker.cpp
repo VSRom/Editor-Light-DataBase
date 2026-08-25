@@ -39,7 +39,7 @@ void Database_Worker::executeQuery(const QString& sql) {
 //================================================================================================================
 void Database_Worker::getColumns(const QString& table) {
 	QList<Table_Explorer::ColumnInfo> cols = explorer_->getColumns(table);
-	emit columnsLoaded(cols);
+    emit columnsLoaded(table ,cols);
 }
 //================================================================================================================
 void Database_Worker::insertRow(const QString& table, const QHash<QString, QVariant>& values) {

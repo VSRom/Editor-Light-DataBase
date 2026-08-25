@@ -13,7 +13,7 @@ class Merge_Tables : public QDialog {
 	Q_OBJECT
 
 public:
-    explicit Merge_Tables(const QStringList& selectTables, const QList<QList<Table_Explorer::ColumnInfo>> allColumns, QWidget* parent = nullptr);
+    explicit Merge_Tables(const QMap<QString, QList<Table_Explorer::ColumnInfo>> tableColumns, QWidget* parent = nullptr);
 
     ~Merge_Tables();
 
@@ -35,7 +35,7 @@ private slots:
 
 private:
     void extracted();
-    //===========================================================================================================
+//===========================================================================================================
     void setup_ui();
 
     QStringList tables_; // Список таблиц

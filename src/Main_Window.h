@@ -1,9 +1,6 @@
 #pragma once
 //================================================================================================================
-<<<<<<< HEAD
-=======
 #include "Database.h"
->>>>>>> 3a56454da39a6d64ff1b1b81e712c6821c2174bb
 #include "Database_Worker.h"
 #include <QMainWindow>
 #include <QComboBox>
@@ -43,7 +40,7 @@ private slots:
     // Поток
     void onTablesLoaded(QStringList tables);
     void onSelectFinished(QList<QList<QVariant>> data, QStringList headers);
-    void onColumnsLoaded(QList<Table_Explorer::ColumnInfo> cols);
+    void onColumnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> cols);
     //void onErrorOccurred(QString);
     void onOperationCompleted(bool success, const QString& message);
     void onTypesDbLoaded(QStringList types);
@@ -53,11 +50,8 @@ private:
     void save_note();
     void refresh_table();
 
-<<<<<<< HEAD
-=======
     Database     db_;                           // База Данных
 
->>>>>>> 3a56454da39a6d64ff1b1b81e712c6821c2174bb
     // Поток
     QThread* worker_thread_;
     Database_Worker* worker_;
@@ -97,6 +91,9 @@ private:
     // БД и Драйвер
     QString db_path_;
     QString driver_;
+
+    QMap<QString, QList<Table_Explorer::ColumnInfo>> m_pendingMergeTables;  // Накопление колонок каждой выделенной таблицы
+    QStringList m_mergeTablesNames;     // Список имен таблиц которые выбрал пользователь
 
 protected:
     void closeEvent(QCloseEvent* event) override;

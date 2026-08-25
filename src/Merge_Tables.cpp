@@ -12,7 +12,7 @@
 #include <QList>
 #include <QWidget>
 //===========================================================================================================
-Merge_Tables::Merge_Tables(const QStringList& selTables, const QList<QList<Table_Explorer::ColumnInfo>> allColumns, QWidget* parent)
+Merge_Tables::Merge_Tables(const QMap<QString, QList<Table_Explorer::ColumnInfo>> tableColumns, QWidget* parent)
     :QDialog(parent)  {
 
 
@@ -49,7 +49,6 @@ void Merge_Tables::setup_ui() {
         QWidget* tab = new QWidget();
         QVBoxLayout* tabLayout = new QVBoxLayout(tab);
 
-        // Продолжение для Вывода всех таблиц во вскрываемых вкладках на одном окне
     }
 }
 //================================================================================================================
@@ -77,10 +76,6 @@ QString Merge_Tables::get_sql() const {	// Сборка запроса для с
 //================================================================================================================
 
 void Merge_Tables::updatePreview() {
-
-}
-//================================================================================================================
-void Merge_Tables::updateComKeys() {
 
 }
 //================================================================================================================
