@@ -75,8 +75,8 @@ void Connection_Window::setupUI()
 // Create dir && path && create file settings
 //=======================================================================================================
 	QString config_dir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
-	QDir().mkpath(config_dir + "/Editor Light DataBase");
-	QString path = config_dir + "/Editor Light DataBase/connections.ini";
+	QDir().mkpath(config_dir + "/configs");
+	QString path = config_dir + "/configs/connections.ini";
 
 	QSettings settings(path, QSettings::IniFormat);
 	QStringList config_s = settings.childGroups();
@@ -216,8 +216,7 @@ void Connection_Window::check_con()
 	}
 }
 //===========================================================================================================
-void Connection_Window::connection()
-{
+void Connection_Window::connection() {
 	QString host = dbAddressLine_->text();
 	int port = dbPortLine_->text().toInt();
 	QString log = loginLine_->text();
@@ -226,6 +225,10 @@ void Connection_Window::connection()
 	setDriverDB();
 
 	QString conName = "main_connection";
+
+	if (QSqlDatabase::contains(conName)) {
+		QSqlDatabase::removeDatabase(conName);
+	}
 
 	bool isRemote = remoteCheck_->isChecked();
 
@@ -256,9 +259,8 @@ void Connection_Window::connection()
 
 	if (!db.open())
 		text_edit_->append(QString("Ошибка подключения: ") + db.lastError().text());
-	else
-	{
-		Main_Window *win = new Main_Window(driver_, dbType_);	// Передали в основное окно данные о типе БД
+	else {
+		Main_Window *win = new Main_Window(driver_, dbType_, host, port, log, pass);	// Передали в основное окно данные о типе БД
 		win->setAttribute(Qt::WA_DeleteOnClose);				// Аттрибут самоудаления
 		win->show();
 		this->close();
@@ -327,10 +329,11 @@ bool Connection_Window::setDriverDB() {
 	switch (dbTypeCombo_->currentIndex())
 	{
 		case 0: driver_ = "QSQLITE"; dbType_ = "sqlite";   return true;
-		case 1: driver_ = "QODBC"; dbType_ = "access";	   return true;
-		case 2: driver_ = "QMYSQL"; dbType_ = "mysql";     return true;
-		case 3: driver_ = "QOCI"; dbType_ = "oracle";      return true;
-		case 4: driver_ = "QPSQL"; dbType_ = "postgresql"; return true;
+		case 1: driver_ = "QMYSQL"; dbType_ = "mysql";     return true;
+		case 2: driver_ = "QPSQL"; dbType_ = "postgresql"; return true;
+		case 3: driver_ = "QODBC"; dbType_ = "access";	   return true;
+		case 4: driver_ = "QOCI"; dbType_ = "oracle";      return true;
+
 		default: text_edit_->append("Неизвестный тип БД"); return false;
 	}
 }

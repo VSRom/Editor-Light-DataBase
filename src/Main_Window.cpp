@@ -19,9 +19,9 @@
 #include <QMenu>
 #include <QHash>
 //===========================================================================================================
-Main_Window::Main_Window(const QString driver, const QString db_type,  QWidget *parent)
-    : QMainWindow(parent), isModifyNote_(false)
-
+Main_Window::Main_Window(const QString driver, const QString db_type, const QString host, const int port,
+    const QString log, const QString pass, QWidget *parent)
+    : QMainWindow(parent), isModifyNote_(false), db_type_(db_type), host_(host), port_(port), log_(log), pass_(pass)
 {
     if (!QSqlDatabase::database("main_connection").isOpen()) {
         QMessageBox::critical(this, "Ошибка подключения", "Не удалось открыть базу данных.\nПроверьте путь к файлу или имя подключения.", QMessageBox::Ok);
@@ -49,7 +49,7 @@ Main_Window::Main_Window(const QString driver, const QString db_type,  QWidget *
 
     worker_thread_->start();
 
-    QMetaObject::invokeMethod(worker_, "initConnection", Qt::QueuedConnection, Q_ARG(QString, driver_), Q_ARG(QString, db_path_));
+    QMetaObject::invokeMethod(worker_, "initConnection", Qt::QueuedConnection, Q_ARG(QString, driver_), Q_ARG(QString, db_path_), Q_ARG(QString, db_type_), Q_ARG(QString, host_), Q_ARG(int, port_), Q_ARG(QString, log_), Q_ARG(QString, pass_) );
     //Загрузка шрифтов!
 
     int Hack = QFontDatabase::addApplicationFont(":/resources/fonts/Hack.ttf");
@@ -82,10 +82,6 @@ void Main_Window::onTableSelected(const QString &tableName) {
 }
 //===========================================================================================================
 void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList headers) {
-    if (!data.isEmpty())
-        qDebug() << "Data cols in first row:" << data[0].size();
-
-
     QStandardItemModel* model = new QStandardItemModel();
     model->setHorizontalHeaderLabels(headers); 
 
@@ -451,7 +447,6 @@ void Main_Window::onTypesDbLoaded(QStringList types) {
 //================================================================================================================
 void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> cols) {
     if (pending_action_ == "addRow") {
-
         QHash<QString, QVariant> newRow;
 
         for (const auto& col : cols) {
@@ -463,9 +458,13 @@ void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer
 
     else if (pending_action_ == "mergeTables") {
         m_pendingMergeTables.insert(tableName, cols);   // Сохранить пришедшие колонки
+
         // Проверяем все ли колонки загружены
         if (m_pendingMergeTables.size() == m_mergeTablesNames.size()) {
             Merge_Tables dialog(m_pendingMergeTables, this);
+            pending_action_ = "";
+            m_pendingMergeTables.clear();
+            m_mergeTablesNames.clear();
 
             if (dialog.exec() == QDialog::Accepted) {
                 QString sql = dialog.get_sql();
@@ -474,9 +473,6 @@ void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer
                     QMetaObject::invokeMethod(worker_, "executeQuery", Qt::QueuedConnection, Q_ARG(QString, sql));
             }
         }
-        pending_action_ = "";
-        m_pendingMergeTables.clear();
-        m_mergeTablesNames.clear();
     }
 }
 //================================================================================================================

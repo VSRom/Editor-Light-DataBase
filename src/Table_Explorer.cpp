@@ -66,7 +66,6 @@ QStringList Table_Explorer::getUserTables() const {
             userTables.append(temp);
         }
     }
-
     return userTables;
 }
 //================================================================================================================
@@ -103,13 +102,19 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
             "FROM user_tab_columns "
             "WHERE table_name = '%1' "
             "ORDER BY column_id").arg(tableName.toUpper()));
-
         while (q.next()) {
-            cols.append({
-                q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y" });
+            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y" });
         }
     }
-
+    else if (driver == "QODBC") {
+        q.exec(QString(
+            "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE "
+            "FROM INFORMATION_SCHEMA.COLUMNS "
+            "WHERE TABLE_NAME = '%1'").arg(tableName));
+        while (q.next()) {
+            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES"});
+       }
+    }
         return cols;
 }
 //================================================================================================================

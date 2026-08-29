@@ -3,8 +3,7 @@
 #include <qfile.h>
 #include <QIcon> 
 //===========================================================================================================
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     QFile file(":/resources/style.qss");

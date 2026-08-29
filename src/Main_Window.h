@@ -14,12 +14,11 @@
 #include <QStandardItemModel>
 #include <QThread>
 //================================================================================================================
-class Main_Window : public QMainWindow
-{
+class Main_Window : public QMainWindow {
     Q_OBJECT
-
 public:
-    explicit Main_Window(const QString driver, const QString db_type, QWidget* parent = nullptr);
+    explicit Main_Window(const QString driver, const QString db_type, const QString host, const int port,
+                        const QString log, const QString pass, QWidget* parent = nullptr);
     ~Main_Window();
 
 private slots:
@@ -55,33 +54,24 @@ private:
     // Поток
     QThread* worker_thread_;
     Database_Worker* worker_;
-    //Table_Explorer explorer_;                   // Обозреватель
-
-
     QLineEdit* search_;                         // Поиск
     QListWidget* table_list_;                   // Список таблиц
     QTableView* data_view_;                     // Данные
-
     QString current_table_;                     // Текущая таблица
     QSortFilterProxyModel* proxyModel_;         // Для поиска в любом регистра
-
     QPlainTextEdit* notepad_;                   // Заметки
     QString notePath_;                          // Путь для заметок
     QComboBox* font_select_;                    // Выбор шрифта для заметок
     bool isModifyNote_;                         // Заметки изменены
-
     std::unique_ptr<QStandardItemModel> const_ptr_;
-
     QPushButton* unitedT_;                      // 2.2.1 united tables
     QPushButton* createT_;			            // 2.2.2 create table
     QPushButton* renameT_;                      // 2.2.3 rename table
     QPushButton* deleteT_;                      // 2.2.4 delete table
-
     // Шрифты
     QString hack_;
     QString fira_;
     QString anon_;
-
     // Запоминание текста поиска
     QString search_text_;
     // Запоминание операции
@@ -91,7 +81,11 @@ private:
     // БД и Драйвер
     QString db_path_;
     QString driver_;
-
+    QString db_type_;
+    QString host_;
+    int port_;
+    QString log_;
+    QString pass_;
     QMap<QString, QList<Table_Explorer::ColumnInfo>> m_pendingMergeTables;  // Накопление колонок каждой выделенной таблицы
     QStringList m_mergeTablesNames;     // Список имен таблиц которые выбрал пользователь
 

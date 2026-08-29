@@ -29,7 +29,7 @@ public slots:
     void updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues);
     void removeRow(const QString& table, const QString& idColumn, const QVariant& idValue);
     void getTypesDb();
-    void initConnection(const QString& driver, const QString& dbPath);
+    void initConnection(const QString& driver, const QString& dbPath, const QString& db_type, const QString& host, const int port, const QString& log, const QString& pass);
     void dropTable(const QString& table);
     void renameTable(const QString& oldName, const QString& newName);
 

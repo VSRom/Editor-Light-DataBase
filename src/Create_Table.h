@@ -19,7 +19,6 @@ public:
 
 	QString get_sql() const;
 
-
 private slots:
 	void add_col_row();				// Добавить столбец/строку
 
@@ -39,7 +38,6 @@ private:
 	QList<Col_Row> col_row_;		// список строк/столбцов
 	QPushButton* add_col_;
 	QStringList types_db_;			// Типы БД принимаем из Main_Window->Table_Explorer->Create_Table
-
 	QPushButton* btn_ok_;
 	QPushButton* btn_canc_;
 

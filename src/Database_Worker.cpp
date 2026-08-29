@@ -71,12 +71,23 @@ void Database_Worker::renameTable(const QString& oldName, const QString& newName
 	emit operationCompleted(success, success ? "Таблица переименована" : "Ошибка переименования");
 }
 //================================================================================================================
-void Database_Worker::initConnection(const QString& driver, const QString& dbPath) {
+void Database_Worker::initConnection(const QString &driver, const QString &dbPath, const QString &db_type, const QString &host, const int port, const QString &log, const QString &pass) {
 	connection_name_ = "worker_connection";
+	dbType_ = db_type;
 	db_path_ = dbPath;
 	driver_ = driver;
+	if (QSqlDatabase::contains(connection_name_))
+		QSqlDatabase::removeDatabase(connection_name_);
+
 	QSqlDatabase db = QSqlDatabase::addDatabase(driver_, connection_name_);
 	db.setDatabaseName(db_path_);
+
+	if (!host.isEmpty()) {
+		db.setHostName(host);
+		db.setPort(port);
+		db.setUserName(log);
+		db.setPassword(pass);
+	}
 
 	if (!db.open()) {
 		emit errorOccurred("Не удалось открыть БД в воркере: " + db.lastError().text());

@@ -1,19 +1,15 @@
 #include "Database.h"
 #include <QDebug>
 //===========================================================================================================
-Database::Database()
-{ }
+Database::Database() { }
 //===========================================================================================================
-Database::~Database()
-{ }
+Database::~Database() { }
 //===========================================================================================================
-bool Database::isOpen() const
-{
+bool Database::isOpen() const {
     return db_Q.isOpen();
 }
 //===========================================================================================================
-bool Database::init_db(const QString &connect_name)
-{
+bool Database::init_db(const QString &connect_name) {
     db_Q = QSqlDatabase::database(connect_name);
 
     qDebug() << "Connection name:" << connect_name;
