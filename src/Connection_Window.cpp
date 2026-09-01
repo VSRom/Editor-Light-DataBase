@@ -200,8 +200,7 @@ void Connection_Window::check_con()
 	QSqlDatabase db = QSqlDatabase::addDatabase(driver_, conName);
 	db.setDatabaseName(dbAddressLine_->text());
 
-	if (isRemote)
-	{
+	if (isRemote) {
 		db.setHostName(host);
 		db.setPort(port);
 		db.setUserName(log);

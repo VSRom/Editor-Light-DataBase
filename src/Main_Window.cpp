@@ -18,6 +18,7 @@
 #include <QMap>
 #include <QMenu>
 #include <QHash>
+#include <QSignalBlocker>
 //===========================================================================================================
 Main_Window::Main_Window(const QString driver, const QString db_type, const QString host, const int port,
     const QString log, const QString pass, QWidget *parent)
@@ -60,7 +61,6 @@ Main_Window::Main_Window(const QString driver, const QString db_type, const QStr
     fira_ = QFontDatabase::applicationFontFamilies(Fira).at(0);
     anon_ = QFontDatabase::applicationFontFamilies(Anon).at(0);
 
-
     notePath_ = QCoreApplication::applicationDirPath() + "/notepad.ini"; // Получили путь к папке для заметок
 
     setup_ui();
@@ -75,8 +75,13 @@ Main_Window::~Main_Window() {
 }
 //===========================================================================================================
 void Main_Window::onTableSelected(const QString &tableName) {
+    if (tableName.isEmpty()) return;
+
     current_table_ = tableName;
+
     search_text_.clear();              // Очистим поиск
+    search_->clear();
+
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
     proxyModel_->setFilterFixedString("");
 }
@@ -118,6 +123,9 @@ void Main_Window::setup_ui()
     
     // Данные
     data_view_ = new QTableView();
+    data_view_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    data_view_->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
     sw->addWidget(data_view_, 1, 0, 1, 3);
 
 ///////////========================================================Онлайн редактирование БД========================================================///////////
@@ -393,11 +401,18 @@ void Main_Window::onAddCol() {
 }
 //================================================================================================================
 void Main_Window::onTablesLoaded(QStringList tables) {
+    // Блокировка сигнала
+    QSignalBlocker blocker(table_list_);
+
     table_list_->clear();
+
     for (const QString& stroke : tables) {
         if (!stroke.startsWith("sqlite_"))      // Исключаем системные объекты из списка таблиц
             table_list_->addItem(stroke);
     }
+
+    QList<QListWidgetItem*> items = table_list_->findItems(current_table_, Qt::MatchExactly);
+    if (!items.isEmpty()) table_list_->setCurrentItem(items.first());
 }
 //================================================================================================================
 void Main_Window::onOperationCompleted(bool success, const QString& message) {
@@ -405,7 +420,6 @@ void Main_Window::onOperationCompleted(bool success, const QString& message) {
         QMessageBox::critical(this, "Ошибка", message);
         return;
     }
-
     // После любой успешной операции обновляем список таблиц
     refresh_table();
 
@@ -416,7 +430,6 @@ void Main_Window::onOperationCompleted(bool success, const QString& message) {
 }
 //================================================================================================================
 void Main_Window::onTypesDbLoaded(QStringList types) {
-
     if (pending_action_ == "create_table") {
         Create_Table dialog(types, this);
 

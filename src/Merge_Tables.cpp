@@ -76,9 +76,11 @@ void Merge_Tables::setup_ui() {
    // Поле условия ON
     QHBoxLayout *onLayout = new QHBoxLayout();
     onLayout->addWidget(new QLabel("Условие связи (ON), например: t1.id = t2.user_id :"));
-    joinConditionEdit_ = new QLineEdit();
-    joinConditionEdit_->setPlaceholderText("t1.id = t2.user_id");
-    onLayout->addWidget(joinConditionEdit_);
+
+    //  joinConditionEdit_ = new QLineEdit();
+    //  joinConditionEdit_->setPlaceholderText("t1.id = t2.user_id");
+    //  onLayout->addWidget(joinConditionEdit_);
+
     mainLayout->addLayout(onLayout);
     
     // Buttons
@@ -94,9 +96,20 @@ void Merge_Tables::setup_ui() {
     connect(btnCancel_, &QPushButton::clicked, this, &QDialog::reject);
 }
 //================================================================================================================
+QStringList Merge_Tables::getNameRows(const QString& alias) const {
+    QStringList resultColCheck;
+
+    for (const TableMergeInfo& tempMergeInfo : mergeInfo_) {
+        if (tempMergeInfo.tableAlias == alias)
+            for (QCheckBox *box : tempMergeInfo.columnsCheck)
+                resultColCheck += box->text();
+    }
+    return resultColCheck;
+}
+//================================================================================================================
 QString Merge_Tables::get_sql() const {	// Сборка запроса для создания таблицы
     QString nameTab = nameEdit_->text().trimmed();	// Получили текст из строки имени таблицы
-    QString condiUnif = joinConditionEdit_->text().trimmed();
+    //  QString condiUnif = joinConditionEdit_->text().trimmed();
     QStringList selectCols;
 
     for (const auto &mergiL : mergeInfo_) {
@@ -105,13 +118,13 @@ QString Merge_Tables::get_sql() const {	// Сборка запроса для с
     }
     if (selectCols.isEmpty()) return QString();
     if (nameTab.isEmpty())    return QString();
-    if (condiUnif.isEmpty())  return QString();
+    //if (condiUnif.isEmpty())  return QString();
 
     QString fromClause("FROM \"" + mergeInfo_[0].tableName + "\" " + mergeInfo_[0].tableAlias);
 
     for (int i = 1; i != mergeInfo_.size(); i++)
         fromClause += " " + joinTypeCombo_->currentText() + " JOIN \"" + mergeInfo_[i].tableName + "\" " + mergeInfo_[i].tableAlias;
-    fromClause += " ON (" + condiUnif + ")";
+    //fromClause += " ON (" + condiUnif + ")";
     
     if (fromClause.isEmpty())    return QString();
 
@@ -119,3 +132,8 @@ QString Merge_Tables::get_sql() const {	// Сборка запроса для с
     return QString("CREATE TABLE \"%1\" AS SELECT %2 %3").arg(nameTab, selectCols.join(", "), fromClause);
 }
 //================================================================================================================
+void Merge_Tables::addConditionRow() {
+    TableConditionEdit* structura = new TableConditionEdit();
+
+
+}
