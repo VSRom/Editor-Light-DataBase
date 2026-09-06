@@ -44,16 +44,15 @@ private:
     QStringList getNameRows(const QString &alias) const;
 
     QMap<QString, QList<Table_Explorer::ColumnInfo>> tableColumns_; // Колонки
-    QList<TableConditionEdit*> listStruct_;
+    QList<TableConditionEdit*> listStruct_; // Список указателей на созданные строки условий
 
+    QWidget *conditionContainer_ = nullptr;     // Общий контейнер для строк условий
     QTabWidget *tabWidget_ = nullptr; // Вкладки
     QLineEdit *nameEdit_ = nullptr;   // Поле Имя
     QList<TableMergeInfo> mergeInfo_; // Список структур
     QComboBox *joinTypeCombo_ = nullptr;
-   // QLineEdit *joinConditionEdit_ = nullptr; // Поле для ввода условия объединения (например, "t1.id = t2.id")
     QPushButton *btnOk_ = nullptr;
     QPushButton *btnCancel_ = nullptr;
-
     QPushButton *btnAdd_ = nullptr;
 };
 //================================================================================================================

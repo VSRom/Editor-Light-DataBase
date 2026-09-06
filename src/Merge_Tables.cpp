@@ -74,15 +74,17 @@ void Merge_Tables::setup_ui() {
         aliasIndex++;
     }
    // Поле условия ON
-    QHBoxLayout *onLayout = new QHBoxLayout();
-    onLayout->addWidget(new QLabel("Условие связи (ON), например: t1.id = t2.user_id :"));
 
-    //  joinConditionEdit_ = new QLineEdit();
-    //  joinConditionEdit_->setPlaceholderText("t1.id = t2.user_id");
-    //  onLayout->addWidget(joinConditionEdit_);
-
-    mainLayout->addLayout(onLayout);
+    conditionContainer_ = new QWidget();
+    QVBoxLayout *onLayout = new QVBoxLayout(conditionContainer_);
+    mainLayout->addWidget(new QLabel("Условия связи ON"));
+    mainLayout->addWidget(conditionContainer_);
     
+    btnAdd_ = new QPushButton("+ Добавить условие");
+    mainLayout->addWidget(btnAdd_);
+    connect(btnAdd_, &QPushButton::clicked, this, &Merge_Tables::addConditionRow);
+
+
     // Buttons
     QHBoxLayout *btnLayout = new QHBoxLayout();
     btnLayout->addStretch();
@@ -94,6 +96,7 @@ void Merge_Tables::setup_ui() {
 
     connect(btnOk_, &QPushButton::clicked, this, &QDialog::accept);
     connect(btnCancel_, &QPushButton::clicked, this, &QDialog::reject);
+    addConditionRow();
 }
 //================================================================================================================
 QStringList Merge_Tables::getNameRows(const QString& alias) const {
@@ -107,33 +110,115 @@ QStringList Merge_Tables::getNameRows(const QString& alias) const {
     return resultColCheck;
 }
 //================================================================================================================
-QString Merge_Tables::get_sql() const {	// Сборка запроса для создания таблицы
+QString Merge_Tables::get_sql() const {	            // Сборка запроса для создания таблицы
     QString nameTab = nameEdit_->text().trimmed();	// Получили текст из строки имени таблицы
-    //  QString condiUnif = joinConditionEdit_->text().trimmed();
     QStringList selectCols;
+    QStringList onCondition;
 
     for (const auto &mergiL : mergeInfo_) {
         for (QCheckBox *box : mergiL.columnsCheck)
-            if (box->isChecked()) selectCols.append(mergiL.tableAlias + "." + box->text());
+            if (box->isChecked()) selectCols.append(mergiL.tableAlias + ".\"" + box->text() + "\"");
     }
     if (selectCols.isEmpty()) return QString();
     if (nameTab.isEmpty())    return QString();
-    //if (condiUnif.isEmpty())  return QString();
+
+    for (const auto* structas : listStruct_) {
+        QString left = structas->leftTable_->currentData().toString();
+        QString leftCol = structas->leftCol_->currentText();
+        QString oper = structas->operator_->currentText();
+
+        QString right = structas->rightTable_->currentData().toString();
+        QString rightCol = structas->rightCol_->currentText();
+
+        if (leftCol.isEmpty() || rightCol.isEmpty())
+            continue;
+
+        onCondition += left + ".\"" + leftCol + "\" " + oper + " " + right + ".\"" + rightCol + "\"";
+    }
+
+    if (onCondition.isEmpty()) return QString();
+    QString onClause = onCondition.join(" AND ");
 
     QString fromClause("FROM \"" + mergeInfo_[0].tableName + "\" " + mergeInfo_[0].tableAlias);
 
-    for (int i = 1; i != mergeInfo_.size(); i++)
+    for (int i = 1; i < mergeInfo_.size(); i++)
         fromClause += " " + joinTypeCombo_->currentText() + " JOIN \"" + mergeInfo_[i].tableName + "\" " + mergeInfo_[i].tableAlias;
-    //fromClause += " ON (" + condiUnif + ")";
-    
-    if (fromClause.isEmpty())    return QString();
 
+    if (fromClause.isEmpty()) return QString();
+
+    fromClause += " ON (" + onClause + ")";
 
     return QString("CREATE TABLE \"%1\" AS SELECT %2 %3").arg(nameTab, selectCols.join(", "), fromClause);
 }
 //================================================================================================================
 void Merge_Tables::addConditionRow() {
-    TableConditionEdit* structura = new TableConditionEdit();
+    TableConditionEdit *structura = new TableConditionEdit();
+    QStringList operators = { "=", "<>", "<", ">", "<=", ">=" };
+    structura->container_ = new QWidget();
 
+    QHBoxLayout *layoutStructContainer = new QHBoxLayout(structura->container_);
+    structura->leftTable_ = new QComboBox(structura->container_);
+    structura->leftCol_ = new QComboBox(structura->container_);
+    structura->operator_ = new QComboBox(structura->container_);
+    structura->rightTable_ = new QComboBox(structura->container_);
+    structura->rightCol_ = new QComboBox(structura->container_);
+    structura->btnDel_ = new QPushButton("X", structura->container_);
 
+    layoutStructContainer->addWidget(structura->leftTable_);
+    layoutStructContainer->addWidget(new QLabel("."));
+    layoutStructContainer->addWidget(structura->leftCol_);
+
+    layoutStructContainer->addWidget(structura->operator_);
+    structura->operator_->addItems(operators);
+
+    layoutStructContainer->addWidget(structura->rightTable_);
+    layoutStructContainer->addWidget(new QLabel("."));
+    layoutStructContainer->addWidget(structura->rightCol_);
+
+    layoutStructContainer->addWidget(structura->btnDel_);
+
+    for (const auto &mergiL : mergeInfo_) {
+        structura->leftTable_->addItem(mergiL.tableName, mergiL.tableAlias);
+        structura->rightTable_->addItem(mergiL.tableName, mergiL.tableAlias);
+    }
+
+    connect(structura->leftTable_, &QComboBox::currentIndexChanged, this, [this, structura]() {
+        QString alias = structura->leftTable_->currentData().toString();
+        structura->leftCol_->clear();
+        structura->leftCol_->addItems(getNameRows(alias));
+        });
+
+    connect(structura->rightTable_, &QComboBox::currentIndexChanged, this, [this, structura]() {
+        QString alias = structura->rightTable_->currentData().toString();
+        structura->rightCol_->clear();
+        structura->rightCol_->addItems(getNameRows(alias));
+        });
+
+    structura->leftTable_->setCurrentIndex(0);
+    structura->rightTable_->setCurrentIndex(0);
+
+    connect(structura->btnDel_, &QPushButton::clicked, this, [this, structura]() {
+
+        int i = listStruct_.indexOf(structura);
+        if (i != -1) {
+            listStruct_.removeAt(i);
+            structura->container_->hide();
+            delete structura->container_;
+            delete structura;
+        }
+
+        //  for (int i = 0; i < listStruct_.size(); i++) {
+        //      if (listStruct_[i] == structura) {
+        //          listStruct_.removeAt(i);
+        //          structura->container_->hide();
+        //          delete structura->container_;
+        //          delete structura;
+        //          break;
+        //      }
+
+        });
+
+        conditionContainer_->layout()->addWidget(structura->container_);
+        listStruct_.append(structura);
 }
+//================================================================================================================
