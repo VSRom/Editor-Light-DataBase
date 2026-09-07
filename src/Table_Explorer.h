@@ -12,7 +12,13 @@ class Table_Explorer {
 public:
     explicit Table_Explorer(const QString &connectionName, const QString& dbType = "sqlite");
 
-    struct ColumnInfo { QString name; QString type; bool isNullable; };
+    struct ColumnInfo {
+        QString name;
+        QString type;
+        bool isNullable;
+        bool isPrimaryKey = false;
+    };
+
     QList<ColumnInfo> getColumns(const QString &tableName) const;
     QStringList getUserTables() const;
     QStringList get_types_db() const { return types_db_; }

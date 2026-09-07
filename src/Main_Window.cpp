@@ -78,11 +78,14 @@ void Main_Window::onTableSelected(const QString &tableName) {
     if (tableName.isEmpty()) return;
 
     current_table_ = tableName;
-
     search_text_.clear();              // Очистим поиск
     search_->clear();
 
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
+
+    pending_action_ = "loadPk";
+    QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, current_table_));
+
     proxyModel_->setFilterFixedString("");
 }
 //===========================================================================================================
@@ -388,7 +391,6 @@ void Main_Window::onDBContextMenu(const QPoint& pos) {
 void Main_Window::onAddRow() {
     pending_action_ = "addRow";
     QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, current_table_));
-
 }
 //================================================================================================================
 void Main_Window::onAddCol() {

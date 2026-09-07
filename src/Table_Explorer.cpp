@@ -3,6 +3,7 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QDebug>
+#include <QSqlIndex>
 //================================================================================================================
 Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
 {
@@ -75,27 +76,40 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
     QString driver = QSqlDatabase::database(connectionName_).driverName();
     QSqlQuery q(QSqlDatabase::database(connectionName_));
 
+    QSqlDatabase db = QSqlDatabase::database(connectionName_);
+    QSqlIndex primaryKey = db.primaryIndex(tableName);
+    QStringList pkColumns;
+
+    for (int i = 0; i < primaryKey.count(); i++)
+        pkColumns.append(primaryKey.fieldName(i));  // Получили список колонок первичного ключа
+
     if (driver == "QSQLITE") {
         q.exec(QString("PRAGMA table_info(\"%1\")").arg(tableName));
         while (q.next()) {
-            cols.append({ q.value(1).toString(), q.value(2).toString(), !q.value(3).toBool() });
+            QString colName = q.value(1).toString();
+            cols.append({ colName, q.value(2).toString(), !q.value(3).toBool(), pkColumns.contains(colName, Qt::CaseInsensitive)});
         }
     }
+
     else if (driver == "QMYSQL") {
         q.exec(QString("SHOW COLUMNS FROM `%1`").arg(tableName));
         while (q.next()) {
-            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES" });
+            QString colName = q.value(0).toString();
+            cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive) });
         }
     }
+
     else if (driver == "QPSQL") {
         q.exec(QString(
             "SELECT column_name, data_type, is_nullable "
             "FROM information_schema.columns "
             "WHERE table_name = '%1'").arg(tableName));
         while (q.next()) {
-            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES" });
+            QString colName = q.value(0).toString();
+            cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive) });
         }
     }
+
     else if (driver == "QOCI") {
         q.exec(QString(
             "SELECT column_name, data_type, nullable "
@@ -103,7 +117,8 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
             "WHERE table_name = '%1' "
             "ORDER BY column_id").arg(tableName.toUpper()));
         while (q.next()) {
-            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y" });
+            QString colName = q.value(0).toString();
+            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y", pkColumns.contains(colName, Qt::CaseInsensitive) });
         }
     }
     else if (driver == "QODBC") {
@@ -112,7 +127,8 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
             "FROM INFORMATION_SCHEMA.COLUMNS "
             "WHERE TABLE_NAME = '%1'").arg(tableName));
         while (q.next()) {
-            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "YES"});
+            QString colName = q.value(0).toString();
+            cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive)  });
        }
     }
         return cols;

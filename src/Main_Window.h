@@ -40,7 +40,6 @@ private slots:
     void onTablesLoaded(QStringList tables);
     void onSelectFinished(QList<QList<QVariant>> data, QStringList headers);
     void onColumnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> cols);
-    //void onErrorOccurred(QString);
     void onOperationCompleted(bool success, const QString& message);
     void onTypesDbLoaded(QStringList types);
 
@@ -88,6 +87,9 @@ private:
     QString pass_;
     QMap<QString, QList<Table_Explorer::ColumnInfo>> m_pendingMergeTables;  // Накопление колонок каждой выделенной таблицы
     QStringList m_mergeTablesNames;     // Список имен таблиц которые выбрал пользователь
+    // Имя и номер первичного ключа
+    QString pk_name_;
+    int pk_index_ = -1;
 
 protected:
     void closeEvent(QCloseEvent* event) override;
