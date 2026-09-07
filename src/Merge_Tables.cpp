@@ -112,41 +112,46 @@ QStringList Merge_Tables::getNameRows(const QString& alias) const {
 //================================================================================================================
 QString Merge_Tables::get_sql() const {	            // Сборка запроса для создания таблицы
     QString nameTab = nameEdit_->text().trimmed();	// Получили текст из строки имени таблицы
+
+    if (nameTab.isEmpty())    return QString();
+
     QStringList selectCols;
-    QStringList onCondition;
 
     for (const auto &mergiL : mergeInfo_) {
         for (QCheckBox *box : mergiL.columnsCheck)
             if (box->isChecked()) selectCols.append(mergiL.tableAlias + ".\"" + box->text() + "\"");
     }
+
     if (selectCols.isEmpty()) return QString();
-    if (nameTab.isEmpty())    return QString();
-
-    for (const auto* structas : listStruct_) {
-        QString left = structas->leftTable_->currentData().toString();
-        QString leftCol = structas->leftCol_->currentText();
-        QString oper = structas->operator_->currentText();
-
-        QString right = structas->rightTable_->currentData().toString();
-        QString rightCol = structas->rightCol_->currentText();
-
-        if (leftCol.isEmpty() || rightCol.isEmpty())
-            continue;
-
-        onCondition += left + ".\"" + leftCol + "\" " + oper + " " + right + ".\"" + rightCol + "\"";
-    }
-
-    if (onCondition.isEmpty()) return QString();
-    QString onClause = onCondition.join(" AND ");
 
     QString fromClause("FROM \"" + mergeInfo_[0].tableName + "\" " + mergeInfo_[0].tableAlias);
 
-    for (int i = 1; i < mergeInfo_.size(); i++)
+    for (int i = 1; i < mergeInfo_.size(); i++) {
         fromClause += " " + joinTypeCombo_->currentText() + " JOIN \"" + mergeInfo_[i].tableName + "\" " + mergeInfo_[i].tableAlias;
+        QString currentAlias = mergeInfo_[i].tableAlias;
+        QStringList conditionsForThisTable;
 
-    if (fromClause.isEmpty()) return QString();
+        for (const auto *structas : listStruct_) {
+            QString left = structas->leftTable_->currentData().toString();
+            QString right = structas->rightTable_->currentData().toString();
 
-    fromClause += " ON (" + onClause + ")";
+            if (left == currentAlias || right == currentAlias) {
+                QString rightCol = structas->rightCol_->currentText();
+                QString leftCol = structas->leftCol_->currentText();
+                QString oper = structas->operator_->currentText();
+
+                if (!leftCol.isEmpty() && !rightCol.isEmpty()) {
+                    QString condition = left + ".\"" + leftCol + "\" " + oper + " " + right + ".\"" + rightCol + "\"";
+                    conditionsForThisTable.append(condition);
+                }
+            }
+        }
+
+        if (conditionsForThisTable.isEmpty())
+            return QString{};
+
+        fromClause += " ON (" + conditionsForThisTable.join(" AND ") + ")";
+    }
 
     return QString("CREATE TABLE \"%1\" AS SELECT %2 %3").arg(nameTab, selectCols.join(", "), fromClause);
 }
