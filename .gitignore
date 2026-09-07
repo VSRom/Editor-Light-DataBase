@@ -18,7 +18,6 @@ Debug/
 Release/
 x64/
 x86/
-resources/
 drivers/
 
 # CMake
