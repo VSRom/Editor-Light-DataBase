@@ -203,7 +203,7 @@ void Merge_Tables::addConditionRow() {
         if (i != -1) {
             listStruct_.removeAt(i);
             structura->container_->hide();
-            delete structura->container_;
+            structura->container_->deleteLater();
             delete structura;
         }
 

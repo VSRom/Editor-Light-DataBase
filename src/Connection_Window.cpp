@@ -178,14 +178,16 @@ void Connection_Window::check_con()
 	if (!isRemote) {
 		QFileInfo fileInfo(dbPath);
 
-		if (!fileInfo.exists()) {
-			text_edit_->append("Файл не найден: " + dbPath);
-			return;
-		}
+		if (driver_ != "QSQLITE" && driver_ != "QODBC") {
+			if (!fileInfo.exists()) {
+				text_edit_->append("Файл не найден: " + dbPath);
+				return;
+			}
 
-		if (!fileInfo.isReadable()) {
-			text_edit_->append("Нет прав на чтение файла: " + dbPath);
-			return;
+			if (!fileInfo.isReadable()) {
+				text_edit_->append("Нет прав на чтение файла: " + dbPath);
+				return;
+			}
 		}
 	}
 
@@ -198,7 +200,11 @@ void Connection_Window::check_con()
 	}
 
 	QSqlDatabase db = QSqlDatabase::addDatabase(driver_, conName);
-	db.setDatabaseName(dbAddressLine_->text());
+
+	if (driver_ == "QODBC")
+		db.setDatabaseName(QString("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%1;").arg(dbPath));
+	else
+		db.setDatabaseName(dbPath);
 
 	if (isRemote) {
 		db.setHostName(host);
@@ -224,30 +230,30 @@ void Connection_Window::connection() {
 	setDriverDB();
 
 	QString conName = "main_connection";
+	QString dbPath = dbAddressLine_->text();
 
 	if (QSqlDatabase::contains(conName)) {
 		QSqlDatabase::removeDatabase(conName);
 	}
 
 	bool isRemote = remoteCheck_->isChecked();
-
-	QSqlDatabase db;
-
-	if (QSqlDatabase::contains(conName))
-		db = QSqlDatabase::database(conName);
-	else
-		db = QSqlDatabase::addDatabase(driver_, conName);
+	QSqlDatabase db = QSqlDatabase::addDatabase(driver_, conName);
 
 	if (!isRemote) {
-		QFileInfo fileInfo(dbAddressLine_->text());
+		QFileInfo fileInfo(dbPath);
 
-		if (!fileInfo.exists()) {
-			text_edit_->append("Файл не найден: " + dbAddressLine_->text());
-			return;
+		if (driver_ != "QSQLITE" && driver_ != "QODBC") {
+			if (!fileInfo.exists()) {
+				text_edit_->append("Файл не найден: " + dbPath);
+				return;
+			}
 		}
 	}
 
-	db.setDatabaseName(dbAddressLine_->text());
+	if (driver_ == "QODBC")
+		db.setDatabaseName(QString("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%1;").arg(dbPath));
+	else
+		db.setDatabaseName(dbPath);
 
 	if (isRemote) {
         db.setHostName(host);

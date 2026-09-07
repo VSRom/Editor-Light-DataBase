@@ -7,8 +7,8 @@
 #include <QMessageBox>
 #include <QGroupBox>
 //===========================================================================================================
-Create_Table::Create_Table(const QStringList& types, QWidget* parent)
-	: types_db_(types), QDialog(parent) {
+Create_Table::Create_Table(const QStringList& types, const QString& dbType, QWidget* parent)
+	: types_db_(types), dbType_(dbType), QDialog(parent) {
 	setup_ui();
 }
 Create_Table::~Create_Table() {}
@@ -70,6 +70,16 @@ void Create_Table::setup_ui() {
 	add_col_row();
 }
 //===========================================================================================================
+const QString Create_Table::getDbType() const{
+	if (dbType_ == "sqlite") return "INTEGER PRIMARY KEY";
+	else if (dbType_ == "mysql") return "INT PRIMARY KEY AUTO_INCREMENT";
+	else if (dbType_ == "postgresql") return  "SERIAL PRIMARY KEY";
+	else if (dbType_ == "access") return "COUNTER PRIMARY KEY";
+	else if (dbType_ == "oracle") return "NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY";
+	else 
+		return QString{};
+}
+//===========================================================================================================
 QString Create_Table::get_sql() const {	// Сборка запроса для создания таблицы
 	QString name_row = {};
 	QString type_row = {};
@@ -81,7 +91,10 @@ QString Create_Table::get_sql() const {	// Сборка запроса для с
 			name_row = col_row_[i].nameEdit_->text().trimmed();
 			type_row = col_row_[i].typeCombo_->currentText();
 
-			if (!name_row.isEmpty())
+			if (name_row.toLower() == "id")
+				temp_sql_get.append(QString("\"%1\" %2").arg(name_row, getDbType()));
+
+			else if (!name_row.isEmpty())
 				temp_sql_get.append(QString("\"%1\" %2").arg(name_row, type_row));
 		}
 	}
@@ -145,10 +158,8 @@ void Create_Table::add_col_row() {
 			int col = i % 5;
 			col_layout_->addWidget(col_row_[i].container_, row, col, Qt::AlignTop | Qt::AlignLeft);
 		}
-
 		group->hide();
-		delete group;
-				});
+		group->deleteLater(); });
 
 
 colrow.container_ = group;

@@ -124,11 +124,15 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
 
     if (!filters.isEmpty()) {
         sql += " WHERE ";
-        QStringList conditions;
-        for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
-            conditions << QString("\"%1\" LIKE ? COLLATE NOCASE").arg(it.key());
 
-        sql += conditions.join(logic);                                      // Для использования OR или AND
+        QStringList conditions;
+        QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
+        QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE" : "";
+
+        for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
+        conditions << QString("\"%1\" %2 ?%3").arg(it.key(), op, collate);
+
+        sql += conditions.join(logic);  // Для использования OR или AND
     }
 
     auto *model = new QSqlQueryModel();

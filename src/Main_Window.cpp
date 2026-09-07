@@ -123,6 +123,7 @@ void Main_Window::setup_ui()
     
     // Данные
     data_view_ = new QTableView();
+    data_view_->setEditTriggers(QAbstractItemView::NoEditTriggers); // Блокируем возможность редактирования "id"
     data_view_->setSelectionBehavior(QAbstractItemView::SelectRows);
     data_view_->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
@@ -431,7 +432,7 @@ void Main_Window::onOperationCompleted(bool success, const QString& message) {
 //================================================================================================================
 void Main_Window::onTypesDbLoaded(QStringList types) {
     if (pending_action_ == "create_table") {
-        Create_Table dialog(types, this);
+        Create_Table dialog(types, db_type_, this);
 
         if (dialog.exec() == QDialog::Accepted) {
             QString sql = dialog.get_sql();

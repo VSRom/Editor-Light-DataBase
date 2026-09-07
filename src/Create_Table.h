@@ -14,7 +14,7 @@ class Create_Table : public QDialog {
 	Q_OBJECT
 
 public:
-	explicit Create_Table(const QStringList& types, QWidget* parent = nullptr);
+	explicit Create_Table(const QStringList& types, const QString &dbType, QWidget* parent = nullptr);
 	~Create_Table();
 
 	QString get_sql() const;
@@ -24,6 +24,7 @@ private slots:
 
 private:
 	void setup_ui();
+	const QString getDbType() const;
 
 	struct Col_Row {				// Структура для создаваемых столбцов
 		QWidget* container_;
@@ -40,6 +41,7 @@ private:
 	QStringList types_db_;			// Типы БД принимаем из Main_Window->Table_Explorer->Create_Table
 	QPushButton* btn_ok_;
 	QPushButton* btn_canc_;
+	QString dbType_;				// Хранится тип текущей БД
 
 };
 //===========================================================================================================
