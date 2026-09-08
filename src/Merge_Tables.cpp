@@ -170,22 +170,22 @@ void Merge_Tables::addConditionRow() {
     structura->btnDel_ = new QPushButton("X", structura->container_);
 
     layoutStructContainer->addWidget(structura->leftTable_);
+    structura->leftTable_->setMinimumWidth(120);
     layoutStructContainer->addWidget(new QLabel("."));
+    structura->leftCol_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layoutStructContainer->addWidget(structura->leftCol_);
 
     layoutStructContainer->addWidget(structura->operator_);
+    structura->operator_->setFixedWidth(80);
     structura->operator_->addItems(operators);
 
     layoutStructContainer->addWidget(structura->rightTable_);
+    structura->rightTable_->setMinimumWidth(120);
     layoutStructContainer->addWidget(new QLabel("."));
+    structura->rightCol_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     layoutStructContainer->addWidget(structura->rightCol_);
 
     layoutStructContainer->addWidget(structura->btnDel_);
-
-    for (const auto &mergiL : mergeInfo_) {
-        structura->leftTable_->addItem(mergiL.tableName, mergiL.tableAlias);
-        structura->rightTable_->addItem(mergiL.tableName, mergiL.tableAlias);
-    }
 
     connect(structura->leftTable_, &QComboBox::currentIndexChanged, this, [this, structura]() {
         QString alias = structura->leftTable_->currentData().toString();
@@ -199,6 +199,11 @@ void Merge_Tables::addConditionRow() {
         structura->rightCol_->addItems(getNameRows(alias));
         });
 
+    for (const auto &mergiL : mergeInfo_) {
+        structura->leftTable_->addItem(mergiL.tableName, mergiL.tableAlias);
+        structura->rightTable_->addItem(mergiL.tableName, mergiL.tableAlias);
+    }
+
     structura->leftTable_->setCurrentIndex(0);
     structura->rightTable_->setCurrentIndex(0);
 
@@ -210,18 +215,7 @@ void Merge_Tables::addConditionRow() {
             structura->container_->hide();
             structura->container_->deleteLater();
             delete structura;
-        }
-
-        //  for (int i = 0; i < listStruct_.size(); i++) {
-        //      if (listStruct_[i] == structura) {
-        //          listStruct_.removeAt(i);
-        //          structura->container_->hide();
-        //          delete structura->container_;
-        //          delete structura;
-        //          break;
-        //      }
-
-        });
+        } });
 
         conditionContainer_->layout()->addWidget(structura->container_);
         listStruct_.append(structura);

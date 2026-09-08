@@ -51,8 +51,8 @@ private:
     Database     db_;                           // База Данных
 
     // Поток
-    QThread* worker_thread_;
-    Database_Worker* worker_;
+    QThread* worker_thread_ = nullptr;
+    Database_Worker* worker_ = nullptr;;
     QLineEdit* search_;                         // Поиск
     QListWidget* table_list_;                   // Список таблиц
     QTableView* data_view_;                     // Данные

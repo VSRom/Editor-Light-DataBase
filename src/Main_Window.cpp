@@ -68,7 +68,7 @@ Main_Window::Main_Window(const QString driver, const QString db_type, const QStr
 //===========================================================================================================
 Main_Window::~Main_Window() {
     // Остановка потока
-    if (worker_thread_->isRunning()) {
+    if (worker_thread_ && worker_thread_->isRunning()) {
         worker_thread_->quit();
         worker_thread_->wait(3000);
     }

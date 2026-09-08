@@ -84,6 +84,7 @@ QString Create_Table::get_sql() const {	// Сборка запроса для с
 	QString name_row = {};
 	QString type_row = {};
 	QStringList temp_sql_get = {};
+	temp_sql_get.append(QString("\"id\" %1").arg(getDbType()));
 
 	QString nameTab = tableName_->text().trimmed();	// Получили текст из строки имени таблицы
 	if (!nameTab.isEmpty()) {
@@ -92,7 +93,7 @@ QString Create_Table::get_sql() const {	// Сборка запроса для с
 			type_row = col_row_[i].typeCombo_->currentText();
 
 			if (name_row.toLower() == "id")
-				temp_sql_get.append(QString("\"%1\" %2").arg(name_row, getDbType()));
+				continue;//temp_sql_get.append(QString("\"%1\" %2").arg(name_row, getDbType()));
 
 			else if (!name_row.isEmpty())
 				temp_sql_get.append(QString("\"%1\" %2").arg(name_row, type_row));
