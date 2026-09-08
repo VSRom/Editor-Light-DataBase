@@ -117,8 +117,8 @@ QString Merge_Tables::get_sql() const {	            // Сборка запрос
 
     QStringList selectCols;
 
-    for (const auto &mergiL : mergeInfo_) {
-        for (QCheckBox *box : mergiL.columnsCheck)
+    for (const auto& mergiL : mergeInfo_) {
+        for (QCheckBox* box : mergiL.columnsCheck)
             if (box->isChecked()) selectCols.append(mergiL.tableAlias + ".\"" + box->text() + "\"");
     }
 
@@ -130,29 +130,40 @@ QString Merge_Tables::get_sql() const {	            // Сборка запрос
         fromClause += " " + joinTypeCombo_->currentText() + " JOIN \"" + mergeInfo_[i].tableName + "\" " + mergeInfo_[i].tableAlias;
         QString currentAlias = mergeInfo_[i].tableAlias;
         QStringList conditionsForThisTable;
+        QStringList availableAliases;
 
-        for (const auto *structas : listStruct_) {
+        for (int j = 0; j < i; j++)
+            availableAliases += mergeInfo_[j].tableAlias;
+
+        for (const auto* structas : listStruct_) {
             QString left = structas->leftTable_->currentData().toString();
             QString right = structas->rightTable_->currentData().toString();
+            QString rightCol = structas->rightCol_->currentText();
+            QString leftCol = structas->leftCol_->currentText();
+            QString oper = structas->operator_->currentText();
 
-            if (left == currentAlias || right == currentAlias) {
-                QString rightCol = structas->rightCol_->currentText();
-                QString leftCol = structas->leftCol_->currentText();
-                QString oper = structas->operator_->currentText();
+            if (leftCol.isEmpty() || rightCol.isEmpty())
+                continue;
 
-                if (!leftCol.isEmpty() && !rightCol.isEmpty()) {
-                    QString condition = left + ".\"" + leftCol + "\" " + oper + " " + right + ".\"" + rightCol + "\"";
-                    conditionsForThisTable.append(condition);
-                }
+            QString secondAlias;
+            if (left == currentAlias)
+                secondAlias = right;
+            else if (right == currentAlias)
+                secondAlias = left;
+            else
+                continue;
+
+            if (availableAliases.contains(secondAlias)) {
+                QString condition = left + ".\"" + leftCol + "\" " + oper + " " + right + ".\"" + rightCol + "\"";
+                conditionsForThisTable.append(condition);
             }
         }
 
-        if (conditionsForThisTable.isEmpty())
-            return QString{};
+            if (conditionsForThisTable.isEmpty())
+                return QString{};
 
-        fromClause += " ON (" + conditionsForThisTable.join(" AND ") + ")";
+            fromClause += " ON (" + conditionsForThisTable.join(" AND ") + ")";
     }
-
     return QString("CREATE TABLE \"%1\" AS SELECT %2 %3").arg(nameTab, selectCols.join(", "), fromClause);
 }
 //================================================================================================================
