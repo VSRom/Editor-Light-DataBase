@@ -1,56 +1,56 @@
 # Editor Light DataBase
-Универсальный клиент для управления базами данных на C++ с графическим интерфейсом QT.
+Universal database management client written in C++ with a Qt graphical user interface.
 
-## Технологии
+## Technologies
 
     C++
     Qt 6 (Widgets, Sql)
-    CMake (сборка)
-    Git (контроль версий)
+    CMake (build system)
+    Git (version control)
 
-## Рабочий функционал
-	Окно подключения:
-	- Подключение к БД SQLite по локальному пути или сетевому.
-	- Выбор типа СУБД ( PostgreSQL, MySQL, SQLite, Access, Oracle)
-    - Ввод адреса, порта, логина и пароля или путь к БД
-    - Проверка соединения перед подключением
-	- Сохранение конфигураций
+## Current Features
+	Connection Window:
+	- Connection to SQLite DB via local or network path.
+	- DBMS type selection (PostgreSQL, MySQL, SQLite, Access, Oracle).
+    - Input fields for address, port, login, password, or DB path.
+    - Connection testing before connecting.
+	- Configuration saving.
 	
-	Основное окно:
-	- Просмотр списка таблиц базы данных
-	- Регистронезависимый поиск по всем значениям
+	Main Window:
+	- View the list of database tables.
+	- Case-insensitive search across all values.
 	
-	Работа с БД:
-	- Объединение данных нескольких таблиц с фильтрацией. При помощи создания новой реальной таблицы.
-	- Редактирование данных в таблицах
-    - Добавление, изменение, построчное удаление данных
-	- Создание новых таблиц
-    - Переименование таблиц
-    - Удаление таблиц
+	Database Operations:
+	- Data merging from multiple tables with filtering by creating a new physical table.
+	- Data editing inside tables.
+    - Insertion, modification, and row-by-row deletion of data.
+	- Creation of new tables.
+    - Renaming of tables.
+    - Deletion of tables.
 	
-	Дополнительно:
-	- Локальные заметки (хранятся отдельно от БД)
+	Additional Features:
+	- Local notes (stored independently from the DB).
 
 	
-## Планируемый функционал
+## Planned Features
 
-	- Возможность администрирования пользователей(создание, выдача прав, блокировка/удаление)
-	- Объединение данных нескольких таблиц с фильтрацией. При помощи создания новой виртуальной таблицы.
-	- Защита от SQL-инъекций
-	- Диалог ввода значений новой строки
-	- Постраничная загрузка больших таблиц
-	- Резервное копирование и восстановлени
-	- Экспорт/импорт данных (CSV, JSON, SQL-скрипт INSERT)
-	- SQL-консоль
-	- Транзакции для пакетных операций
-	- Управление индексами (список, создание, удаление)
+	- User administration capabilities (creation, privilege assignment, blocking/deletion).
+	- Data merging from multiple tables with filtering by creating a new virtual table.
+	- SQL injection protection.
+	- Input dialog for new row values.
+	- Pagination for loading large tables.
+	- Backup and recovery.
+	- Data export/import (CSV, JSON, SQL INSERT script).
+	- SQL console.
+	- Transactions for batch operations.
+	- Index management (listing, creation, deletion).
 
-Сборка:
+Build:
 	
 	x64 Native Tools Command Prompt for VS
 	set QTDIR=C:\QT\*.*.*\msvc2019_64
 	echo %QTDIR%
-	git clone https://github.com/VSRom/Editor-Light-DataBase
+	git clone https://github.com
 	cmake --preset=Qt-Release
 	cmake --build out/build/release
 	cd out/build/release
