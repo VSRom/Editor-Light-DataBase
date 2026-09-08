@@ -328,33 +328,45 @@ void Main_Window::save_note() {
 }
 //================================================================================================================
 void Main_Window::doubleClick(const QModelIndex& index) {
-    if (index.column() == 0)
+    if (pk_index_ == -1) {
+        QMessageBox::warning(this, "Ошибка", "У таблицы нет первичного ключа, редактирование недоступно");
+        return;
+    }
+
+    if (index.column() == pk_index_) {
         QMessageBox::warning(this, "Ошибка", "Нельзя изменить id");
-    else {
-        QString data = index.data().toString();
-        QInputDialog inDialog(this);
-        inDialog.setWindowTitle("Новое значение");
-        inDialog.setLabelText("Ввод");
-        inDialog.setTextValue(data);
-        inDialog.resize(500, 150);
+        return;
+    }
+        else {
+            QString data = index.data().toString();
+            QInputDialog inDialog(this);
+            inDialog.setWindowTitle("Новое значение");
+            inDialog.setLabelText("Ввод");
+            inDialog.setTextValue(data);
+            inDialog.resize(500, 150);
 
-        if (inDialog.exec() == QDialog::Accepted) {
-            QString newData = inDialog.textValue();
-            QString nameRow = proxyModel_->headerData(index.column(), Qt::Horizontal).toString();
+            if (inDialog.exec() == QDialog::Accepted) {
+                QString newData = inDialog.textValue();
+                QString nameRow = proxyModel_->headerData(index.column(), Qt::Horizontal).toString();
 
-            if (newData == data) return;
-            else {
-                QVariant idRow = proxyModel_->index(index.row(), 0).data();
-                QMap<QString, QVariant> newVal;
-                newVal[nameRow] = newData;
+                if (newData == data) return;
+                else {
+                    QVariant idRow = proxyModel_->index(index.row(), pk_index_).data();
+                    QMap<QString, QVariant> newVal;
+                    newVal[nameRow] = newData;
 
-                QMetaObject::invokeMethod(worker_, "updateRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(QString, "id"), Q_ARG(QVariant, idRow), Q_ARG(Map, newVal));
+                    QMetaObject::invokeMethod(worker_, "updateRow", Qt::QueuedConnection, Q_ARG(QString, current_table_),
+                        Q_ARG(QString, pk_name_), Q_ARG(QVariant, idRow), Q_ARG(Map, newVal));
+                }
             }
         }
-    }
 }
 //================================================================================================================
 void Main_Window::keyPressEvent(QKeyEvent* event) {
+    if (pk_index_ == -1) {
+        QMessageBox::warning(this, "Ошибка", "У таблицы нет первичного ключа, редактирование недоступно");
+        return;
+    }
     if (event->key() == Qt::Key_Delete) {                                           // Проверка на нажатие кнопки Delete
         QModelIndexList selectRows = data_view_->selectionModel()->selectedRows();  // Получили список выделенных строк
         if (selectRows.isEmpty()) {
@@ -364,14 +376,15 @@ void Main_Window::keyPressEvent(QKeyEvent* event) {
         // Список выделенных строк
         QList<QVariant> delRows;
         for (int i = 0; i < selectRows.size(); i++) {
-            QModelIndex idIdx = proxyModel_->index(selectRows[i].row(), 0);     // Получаем индекс в колонке 0 для текущей строки
+            QModelIndex idIdx = proxyModel_->index(selectRows[i].row(), pk_index_);     // Получаем индекс в колонке 0 для текущей строки
             QVariant idVal = proxyModel_->data(idIdx);                          // Извлекаем значение ID из этой ячейки
             delRows.append(idVal);
         }
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Подтверждение удаления", "Удалить выбранную(ые) строку(и)?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (reply == QMessageBox::Yes) {
             for (const QVariant& idVal : delRows)
-                QMetaObject::invokeMethod(worker_, "removeRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(QString, "id"), Q_ARG(QVariant, idVal));
+                QMetaObject::invokeMethod(worker_, "removeRow", Qt::QueuedConnection, Q_ARG(QString, current_table_),
+                    Q_ARG(QString, pk_name_), Q_ARG(QVariant, idVal));
             return;
         }
         QMainWindow::keyPressEvent(event);
@@ -462,14 +475,29 @@ void Main_Window::onTypesDbLoaded(QStringList types) {
 }
 //================================================================================================================
 void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> cols) {
+
+    if (tableName == current_table_) {
+        pk_index_ = -1;
+        pk_name_.clear();
+
+        for (int i = 0; i < cols.size(); i++) { // Поиск первичного ключа
+            if (cols[i].isPrimaryKey) {
+                pk_name_ = cols[i].name;
+                pk_index_ = i;
+                break;
+            }
+        }
+    }
+
     if (pending_action_ == "addRow") {
         QHash<QString, QVariant> newRow;
 
         for (const auto& col : cols) {
-            if (col.name != "id")
+            if (!col.isPrimaryKey)
                 newRow.insert(col.name, QVariant());
         }
-        QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(Hash, newRow));
+        QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_),
+            Q_ARG(Hash, newRow));
     }
 
     else if (pending_action_ == "mergeTables") {
@@ -490,5 +518,8 @@ void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer
             }
         }
     }
+
+    if (pending_action_ == "loadPk")
+        pending_action_ = "";
 }
 //================================================================================================================
