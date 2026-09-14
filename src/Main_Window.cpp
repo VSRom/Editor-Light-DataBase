@@ -1,6 +1,7 @@
 #include "Main_Window.h"
 #include "Create_Table.h"
 #include "Merge_Tables.h"
+#include "Add_Row_Dialog.h"
 #include <QInputDialog>
 #include <QLabel>
 #include <QSettings>
@@ -490,14 +491,17 @@ void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer
     }
 
     if (pending_action_ == "addRow") {
-        QHash<QString, QVariant> newRow;
+        Add_Row_Dialog dialog(cols, this);
+        QHash<QString, QVariant> tempValues;
+        if (dialog.exec() == QDialog::Accepted) {
+            tempValues = dialog.getValues();
 
-        for (const auto& col : cols) {
-            if (!col.isPrimaryKey)
-                newRow.insert(col.name, QVariant());
+            if (tempValues.isEmpty()) {
+                QMessageBox::warning(this, "Ошибка", "В таблице колонки скрыты или состоят из первичных ключей.");
+                return;
+            }
+            QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(Hash, tempValues));
         }
-        QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-            Q_ARG(Hash, newRow));
     }
 
     else if (pending_action_ == "mergeTables") {

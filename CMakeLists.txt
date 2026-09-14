@@ -28,6 +28,7 @@ set(SOURCES
 	src/Create_Table.cpp
 	src/Merge_Tables.cpp
 	src/Database_Worker.cpp
+	src/Add_Row_Dialog.cpp
     resources.qrc
 	app.rc
  )
@@ -40,6 +41,7 @@ set(HEADERS
 	src/Create_Table.h
 	src/Merge_Tables.h
 	src/Database_Worker.h
+	src/Add_Row_Dialog.h
  )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} )
