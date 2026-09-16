@@ -27,6 +27,7 @@ Universal database management client written in C++ with a Qt graphical user int
 	- Creation of new tables.
     - Renaming of tables.
     - Deletion of tables.
+	- Input dialog for new row values.
 	
 	Additional Features:
 	- Local notes (stored independently from the DB).
@@ -37,7 +38,6 @@ Universal database management client written in C++ with a Qt graphical user int
 	- User administration capabilities (creation, privilege assignment, blocking/deletion).
 	- Data merging from multiple tables with filtering by creating a new virtual table.
 	- SQL injection protection.
-	- Input dialog for new row values.
 	- Pagination for loading large tables.
 	- Backup and recovery.
 	- Data export/import (CSV, JSON, SQL INSERT script).

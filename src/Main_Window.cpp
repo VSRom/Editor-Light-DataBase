@@ -48,6 +48,7 @@ Main_Window::Main_Window(const QString driver, const QString db_type, const QStr
 
     qRegisterMetaType<Hash>("Hash");
     qRegisterMetaType<Map>("Map");
+    qRegisterMetaType<QMap<QString, QString>>("QMap<QString,QString>");
 
     worker_thread_->start();
 
@@ -124,7 +125,21 @@ void Main_Window::setup_ui()
     search_ = new QLineEdit();
     search_->setPlaceholderText("Search...");
     sw->addWidget(search_, 0, 0, 1, 3);
-    
+
+    QVBoxLayout *filterLayout = new QVBoxLayout();
+    mainLayout->addLayout(filterLayout);
+
+    filterColumn = new QWidget(this);
+    filterColumn->setLayout(new QVBoxLayout());
+    mainLayout->addWidget(filterColumn);
+
+    QHBoxLayout *btnsFilter = new QHBoxLayout();
+    btnAddFilter = new QPushButton("Добавить\n фильтр", this);
+    btnsFilter->addWidget(btnAddFilter);
+    mainLayout->addLayout(btnsFilter);
+
+    connect(btnAddFilter, &QPushButton::clicked, this, &Main_Window::addFilterRow);
+
     // Данные
     data_view_ = new QTableView();
     data_view_->setEditTriggers(QAbstractItemView::NoEditTriggers); // Блокируем возможность редактирования "id"
@@ -417,6 +432,57 @@ void Main_Window::onAddCol() {
     QMetaObject::invokeMethod(worker_, "getTypesDb", Qt::QueuedConnection);
 }
 //================================================================================================================
+void Main_Window::addFilterRow() {
+    FilterRow* structura  = new FilterRow();
+    QStringList operators = { "=", "!=", "<", ">", "<=", ">=", "LIKE"};
+    structura->container_ = new QWidget();
+    structura->editCombo_ = new QLineEdit(structura->container_);
+    structura->columnCombo_ = new QComboBox(structura->container_);
+    structura->operatorCombo_ = new QComboBox(structura->container_);
+    QHBoxLayout *layout   = new QHBoxLayout(structura->container_);
+    layout->addWidget(structura->editCombo_);
+    layout->addWidget(structura->columnCombo_);
+    layout->addWidget(structura->operatorCombo_);
+
+    for (int i = 0; i < proxyModel_->columnCount(); i++)
+        structura->columnCombo_->addItem(proxyModel_->headerData(i, Qt::Horizontal).toString());
+
+    structura->btnDel_ = new QPushButton("X", structura->container_);
+
+    connect(structura->btnDel_, &QPushButton::clicked, this, [this, structura]() {
+        int i = listFilterRows.indexOf(structura);
+        if (i != -1) {
+            listFilterRows.removeAt(i);
+            structura->container_->hide();
+            structura->container_->deleteLater();
+            delete structura;
+        }});
+
+        connect(structura->columnCombo_, &QComboBox::currentTextChanged, this, &Main_Window::applyFilters);
+        connect(structura->editCombo_, &QLineEdit::textChanged, this, &Main_Window::applyFilters);
+
+        filterColumn->layout()->addWidget(structura->container_);
+        listFilterRows.append(structura);
+}
+//================================================================================================================
+void Main_Window::applyFilters() {
+    QMap<QString, QString> filters;
+    QString valueOne;
+    QString valueTwo;
+
+    for (const auto &row : listFilterRows) {
+        valueOne = row->columnCombo_->currentText();
+        valueTwo = row->editCombo_->text().trimmed();
+
+        if (valueTwo.isEmpty()) continue;
+        else
+            filters.insert(valueOne, valueTwo);
+    }
+
+    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
+        Q_ARG(QMap<QString, QString>, filters));
+}
+//================================================================================================================
 void Main_Window::onTablesLoaded(QStringList tables) {
     // Блокировка сигнала
     QSignalBlocker blocker(table_list_);
@@ -492,7 +558,7 @@ void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer
 
     if (pending_action_ == "addRow") {
         Add_Row_Dialog dialog(cols, this);
-        QHash<QString, QVariant> tempValues;
+        Hash tempValues;
         if (dialog.exec() == QDialog::Accepted) {
             tempValues = dialog.getValues();
 
@@ -500,7 +566,8 @@ void Main_Window::onColumnsLoaded(const QString& tableName, QList<Table_Explorer
                 QMessageBox::warning(this, "Ошибка", "В таблице колонки скрыты или состоят из первичных ключей.");
                 return;
             }
-            QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(Hash, tempValues));
+            QMetaObject::invokeMethod(worker_, "insertRow", Qt::QueuedConnection, Q_ARG(QString, current_table_),
+                Q_ARG(Hash, tempValues));
         }
     }
 

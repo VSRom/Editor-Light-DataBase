@@ -15,9 +15,9 @@ void Database_Worker::loadTables() {
 	emit tablesLoaded(tables);
 }
 //================================================================================================================
-void Database_Worker::selectTable(const QString& table) {
+void Database_Worker::selectTable(const QString& table, const QMap<QString, QString> &filters) {
 	if (!explorer_) return;
-	QSqlQueryModel* model = explorer_->select(table);
+	QSqlQueryModel* model = explorer_->select(table, filters);
 	QList<QList<QVariant>> data;
 	QStringList headers;
 
@@ -46,7 +46,7 @@ void Database_Worker::getColumns(const QString& table) {
     emit columnsLoaded(table ,cols);
 }
 //================================================================================================================
-void Database_Worker::insertRow(const QString& table, const QHash<QString, QVariant>& values) {
+void Database_Worker::insertRow(const QString& table, const Hash& values) {
 	if (!explorer_) return;
 	bool success = explorer_->insert(table, values);
 	emit operationCompleted(success, success ? "Строка добавлена" : "Ошибка добавления строки");

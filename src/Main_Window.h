@@ -21,6 +21,14 @@ public:
                         const QString log, const QString pass, QWidget* parent = nullptr);
     ~Main_Window();
 
+    struct FilterRow {
+        QComboBox *columnCombo_ = nullptr;
+        QComboBox *operatorCombo_ = nullptr;
+        QLineEdit *editCombo_ = nullptr;
+        QWidget *container_ = nullptr;
+        QPushButton *btnDel_ = nullptr;
+    };
+
 private slots:
     void onSearch();
     void tab_create();
@@ -34,6 +42,8 @@ private slots:
     void onDBContextMenu(const QPoint& pos);            // Клик ПКМ окна БД
     void onAddRow();
     void onAddCol();
+    void addFilterRow();
+    void applyFilters();
     //void onTableContextMenu(const QPoint& pos);       // Клик ПКМ окна таблиц
 
     // Поток
@@ -50,6 +60,8 @@ private:
 
     Database     db_;                           // База Данных
 
+    std::unique_ptr<QStandardItemModel> const_ptr_;
+
     // Поток
     QThread* worker_thread_ = nullptr;
     Database_Worker* worker_ = nullptr;;
@@ -62,7 +74,6 @@ private:
     QString notePath_;                          // Путь для заметок
     QComboBox* font_select_;                    // Выбор шрифта для заметок
     bool isModifyNote_;                         // Заметки изменены
-    std::unique_ptr<QStandardItemModel> const_ptr_;
     QPushButton* unitedT_;                      // 2.2.1 united tables
     QPushButton* createT_;			            // 2.2.2 create table
     QPushButton* renameT_;                      // 2.2.3 rename table
@@ -90,6 +101,10 @@ private:
     // Имя и номер первичного ключа
     QString pk_name_;
     int pk_index_ = -1;
+
+    QWidget *filterColumn = nullptr;
+    QPushButton *btnAddFilter = nullptr;
+    QList<FilterRow *> listFilterRows;
 
 protected:
     void closeEvent(QCloseEvent* event) override;

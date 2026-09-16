@@ -22,10 +22,10 @@ public:
 
 public slots:
     void loadTables();
-    void selectTable(const QString& table);
+    void selectTable(const QString &table, const QMap<QString, QString> &filters = {});
     void executeQuery(const QString& sql);
     void getColumns(const QString& table);
-    void insertRow(const QString& table, const QHash<QString, QVariant>& values);
+    void insertRow(const QString& table, const Hash& values);
     void updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues);
     void removeRow(const QString& table, const QString& idColumn, const QVariant& idValue);
     void getTypesDb();
