@@ -30,6 +30,7 @@ public:
     bool drop_table(const QString& table) const;
     bool rename_table(const QString& table, const QString& new_name_table) const;
     bool exeQuery(const QString& sql) const;
+    static QString safeName(const QString& name);
 
 private:
     QString connectionName_;

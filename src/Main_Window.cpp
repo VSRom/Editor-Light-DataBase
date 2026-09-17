@@ -536,7 +536,8 @@ void Main_Window::onTypesDbLoaded(QStringList types) {
             return;
         }
 
-        QString sql = QString("ALTER TABLE \"%1\" ADD COLUMN \"%2\" %3").arg(current_table_, pending_column_name_, colType); // Запрос на добавление столбца
+        QString sql = QString("ALTER TABLE %1 ADD COLUMN %2 %3").arg(Table_Explorer::safeName(current_table_),
+            Table_Explorer::safeName(pending_column_name_), colType); // Запрос на добавление столбца
 
         QMetaObject::invokeMethod(worker_, "executeQuery", Qt::QueuedConnection, Q_ARG(QString, sql));
         pending_action_ = "";

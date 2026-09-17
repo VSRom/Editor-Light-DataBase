@@ -119,15 +119,17 @@ QString Merge_Tables::get_sql() const {	            // Сборка запрос
 
     for (const auto& mergiL : mergeInfo_) {
         for (QCheckBox* box : mergiL.columnsCheck)
-            if (box->isChecked()) selectCols.append(mergiL.tableAlias + ".\"" + box->text() + "\"");
+            if (box->isChecked()) selectCols.append(mergiL.tableAlias + "." + Table_Explorer::safeName(box->text()));
     }
 
     if (selectCols.isEmpty()) return QString();
 
-    QString fromClause("FROM \"" + mergeInfo_[0].tableName + "\" " + mergeInfo_[0].tableAlias);
+    QString fromClause("FROM " + Table_Explorer::safeName(mergeInfo_[0].tableName) + " " + mergeInfo_[0].tableAlias);
 
     for (int i = 1; i < mergeInfo_.size(); i++) {
-        fromClause += " " + joinTypeCombo_->currentText() + " JOIN \"" + mergeInfo_[i].tableName + "\" " + mergeInfo_[i].tableAlias;
+        fromClause += " " + joinTypeCombo_->currentText() + " JOIN " + Table_Explorer::safeName(mergeInfo_[i].tableName)
+            + " " + mergeInfo_[i].tableAlias;
+
         QString currentAlias = mergeInfo_[i].tableAlias;
         QStringList conditionsForThisTable;
         QStringList availableAliases;
@@ -153,8 +155,13 @@ QString Merge_Tables::get_sql() const {	            // Сборка запрос
             else
                 continue;
 
+            QStringList allowOper = { "=", "<>", "<", ">", "<=", ">=" };
+
             if (availableAliases.contains(secondAlias)) {
-                QString condition = left + ".\"" + leftCol + "\" " + oper + " " + right + ".\"" + rightCol + "\"";
+                if (!allowOper.contains(oper))
+                    continue;
+
+                QString condition = left + "." + Table_Explorer::safeName(leftCol) + " " + oper + " " + right + "." + Table_Explorer::safeName(rightCol);
                 conditionsForThisTable.append(condition);
             }
         }
@@ -164,7 +171,7 @@ QString Merge_Tables::get_sql() const {	            // Сборка запрос
 
             fromClause += " ON (" + conditionsForThisTable.join(" AND ") + ")";
     }
-    return QString("CREATE TABLE \"%1\" AS SELECT %2 %3").arg(nameTab, selectCols.join(", "), fromClause);
+    return QString("CREATE TABLE %1 AS SELECT %2 %3").arg(Table_Explorer::safeName(nameTab), selectCols.join(", "), fromClause);
 }
 //================================================================================================================
 void Merge_Tables::addConditionRow() {

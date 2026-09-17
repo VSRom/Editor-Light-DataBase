@@ -84,7 +84,7 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         pkColumns.append(primaryKey.fieldName(i));  // Получили список колонок первичного ключа
 
     if (driver == "QSQLITE") {
-        q.exec(QString("PRAGMA table_info(\"%1\")").arg(tableName));
+        q.exec(QString("PRAGMA table_info(%1)").arg(safeName(tableName)));
         while (q.next()) {
             QString colName = q.value(1).toString();
             cols.append({ colName, q.value(2).toString(), !q.value(3).toBool(), pkColumns.contains(colName, Qt::CaseInsensitive)});
@@ -92,7 +92,7 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
     }
 
     else if (driver == "QMYSQL") {
-        q.exec(QString("SHOW COLUMNS FROM `%1`").arg(tableName));
+        q.exec(QString("SHOW COLUMNS FROM %1").arg(safeName(tableName)));
         while (q.next()) {
             QString colName = q.value(0).toString();
             cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive) });
@@ -136,7 +136,7 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
 //================================================================================================================
 QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString, QString> &filters, const QString &logic) const {
     
-    QString sql = QString("SELECT * FROM \"%1\"").arg(table);
+    QString sql = QString("SELECT * FROM %1").arg(safeName(table));
 
     if (!filters.isEmpty()) {
         sql += " WHERE ";
@@ -146,7 +146,7 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
         QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE" : "";
 
         for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
-        conditions << QString("\"%1\" %2 ?%3").arg(it.key(), op, collate);
+        conditions << QString("%1 %2 ?%3").arg(safeName(it.key()), op, collate);
 
         sql += conditions.join(logic);  // Для использования OR или AND
     }
@@ -176,10 +176,18 @@ bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> 
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QStringList place(values.size(), "?");
-    QString colum = values.keys().join("\", \"");
+    QStringList tempColum = values.keys();
+    QStringList resultColum{};
+
+    for (QString col : tempColum) {
+        QString column = safeName(col);
+            resultColum += column;
+    }
+
+    QString colum = resultColum.join(", ");
     QString placer = place.join(", ");                              // Подготовка данных
 
-    QString sql = QString("INSERT INTO \"%1\" (\"%2\") VALUES (%3)").arg(table, colum, placer);
+    QString sql = QString("INSERT INTO %1 (%2) VALUES (%3)").arg(safeName(table), colum, placer);
 
     qs.prepare(sql);                                                // Подготовка запроса
 
@@ -214,11 +222,11 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
     QStringList list{};
 
     for (auto it = newValues.constBegin(); it != newValues.constEnd(); it++)
-        list << QString("\"%1\" = ?").arg(it.key());            // Взяли все значения в строку с разделителем %1 = ?
+        list << QString("%1 = ?").arg(safeName(it.key()));            // Взяли все значения в строку с разделителем %1 = ?
 
     QString result = list.join(", ");                           // Склеили полученную выше строку с разделителем ,
 
-    QString sql = QString("UPDATE \"%1\" SET %2 WHERE \"%3\" = ?").arg(table, result, idColumn);
+    QString sql = QString("UPDATE %1 SET %2 WHERE %3 = ?").arg(safeName(table), result, safeName(idColumn));
 
     qs.prepare(sql);                                            // Подготовка запроса
 
@@ -243,7 +251,7 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
 bool Table_Explorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
-    QString sql = QString("DELETE FROM \"%1\" WHERE \"%2\" = ?").arg(table, idColumn);
+    QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(safeName(table), safeName(idColumn));
     qs.prepare(sql);
 
     qs.bindValue(0, idValue);               // привязка значения к (= ?[0])
@@ -263,8 +271,9 @@ bool Table_Explorer::remove(const QString &table, const QString &idColumn, const
 bool Table_Explorer::drop_table(const QString& table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
-    QString sql = QString("DROP TABLE \"%1\"").arg(table);
+    if (table.isEmpty()) return false;
 
+    QString sql = QString("DROP TABLE %1").arg(safeName(table));
     bool exe = qs.exec(sql);
 
     if (!exe) {
@@ -280,8 +289,9 @@ bool Table_Explorer::drop_table(const QString& table) const {
 bool Table_Explorer::rename_table(const QString& table, const QString& new_name_table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
-    QString sql = QString("ALTER TABLE \"%1\" RENAME TO \"%2\"").arg(table, new_name_table);
+    if (table.isEmpty() || new_name_table.isEmpty()) return false;
 
+    QString sql = QString("ALTER TABLE %1 RENAME TO %2").arg(safeName(table), safeName(new_name_table));
     bool exe = qs.exec(sql);
 
     if (!exe) {
@@ -298,5 +308,17 @@ bool Table_Explorer::exeQuery(const QString& sql) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
     bool exe = qs.exec(sql);
     return exe;
+}
+//================================================================================================================
+QString Table_Explorer::safeName(const QString& name) {
+    if (name.isEmpty()) 
+        return QString();
+
+    QString copy = name;
+    QString result{};
+    copy.replace("\"", "\"\"");
+    result = "\"" + copy + "\"";
+
+    return result;
 }
 //================================================================================================================

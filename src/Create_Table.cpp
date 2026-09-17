@@ -1,4 +1,5 @@
 #include "Create_Table.h"
+#include "Table_Explorer.h"
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -84,7 +85,9 @@ QString Create_Table::get_sql() const {	// Сборка запроса для с
 	QString name_row = {};
 	QString type_row = {};
 	QStringList temp_sql_get = {};
-	temp_sql_get.append(QString("\"id\" %1").arg(getDbType()));
+	QString idx = Table_Explorer::safeName("id");
+
+	temp_sql_get.append(QString(idx + " %1").arg(getDbType()));
 
 	QString nameTab = tableName_->text().trimmed();	// Получили текст из строки имени таблицы
 	if (!nameTab.isEmpty()) {
@@ -93,17 +96,17 @@ QString Create_Table::get_sql() const {	// Сборка запроса для с
 			type_row = col_row_[i].typeCombo_->currentText();
 
 			if (name_row.toLower() == "id")
-				continue;//temp_sql_get.append(QString("\"%1\" %2").arg(name_row, getDbType()));
+				continue;
 
 			else if (!name_row.isEmpty())
-				temp_sql_get.append(QString("\"%1\" %2").arg(name_row, type_row));
+				temp_sql_get.append(QString("%1 %2").arg(Table_Explorer::safeName(name_row), type_row));
 		}
 	}
 
 	if (temp_sql_get.isEmpty())
 		return QString();
 
-	return QString("CREATE TABLE IF NOT EXISTS \"%1\" (%2);").arg(nameTab, temp_sql_get.join(", "));
+	return QString("CREATE TABLE IF NOT EXISTS %1 (%2);").arg(Table_Explorer::safeName(nameTab), temp_sql_get.join(", "));
 }
 //===========================================================================================================
 void Create_Table::add_col_row() {
