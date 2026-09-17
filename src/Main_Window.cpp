@@ -83,7 +83,8 @@ void Main_Window::onTableSelected(const QString &tableName) {
     search_text_.clear();              // Очистим поиск
     search_->clear();
 
-    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
+    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
+        Q_ARG(MapString, MapString()));
 
     pending_action_ = "loadPk";
     QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, current_table_));
@@ -134,7 +135,7 @@ void Main_Window::setup_ui()
     mainLayout->addWidget(filterColumn);
 
     QHBoxLayout *btnsFilter = new QHBoxLayout();
-    btnAddFilter = new QPushButton("Добавить\n фильтр", this);
+    btnAddFilter = new QPushButton("Добавить\nфильтр", this);
     btnsFilter->addWidget(btnAddFilter);
     mainLayout->addLayout(btnsFilter);
 
@@ -480,7 +481,7 @@ void Main_Window::applyFilters() {
     }
 
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-        Q_ARG(QMap<QString, QString>, filters));
+        Q_ARG(MapString, filters));
 }
 //================================================================================================================
 void Main_Window::onTablesLoaded(QStringList tables) {
@@ -508,7 +509,8 @@ void Main_Window::onOperationCompleted(bool success, const QString& message) {
 
     // Если есть текущая таблица — перезагружаем её
     if (!current_table_.isEmpty()) {
-        QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
+        QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
+            Q_ARG(MapString, MapString()));
     }
 }
 //================================================================================================================
