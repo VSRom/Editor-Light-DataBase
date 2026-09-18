@@ -1,6 +1,5 @@
 #pragma once
 //================================================================================================================
-#include "Database.h"
 #include "Database_Worker.h"
 #include <QMainWindow>
 #include <QComboBox>
@@ -57,8 +56,6 @@ private:
     void setup_ui();
     void save_note();
     void refresh_table();
-
-    Database     db_;                           // База Данных
 
     std::unique_ptr<QStandardItemModel> const_ptr_;
 

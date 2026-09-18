@@ -21,7 +21,7 @@ set(CMAKE_AUTOUIC ON)
 
 set(SOURCES
     src/Main.cpp
-    src/Database.cpp
+    
     src/Main_Window.cpp
 	src/Connection_Window.cpp
 	src/Table_Explorer.cpp
@@ -34,7 +34,7 @@ set(SOURCES
  )
 
 set(HEADERS
-    src/Database.h
+    
     src/Main_Window.h
 	src/Connection_Window.h
 	src/Table_Explorer.h

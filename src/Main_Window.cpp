@@ -49,6 +49,7 @@ Main_Window::Main_Window(const QString driver, const QString db_type, const QStr
     qRegisterMetaType<Hash>("Hash");
     qRegisterMetaType<Map>("Map");
     qRegisterMetaType<QMap<QString, QString>>("QMap<QString,QString>");
+    qRegisterMetaType<FilterList>("FilterList");
 
     worker_thread_->start();
 
