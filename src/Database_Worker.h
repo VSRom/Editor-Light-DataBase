@@ -37,7 +37,7 @@ public slots:
 
 signals:
     void tablesLoaded(QStringList tables);
-    void selectFinished(QList<QList<QVariant>> data, QStringList headers);
+    void selectFinished(QList<QList<QVariant>> data, QStringList headers, int pageSize = 0, int offset = 0);
     void operationCompleted(bool success, const QString& message);
     void columnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
     void typesDbLoaded(QStringList types);

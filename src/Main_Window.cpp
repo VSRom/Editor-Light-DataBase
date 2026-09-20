@@ -164,7 +164,7 @@ void Main_Window::setup_ui()
     data_view_->setModel(proxyModel_);
 
     // Список таблиц
-    table_list_ = new QListWidget();
+    table_list_ = new QListWidget(this);
     table_list_->setSelectionMode(QAbstractItemView::ExtendedSelection);    // Для диапозонного выделения чз Shift и одиночного чз Ctrl
 ///////////========================================================Онлайн редактирование БД========================================================///////////
 
