@@ -8,21 +8,13 @@
 #include <QHash>
 #include "Table_Explorer.h"
 //================================================================================================================
-struct Filtration {
-    QString colName_;
-    QString operator_;
-    QString value_;
-};
-//================================================================================================================
 typedef QHash<QString, QVariant> Hash;
 typedef QMap<QString, QVariant> Map;
 typedef QMap<QString, QString> MapString;
-typedef QList<Filtration> FilterList;
 //================================================================================================================
 Q_DECLARE_METATYPE(Hash)
 Q_DECLARE_METATYPE(Map)
 Q_DECLARE_METATYPE(MapString)
-Q_DECLARE_METATYPE(FilterList)
 //================================================================================================================
 class Database_Worker : public QObject {
     Q_OBJECT
@@ -32,7 +24,7 @@ public:
 
 public slots:
     void loadTables();
-    void selectTable(const QString &table, const QMap<QString, QString> &filters = {});
+    void selectTable(const QString &table, const FilterList &filters = {});
     void executeQuery(const QString& sql);
     void getColumns(const QString& table);
     void insertRow(const QString& table, const Hash& values);

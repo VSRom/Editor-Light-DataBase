@@ -134,21 +134,24 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         return cols;
 }
 //================================================================================================================
-QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString, QString> &filters, const QString &logic) const {
-    
+QSqlQueryModel *Table_Explorer::select(const QString &table, const FilterList &filters, const QString &logic) const {
     QString sql = QString("SELECT * FROM %1").arg(safeName(table));
 
     if (!filters.isEmpty()) {
         sql += " WHERE ";
 
         QStringList conditions;
-        QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
-        QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE" : "";
 
-        for (auto it = filters.constBegin(); it != filters.constEnd(); ++it)
-        conditions << QString("%1 %2 ?%3").arg(safeName(it.key()), op, collate);
-
-        sql += conditions.join(logic);  // Для использования OR или AND
+        for (const auto &f : filters) {
+            if (f.operator_ == "LIKE") {
+                QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
+                QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE" : "";
+                conditions << QString("%1 %2 ?%3").arg(safeName(f.colName_), op, collate);
+            }
+            else
+                conditions << QString("%1 %2 ?").arg(safeName(f.colName_), f.operator_);
+        }
+        sql += conditions.join(logic);
     }
 
     auto *model = new QSqlQueryModel();
@@ -157,8 +160,12 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const QMap<QString,
 
     if (!filters.isEmpty()) {
         int idx = 0;
-        for (auto it = filters.constBegin(); it != filters.constEnd(); ++it, ++idx) {
-            qs.bindValue(idx, "%" + it.value() + "%");
+        for (const auto &f : filters) {
+            if (f.operator_ == "LIKE")
+                qs.bindValue(idx, "%" + f.value_ + "%");
+            else
+                qs.bindValue(idx, f.value_);
+            ++idx;
         }
     }
 

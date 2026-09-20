@@ -15,7 +15,7 @@ void Database_Worker::loadTables() {
 	emit tablesLoaded(tables);
 }
 //================================================================================================================
-void Database_Worker::selectTable(const QString& table, const QMap<QString, QString> &filters) {
+void Database_Worker::selectTable(const QString& table, const FilterList &filters) {
 	if (!explorer_) return;
 	QSqlQueryModel* model = explorer_->select(table, filters, " AND ");
 	QList<QList<QVariant>> data;

@@ -85,7 +85,7 @@ void Main_Window::onTableSelected(const QString &tableName) {
     search_->clear();
 
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-        Q_ARG(MapString, MapString()));
+        Q_ARG(FilterList, FilterList()));
 
     pending_action_ = "loadPk";
     QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, current_table_));
@@ -240,7 +240,7 @@ void Main_Window::onSearch() {
 
     search_text_ = stroke;
 
-    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_));
+    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(FilterList, FilterList()));
 }
 //================================================================================================================
 void Main_Window::tab_create() {
@@ -441,6 +441,8 @@ void Main_Window::addFilterRow() {
     structura->editCombo_ = new QLineEdit(structura->container_);
     structura->columnCombo_ = new QComboBox(structura->container_);
     structura->operatorCombo_ = new QComboBox(structura->container_);
+    structura->operatorCombo_->addItems(operators);
+
     QHBoxLayout *layout   = new QHBoxLayout(structura->container_);
     layout->addWidget(structura->editCombo_);
     layout->addWidget(structura->columnCombo_);
@@ -468,21 +470,20 @@ void Main_Window::addFilterRow() {
 }
 //================================================================================================================
 void Main_Window::applyFilters() {
-    QMap<QString, QString> filters;
-    QString valueOne;
-    QString valueTwo;
+    FilterList filters;
 
     for (const auto &row : listFilterRows) {
-        valueOne = row->columnCombo_->currentText();
-        valueTwo = row->editCombo_->text().trimmed();
+        QString colName = row->columnCombo_->currentText();
+        QString oper = row->operatorCombo_->currentText();
+        QString value = row->editCombo_->text().trimmed();
 
-        if (valueTwo.isEmpty()) continue;
-        else
-            filters.insert(valueOne, valueTwo);
+        if (colName.isEmpty() || value.isEmpty())
+            continue;
+        filters.append({colName, oper, value});
     }
 
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-        Q_ARG(MapString, filters));
+        Q_ARG(FilterList, filters));
 }
 //================================================================================================================
 void Main_Window::onTablesLoaded(QStringList tables) {
@@ -511,7 +512,7 @@ void Main_Window::onOperationCompleted(bool success, const QString& message) {
     // Если есть текущая таблица — перезагружаем её
     if (!current_table_.isEmpty()) {
         QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-            Q_ARG(MapString, MapString()));
+            Q_ARG(FilterList, FilterList()));
     }
 }
 //================================================================================================================
