@@ -17,6 +17,7 @@ Universal database management client written in C++ with a Qt graphical user int
 	- Configuration saving.
 	
 	Main Window:
+	- Pagination for loading large tables.
 	- View the list of database tables.
 	- Case-insensitive search across all values.
 	
@@ -36,7 +37,6 @@ Universal database management client written in C++ with a Qt graphical user int
 	- User administration capabilities (creation, privilege assignment, blocking/deletion).
 	- Data merging from multiple tables with filtering by creating a new virtual table.
 	- SQL injection protection.
-	- Pagination for loading large tables.
 	- Backup and recovery.
 	- Data export/import (CSV, JSON, SQL INSERT script).
 	- SQL console.
