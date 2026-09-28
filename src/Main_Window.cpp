@@ -84,8 +84,8 @@ void Main_Window::onTableSelected(const QString &tableName) {
     search_text_.clear();              // Очистим поиск
     search_->clear();
 
-    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-        Q_ARG(FilterList, FilterList()));
+    currentPage_ = 0;
+    reloadCurrentPage();
 
     pending_action_ = "loadPk";
     QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(QString, current_table_));
@@ -93,7 +93,18 @@ void Main_Window::onTableSelected(const QString &tableName) {
     proxyModel_->setFilterFixedString("");
 }
 //===========================================================================================================
-void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList headers) {
+void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList headers, int totalRows) {
+    totalRows_ = totalRows;
+    int totalPages = ( (totalRows_ + PAGE_SIZE - 1) / PAGE_SIZE);
+
+    if (totalPages == 0)
+        totalPages = 1;
+
+    pageLabel_->setText(QString("Страница %1 из %2").arg(currentPage_ + 1).arg(totalPages));
+    btnPrev_->setEnabled(currentPage_ > 0);
+    btnNext_->setEnabled(currentPage_ < totalPages - 1);
+
+
     QStandardItemModel* model = new QStandardItemModel();
     model->setHorizontalHeaderLabels(headers); 
 
@@ -214,9 +225,18 @@ void Main_Window::setup_ui()
     connect(renameT_, &QPushButton::clicked, this, &Main_Window::tab_rename);
     connect(deleteT_, &QPushButton::clicked, this, &Main_Window::tab_delete);
 
+    btnPrev_ = new QPushButton("◀", this);
+    pageLabel_ = new QLabel("Странимца 1 из 1", this);
+    btnNext_ = new QPushButton("▶", this);
+
+    connect(btnPrev_, &QPushButton::clicked, this, &Main_Window::prevPage);
+    connect(btnNext_, &QPushButton::clicked, this, &Main_Window::nextPage);
+
     sw->addLayout(ucrd, 2, 3, 1, 1);
     sw->addWidget(notepad_, 3, 3, 2, 1);
     sw->addWidget(table_list_, 0, 3, 2, 1); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
+    sw->addWidget(btnPrev_, 3, 0, 1, 1);
+    sw->addWidget(btnNext_, 3, 2, 1, 1);
     sw->setRowStretch(1, 1);
     sw->setColumnStretch(0, 1);
     sw->setColumnStretch(1, 1);
@@ -240,7 +260,8 @@ void Main_Window::onSearch() {
 
     search_text_ = stroke;
 
-    QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_), Q_ARG(FilterList, FilterList()));
+    currentPage_ = 0;
+    reloadCurrentPage();
 }
 //================================================================================================================
 void Main_Window::tab_create() {
@@ -306,6 +327,22 @@ void Main_Window::tab_delete(){
 //================================================================================================================
 void Main_Window::refresh_table() {
     QMetaObject::invokeMethod(worker_, "loadTables", Qt::QueuedConnection);
+}
+//================================================================================================================
+FilterList Main_Window::collectFilters() {
+    FilterList filters;
+
+    for (const auto& row : listFilterRows) {
+        QString colName = row->columnCombo_->currentText();
+        QString oper = row->operatorCombo_->currentText();
+        QString value = row->editCombo_->text().trimmed();
+
+        if (colName.isEmpty() || value.isEmpty())
+            continue;
+        filters.append({ colName, oper, value });
+    }
+
+    return filters;
 }
 //================================================================================================================
 void Main_Window::onFontChanged(const QString& fontName) {
@@ -470,20 +507,29 @@ void Main_Window::addFilterRow() {
 }
 //================================================================================================================
 void Main_Window::applyFilters() {
-    FilterList filters;
-
-    for (const auto &row : listFilterRows) {
-        QString colName = row->columnCombo_->currentText();
-        QString oper = row->operatorCombo_->currentText();
-        QString value = row->editCombo_->text().trimmed();
-
-        if (colName.isEmpty() || value.isEmpty())
-            continue;
-        filters.append({colName, oper, value});
+    currentPage_ = 0;
+    reloadCurrentPage();
+}
+//================================================================================================================
+void Main_Window::prevPage() {
+    if (currentPage_ > 0) {
+        currentPage_--;
+        reloadCurrentPage();
     }
+}
+//================================================================================================================
+void Main_Window::nextPage() {
+    int totalPages = ((totalRows_ + PAGE_SIZE - 1) / PAGE_SIZE);
 
+    if (currentPage_ < totalPages - 1) {
+        currentPage_++;
+        reloadCurrentPage();
+    }
+}
+//================================================================================================================
+void Main_Window::reloadCurrentPage() {
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-        Q_ARG(FilterList, filters));
+        Q_ARG(FilterList, collectFilters()), Q_ARG(int, PAGE_SIZE), Q_ARG(int, currentPage_* PAGE_SIZE));
 }
 //================================================================================================================
 void Main_Window::onTablesLoaded(QStringList tables) {
@@ -510,10 +556,8 @@ void Main_Window::onOperationCompleted(bool success, const QString& message) {
     refresh_table();
 
     // Если есть текущая таблица — перезагружаем её
-    if (!current_table_.isEmpty()) {
-        QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection, Q_ARG(QString, current_table_),
-            Q_ARG(FilterList, FilterList()));
-    }
+    if (!current_table_.isEmpty())
+        reloadCurrentPage();
 }
 //================================================================================================================
 void Main_Window::onTypesDbLoaded(QStringList types) {

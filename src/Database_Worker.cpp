@@ -15,9 +15,10 @@ void Database_Worker::loadTables() {
 	emit tablesLoaded(tables);
 }
 //================================================================================================================
-void Database_Worker::selectTable(const QString& table, const FilterList &filters) {
+void Database_Worker::selectTable(const QString& table, const FilterList &filters, int pageSize, int offset) {
 	if (!explorer_) return;
-	QSqlQueryModel* model = explorer_->select(table, filters, " AND ");
+	QSqlQueryModel* model = explorer_->select(table, filters, " AND ", pageSize, offset);
+	int totalRows = explorer_->countRows(table, filters);
 	QList<QList<QVariant>> data;
 	QStringList headers;
 
@@ -31,7 +32,7 @@ void Database_Worker::selectTable(const QString& table, const FilterList &filter
 		data << rowData;
 	}
 	delete model;
-	emit selectFinished(data, headers);
+	emit selectFinished(data, headers, totalRows);
 }
 //================================================================================================================
 void Database_Worker::executeQuery(const QString& sql) {

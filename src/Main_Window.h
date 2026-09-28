@@ -44,10 +44,13 @@ private slots:
     void addFilterRow();
     void applyFilters();
     //void onTableContextMenu(const QPoint& pos);       // Клик ПКМ окна таблиц
+    void prevPage();
+    void nextPage();
+    void reloadCurrentPage();
 
     // Поток
     void onTablesLoaded(QStringList tables);
-    void onSelectFinished(QList<QList<QVariant>> data, QStringList headers);
+    void onSelectFinished(QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void onColumnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> cols);
     void onOperationCompleted(bool success, const QString& message);
     void onTypesDbLoaded(QStringList types);
@@ -56,25 +59,26 @@ private:
     void setup_ui();
     void save_note();
     void refresh_table();
+    FilterList collectFilters();
 
     std::unique_ptr<QStandardItemModel> const_ptr_;
 
     // Поток
     QThread* worker_thread_ = nullptr;
     Database_Worker* worker_ = nullptr;;
-    QLineEdit* search_;                         // Поиск
-    QListWidget* table_list_;                   // Список таблиц
-    QTableView* data_view_;                     // Данные
+    QLineEdit* search_ = nullptr;                         // Поиск
+    QListWidget* table_list_ = nullptr;                   // Список таблиц
+    QTableView* data_view_ = nullptr;                     // Данные
     QString current_table_;                     // Текущая таблица
-    QSortFilterProxyModel* proxyModel_;         // Для поиска в любом регистра
-    QPlainTextEdit* notepad_;                   // Заметки
+    QSortFilterProxyModel* proxyModel_ = nullptr;         // Для поиска в любом регистра
+    QPlainTextEdit* notepad_ = nullptr;                   // Заметки
     QString notePath_;                          // Путь для заметок
-    QComboBox* font_select_;                    // Выбор шрифта для заметок
+    QComboBox* font_select_ = nullptr;                    // Выбор шрифта для заметок
     bool isModifyNote_;                         // Заметки изменены
-    QPushButton* unitedT_;                      // 2.2.1 united tables
-    QPushButton* createT_;			            // 2.2.2 create table
-    QPushButton* renameT_;                      // 2.2.3 rename table
-    QPushButton* deleteT_;                      // 2.2.4 delete table
+    QPushButton* unitedT_ = nullptr;                      // 2.2.1 united tables
+    QPushButton* createT_ = nullptr;			            // 2.2.2 create table
+    QPushButton* renameT_ = nullptr;                      // 2.2.3 rename table
+    QPushButton* deleteT_ = nullptr;                      // 2.2.4 delete table
     // Шрифты
     QString hack_;
     QString fira_;
@@ -102,6 +106,13 @@ private:
     QWidget *filterColumn = nullptr;
     QPushButton *btnAddFilter = nullptr;
     QList<FilterRow *> listFilterRows;
+
+    int currentPage_ = 0;
+    int totalRows_   = 0;
+    static const int PAGE_SIZE = 1000;
+    QPushButton* btnPrev_ = nullptr;
+    QPushButton* btnNext_ = nullptr;
+    QLabel* pageLabel_ = nullptr;
 
 protected:
     void closeEvent(QCloseEvent* event) override;

@@ -35,15 +35,14 @@ void Create_Table::setup_ui() {
 	scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
 	scroll_content_ = new QWidget();
+
 	col_layout_ = new QGridLayout(scroll_content_);
 	col_layout_->setSpacing(15);
 	col_layout_->setContentsMargins(15, 15, 15, 15);
-
 	col_layout_->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
 	scroll_content_->setMinimumWidth(800);
 	scroll_content_->setMaximumHeight(1000);
-
 
 	scroll->setWidget(scroll_content_);
 	layout->addWidget(scroll);
@@ -164,7 +163,6 @@ void Create_Table::add_col_row() {
 		}
 		group->hide();
 		group->deleteLater(); });
-
 
 colrow.container_ = group;
 colrow.typeCombo_ = box;

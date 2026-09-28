@@ -24,7 +24,7 @@ public:
 
 public slots:
     void loadTables();
-    void selectTable(const QString &table, const FilterList &filters = {});
+    void selectTable(const QString &table, const FilterList &filters = {}, int pageSize = 0, int offset = 0);
     void executeQuery(const QString& sql);
     void getColumns(const QString& table);
     void insertRow(const QString& table, const Hash& values);
@@ -37,7 +37,7 @@ public slots:
 
 signals:
     void tablesLoaded(QStringList tables);
-    void selectFinished(QList<QList<QVariant>> data, QStringList headers, int pageSize = 0, int offset = 0);
+    void selectFinished(QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void operationCompleted(bool success, const QString& message);
     void columnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
     void typesDbLoaded(QStringList types);

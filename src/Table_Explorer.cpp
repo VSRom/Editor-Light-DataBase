@@ -9,19 +9,14 @@ Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbT
 {
     if (dbType_ == "sqlite")
         types_db_ = { "INTEGER", "REAL", "TEXT", "BLOB" };
-
     else if (dbType_ == "mysql")
         types_db_ = { "INT", "BIGINT", "VARCHAR(255)", "TEXT", "BLOB", "DATE", "DATETIME", "BOOLEAN" };
-
     else if (dbType_ == "postgresql")
         types_db_ = { "INTEGER", "SERIAL", "VARCHAR(255)", "TEXT", "BOOLEAN", "DATE", "TIMESTAMP" };
-
     else if (dbType_ == "access")
         types_db_ = { "INTEGER", "LONG", "TEXT", "MEMO", "YESNO","DATETIME" };
-
     else if (dbType_ == "oracle")
         types_db_ = { "NUMBER", "VARCHAR2(255)", "CLOB", "BLOB", "DATE", "TIMESTAMP" };
-
     else
         types_db_ = { "INTEGER", "TEXT", "REAL", "BLOB" };
 }
