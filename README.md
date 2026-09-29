@@ -44,6 +44,9 @@ Universal database management client written in C++ with a Qt graphical user int
 	- Transactions for batch operations.
 	- Index management (listing, creation, deletion).
 
+## Downloads
+Prebuilt Windows x64 installer: see [Releases](https://github.com/VSRom/Editor-Light-DataBase/releases)
+
 Build:
 	
 	x64 Native Tools Command Prompt for VS
@@ -54,4 +57,3 @@ Build:
 	cmake --build out/build/release
 	cd out/build/release
 	"%QTDIR%\bin\windeployqt.exe" Editor-Light-DataBase.exe	// ELDB.exe
-	
