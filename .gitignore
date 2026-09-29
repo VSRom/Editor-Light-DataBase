@@ -12,6 +12,7 @@
 # Build directories
 out/
 build/
+installer_output/
 bin/
 obj/
 Debug/

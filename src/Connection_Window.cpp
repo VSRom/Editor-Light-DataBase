@@ -130,6 +130,9 @@ void Connection_Window::setupUI()
 			loginLine_->clear();
 			passwordLine_->clear();
 		}
+
+		text_edit_->append("Доступные драйверы: " + QSqlDatabase::drivers().join(", "));
+
 		});
 //===========================================================================================================
 	// 1.2 Add buttons
