@@ -120,75 +120,60 @@ void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList head
     proxyModel_->setFilterFixedString(search_text_);
 }
 //===========================================================================================================
-void Main_Window::setup_ui()
-{
-    setWindowTitle("Manager DataBase");
-    setMinimumSize(1024, 768);
 
-    QWidget *central = new QWidget(this);
+void Main_Window::setup_ui() {
+    setWindowTitle("Manager DataBase");
+    setMinimumSize(1280, 860);
+
+    QWidget* central = new QWidget(this);
     setCentralWidget(central);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(central);
+    QVBoxLayout* mainLayout = new QVBoxLayout(central);
     mainLayout->setContentsMargins(20, 20, 20, 20);
-    mainLayout->setSpacing(25);
+    mainLayout->setSpacing(10);
 
-    QGridLayout *sw = new QGridLayout();
+    QGridLayout* sw = new QGridLayout();
 
-    // Поисковая строка
     search_ = new QLineEdit();
     search_->setPlaceholderText("Search...");
-    sw->addWidget(search_, 0, 0, 1, 3);
+    sw->addWidget(search_, 0, 0, 1, 2);
 
-    QVBoxLayout *filterLayout = new QVBoxLayout();
-    mainLayout->addLayout(filterLayout);
-
-    filterColumn = new QWidget(this);
-    filterColumn->setLayout(new QVBoxLayout());
-    mainLayout->addWidget(filterColumn);
-
-    QHBoxLayout *btnsFilter = new QHBoxLayout();
-    btnAddFilter = new QPushButton("Добавить\nфильтр", this);
-    btnsFilter->addWidget(btnAddFilter);
-    mainLayout->addLayout(btnsFilter);
+    btnAddFilter = new QPushButton("+ Фильтр", this);
+    btnAddFilter->setFixedWidth(110);
+    sw->addWidget(btnAddFilter, 0, 2, 1, 1);
 
     connect(btnAddFilter, &QPushButton::clicked, this, &Main_Window::addFilterRow);
 
-    // Данные
+    filterColumn = new QWidget(this);
+    filterColumn->setLayout(new QVBoxLayout());
+    filterColumn->layout()->setContentsMargins(0, 0, 0, 0);
+    filterColumn->layout()->setSpacing(4);
+    filterColumn->setVisible(false);
+    filterColumn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    sw->addWidget(filterColumn, 1, 0, 1, 3);
+
     data_view_ = new QTableView();
-    data_view_->setEditTriggers(QAbstractItemView::NoEditTriggers); // Блокируем возможность редактирования "id"
+    data_view_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     data_view_->setSelectionBehavior(QAbstractItemView::SelectRows);
     data_view_->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    sw->addWidget(data_view_, 2, 0, 1, 3);
 
-    sw->addWidget(data_view_, 1, 0, 1, 3);
-
-///////////========================================================Онлайн редактирование БД========================================================///////////
-    // Подключение сигнала двойного клика ЛКМ
     connect(data_view_, &QTableView::doubleClicked, this, &Main_Window::doubleClick);
-
-    // Скрыть заголовок с дублированием id
     data_view_->verticalHeader()->setVisible(false);
 
-    // Для поиска по любому регистру
     proxyModel_ = new QSortFilterProxyModel(this);
-    proxyModel_->setFilterCaseSensitivity(Qt::CaseInsensitive); // Игнор регистра
-    proxyModel_->setFilterKeyColumn(-1); // Поиск по всем колонкам
+    proxyModel_->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    proxyModel_->setFilterKeyColumn(-1);
     data_view_->setModel(proxyModel_);
 
-    // Список таблиц
     table_list_ = new QListWidget(this);
-    table_list_->setSelectionMode(QAbstractItemView::ExtendedSelection);    // Для диапозонного выделения чз Shift и одиночного чз Ctrl
-///////////========================================================Онлайн редактирование БД========================================================///////////
+    table_list_->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
-///////////==========================================================Контекстное меню БД========================================================///////////
-
-    data_view_->setContextMenuPolicy(Qt::CustomContextMenu);    // Сами будем обрабатывать ПКМ
+    data_view_->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(data_view_, &QTableView::customContextMenuRequested, this, &Main_Window::onDBContextMenu);
-
-///////////==========================================================Контекстное меню БД========================================================///////////
 
     QGridLayout* ucrd = new QGridLayout();
 
-    // Окно заметок + сохранение в notepad.ini файл + 3 варианта при закрытие приложения
     notepad_ = new QPlainTextEdit();
     font_select_ = new QComboBox();
     font_select_->addItems({ hack_, fira_, anon_ });
@@ -198,7 +183,6 @@ void Main_Window::setup_ui()
     connect(font_select_, &QComboBox::currentTextChanged, this, &Main_Window::onFontChanged);
     connect(notepad_, &QPlainTextEdit::textChanged, this, &Main_Window::onTextChanged);
 
-   
     QSettings settings(notePath_, QSettings::IniFormat);
     QString text = settings.value("notepad/text", "").toString();
     QString font = settings.value("notepad/font", hack_).toString();
@@ -207,8 +191,6 @@ void Main_Window::setup_ui()
     notepad_->setFont(QFont(font, size));
     font_select_->setCurrentText(font);
 
-    // 4 кнопки(Объединить, Создать, Переименовать, Удалить) "Между Заметками и Окном списка таблиц"
-    
     unitedT_ = new QPushButton("Объединить\n таблицы", this);
     createT_ = new QPushButton("Создать\n таблицу", this);
     renameT_ = new QPushButton("Переименовать\n таблицу", this);
@@ -225,19 +207,32 @@ void Main_Window::setup_ui()
     connect(renameT_, &QPushButton::clicked, this, &Main_Window::tab_rename);
     connect(deleteT_, &QPushButton::clicked, this, &Main_Window::tab_delete);
 
+    QHBoxLayout* paginationLayout = new QHBoxLayout();
+    paginationLayout->setContentsMargins(0, 0, 0, 0);
+    paginationLayout->setSpacing(8);
+
     btnPrev_ = new QPushButton("◀", this);
-    pageLabel_ = new QLabel("Странимца 1 из 1", this);
+    btnPrev_->setFixedWidth(60);
+    paginationLayout->addWidget(btnPrev_);
+
+    pageLabel_ = new QLabel("Страница 1 из 1", this);
+    pageLabel_->setAlignment(Qt::AlignHCenter);
+    paginationLayout->addWidget(pageLabel_);
+
     btnNext_ = new QPushButton("▶", this);
+    btnNext_->setFixedWidth(60);
+    paginationLayout->addWidget(btnNext_);
 
     connect(btnPrev_, &QPushButton::clicked, this, &Main_Window::prevPage);
     connect(btnNext_, &QPushButton::clicked, this, &Main_Window::nextPage);
 
-    sw->addLayout(ucrd, 2, 3, 1, 1);
-    sw->addWidget(notepad_, 3, 3, 2, 1);
-    sw->addWidget(table_list_, 0, 3, 2, 1); // Номер строки // Номер колонки // Сколько строк занять // Сколько колонок занять
-    sw->addWidget(btnPrev_, 3, 0, 1, 1);
-    sw->addWidget(btnNext_, 3, 2, 1, 1);
-    sw->setRowStretch(1, 1);
+    sw->addLayout(paginationLayout, 3, 0, 1, 3);
+
+    sw->addLayout(ucrd, 0, 3, 3, 1);
+    sw->addWidget(notepad_, 3, 3, 1, 1);
+    sw->addWidget(table_list_, 4, 3, 1, 1);
+
+    sw->setRowStretch(2, 1);
     sw->setColumnStretch(0, 1);
     sw->setColumnStretch(1, 1);
     sw->setColumnStretch(2, 1);
@@ -246,8 +241,9 @@ void Main_Window::setup_ui()
     mainLayout->addLayout(sw);
 
     connect(table_list_, &QListWidget::currentTextChanged, this, &Main_Window::onTableSelected);
-    connect(search_, &QLineEdit::returnPressed, this, &Main_Window::onSearch); 
-    //  Кто отправляет       // Сигнал     // Кто принимает // Слот
+    connect(search_, &QLineEdit::returnPressed, this, &Main_Window::onSearch);
+
+    resize(1440, 900);
 }
 //================================================================================================================
 void Main_Window::onSearch() {
@@ -472,38 +468,53 @@ void Main_Window::onAddCol() {
 }
 //================================================================================================================
 void Main_Window::addFilterRow() {
-    FilterRow* structura  = new FilterRow();
-    QStringList operators = { "=", "!=", "<", ">", "<=", ">=", "LIKE"};
+    FilterRow* structura = new FilterRow();
+    QStringList operators = { "=", "!=", "<", ">", "<=", ">=", "LIKE" };
+
     structura->container_ = new QWidget();
-    structura->editCombo_ = new QLineEdit(structura->container_);
+    structura->container_->setFixedHeight(32);
+
     structura->columnCombo_ = new QComboBox(structura->container_);
+    structura->columnCombo_->setFixedWidth(140);
+
     structura->operatorCombo_ = new QComboBox(structura->container_);
+    structura->operatorCombo_->setFixedWidth(70);
     structura->operatorCombo_->addItems(operators);
 
-    QHBoxLayout *layout   = new QHBoxLayout(structura->container_);
-    layout->addWidget(structura->editCombo_);
+    structura->editCombo_ = new QLineEdit(structura->container_);
+
+    structura->btnDel_ = new QPushButton("X", structura->container_);
+    structura->btnDel_->setFixedSize(24, 24);
+
+    QHBoxLayout* layout = new QHBoxLayout(structura->container_);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(4);
     layout->addWidget(structura->columnCombo_);
     layout->addWidget(structura->operatorCombo_);
+    layout->addWidget(structura->editCombo_);
+    layout->addWidget(structura->btnDel_);
 
     for (int i = 0; i < proxyModel_->columnCount(); i++)
         structura->columnCombo_->addItem(proxyModel_->headerData(i, Qt::Horizontal).toString());
-
-    structura->btnDel_ = new QPushButton("X", structura->container_);
 
     connect(structura->btnDel_, &QPushButton::clicked, this, [this, structura]() {
         int i = listFilterRows.indexOf(structura);
         if (i != -1) {
             listFilterRows.removeAt(i);
+            if (listFilterRows.isEmpty())
+                filterColumn->setVisible(false);
             structura->container_->hide();
             structura->container_->deleteLater();
             delete structura;
-        }});
+        }
+        });
 
-        connect(structura->columnCombo_, &QComboBox::currentTextChanged, this, &Main_Window::applyFilters);
-        connect(structura->editCombo_, &QLineEdit::textChanged, this, &Main_Window::applyFilters);
+    connect(structura->columnCombo_, &QComboBox::currentTextChanged, this, &Main_Window::applyFilters);
+    connect(structura->editCombo_, &QLineEdit::textChanged, this, &Main_Window::applyFilters);
 
-        filterColumn->layout()->addWidget(structura->container_);
-        listFilterRows.append(structura);
+    filterColumn->layout()->addWidget(structura->container_);
+    listFilterRows.append(structura);
+    filterColumn->setVisible(true);
 }
 //================================================================================================================
 void Main_Window::applyFilters() {
