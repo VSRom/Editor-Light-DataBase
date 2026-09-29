@@ -98,7 +98,10 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         q.exec(QString(
             "SELECT column_name, data_type, is_nullable "
             "FROM information_schema.columns "
-            "WHERE table_name = '%1'").arg(tableName));
+            "WHERE table_name = ?"));
+        q.bindValue(0, tableName);
+        q.exec();
+
         while (q.next()) {
             QString colName = q.value(0).toString();
             cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive) });
@@ -109,8 +112,11 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         q.exec(QString(
             "SELECT column_name, data_type, nullable "
             "FROM user_tab_columns "
-            "WHERE table_name = '%1' "
-            "ORDER BY column_id").arg(tableName.toUpper()));
+            "WHERE table_name = ? "
+            "ORDER BY column_id"));
+        q.bindValue(0, tableName.toUpper());
+        q.exec();
+
         while (q.next()) {
             QString colName = q.value(0).toString();
             cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y", pkColumns.contains(colName, Qt::CaseInsensitive) });
@@ -120,7 +126,10 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         q.exec(QString(
             "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE "
             "FROM INFORMATION_SCHEMA.COLUMNS "
-            "WHERE TABLE_NAME = '%1'").arg(tableName));
+            "WHERE TABLE_NAME = ?"));
+        q.bindValue(0, tableName);
+        q.exec();
+
         while (q.next()) {
             QString colName = q.value(0).toString();
             cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive)  });

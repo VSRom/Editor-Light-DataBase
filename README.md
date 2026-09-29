@@ -31,12 +31,12 @@ Universal database management client written in C++ with a Qt graphical user int
 	
 	Additional Features:
 	- Local notes (stored independently from the DB).
+	- SQL injection protection.
 
 ## Planned Features
 
 	- User administration capabilities (creation, privilege assignment, blocking/deletion).
 	- Data merging from multiple tables with filtering by creating a new virtual table.
-	- SQL injection protection.
 	- Backup and recovery.
 	- Data export/import (CSV, JSON, SQL INSERT script).
 	- SQL console.

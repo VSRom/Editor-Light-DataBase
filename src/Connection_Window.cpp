@@ -250,8 +250,13 @@ void Connection_Window::connection() {
 		}
 	}
 
-	if (driver_ == "QODBC")
+	if (driver_ == "QODBC") {
+		if (dbPath.contains(';') || dbPath.contains('{') || dbPath.contains('}')) {
+			text_edit_->append("Путь к файлу содержит недопустимые символы: ';', '{', '}'");
+				return;
+		}
 		db.setDatabaseName(QString("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%1;").arg(dbPath));
+	}
 	else
 		db.setDatabaseName(dbPath);
 
