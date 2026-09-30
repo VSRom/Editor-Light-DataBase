@@ -7,5 +7,10 @@
 		<file>resources/fonts/Anon.ttf</file>
 		<file>resources/fonts/Fira.ttf</file>
 		<file>resources/fonts/Hack.ttf</file>
+		<file>qml_desktop/AddRowDialog.qml</file>
+		<file>qml_desktop/ConnectionWindow.qml</file>
+		<file>qml_desktop/CreateTable.qml</file>
+		<file>qml_desktop/MainWindow.qml</file>
+		<file>qml_desktop/MergeTables.qml</file>
 	</qresource> 
  </RCC>

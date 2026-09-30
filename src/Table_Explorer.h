@@ -41,7 +41,7 @@ public:
     bool drop_table(const QString& table) const;
     bool rename_table(const QString& table, const QString& new_name_table) const;
     bool exeQuery(const QString& sql) const;
-    int countRows(const QString &table, const FilterList &filters = {}) const;
+    int  countRows(const QString &table, const FilterList &filters = {}) const;
 
     static QString safeName(const QString& name);
 
