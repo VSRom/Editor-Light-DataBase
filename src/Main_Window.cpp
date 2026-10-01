@@ -120,7 +120,6 @@ void Main_Window::onSelectFinished(QList<QList<QVariant>> data, QStringList head
     proxyModel_->setFilterFixedString(search_text_);
 }
 //===========================================================================================================
-
 void Main_Window::setup_ui() {
     setWindowTitle("Manager DataBase");
     setMinimumSize(1280, 860);
