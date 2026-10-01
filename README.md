@@ -36,7 +36,9 @@ Universal database management client written in C++ with a Qt graphical user int
 
 ## Planned Features
 
-	- UI modernization: Port the graphical user interface to QML.
+	 #UI modernization
+	 
+	- Port the graphical user interface to QML.
 	
 	- User administration capabilities (creation, privilege assignment, blocking/deletion).
 	- Data merging from multiple tables with filtering by creating a new virtual table.
