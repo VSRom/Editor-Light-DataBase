@@ -34,12 +34,12 @@ Universal database management client written in C++ with a Qt graphical user int
 	- SQL injection protection.
 	- Added database driver support(SQLite, MySQL, MariaDB, PostgreSQL, Oracle, Access/ODBC, InterBase, Mimer)
 
-## Planned Features
-
-	 ## UI modernization
+## UI modernization
 	 
 	- Port the graphical user interface to QML.
-	
+
+## Planned Features
+
 	- User administration capabilities (creation, privilege assignment, blocking/deletion).
 	- Data merging from multiple tables with filtering by creating a new virtual table.
 	- Backup and recovery.
