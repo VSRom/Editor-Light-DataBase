@@ -36,7 +36,7 @@ Universal database management client written in C++ with a Qt graphical user int
 
 ## Planned Features
 
-	 # UI modernization
+	 ## UI modernization
 	 
 	- Port the graphical user interface to QML.
 	
