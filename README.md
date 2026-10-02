@@ -32,14 +32,11 @@ Universal database management client written in C++ with a Qt graphical user int
 	Additional Features:
 	- Local notes (stored independently from the DB).
 	- SQL injection protection.
-	- Added database driver support(SQLite, MySQL, MariaDB, PostgreSQL, Oracle, Access/ODBC, InterBase, Mimer)
+	- Added database driver support(SQLite, MySQL, MariaDB, PostgreSQL, Oracle, Access/ODBC, InterBase, Mimer).
+	- Port UI from C++ to QML.
 
 ## Planned Features
 
-	 #UI modernization
-	 
-	- Port the graphical user interface to QML.
-	
 	- User administration capabilities (creation, privilege assignment, blocking/deletion).
 	- Data merging from multiple tables with filtering by creating a new virtual table.
 	- Backup and recovery.

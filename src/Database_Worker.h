@@ -4,45 +4,47 @@
 #include <QStringList>
 #include <QList>
 #include <QVariant>
+#include <QVariantList>
 #include <QMap>
 #include <QHash>
 #include "Table_Explorer.h"
-//================================================================================================================
+
 typedef QHash<QString, QVariant> Hash;
 typedef QMap<QString, QVariant> Map;
 typedef QMap<QString, QString> MapString;
-//================================================================================================================
 Q_DECLARE_METATYPE(Hash)
 Q_DECLARE_METATYPE(Map)
 Q_DECLARE_METATYPE(MapString)
-//================================================================================================================
+
 class Database_Worker : public QObject {
     Q_OBJECT
+
 public:
     explicit Database_Worker(const QString& connectionName, const QString& dbType, QObject* parent = nullptr);
     ~Database_Worker();
 
 public slots:
     void loadTables();
-    void selectTable(const QString &table, const FilterList &filters = {}, int pageSize = 0, int offset = 0);
+    void selectTable(quint64 requestId, const QString& table, const FilterList& filters = {}, int pageSize = 0, int offset = 0,
+        const QString& search = {}, const QStringList& searchableColumns = {});
     void executeQuery(const QString& sql);
-    void getColumns(const QString& table);
+    void getColumns(quint64 requestId, const QString& table);
     void insertRow(const QString& table, const Hash& values);
     void updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues);
     void removeRow(const QString& table, const QString& idColumn, const QVariant& idValue);
-    void getTypesDb();
+    void removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues);
+    void getTypesDb(quint64 requestId);
     void initConnection(const QString& driver, const QString& dbPath, const QString& db_type, const QString& host, const int port, const QString& log, const QString& pass);
     void dropTable(const QString& table);
     void renameTable(const QString& oldName, const QString& newName);
 
 signals:
     void tablesLoaded(QStringList tables);
-    void selectFinished(QList<QList<QVariant>> data, QStringList headers, int totalRows);
+    void selectFinished(quint64 requestId, QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void operationCompleted(bool success, const QString& message);
-    void columnsLoaded(const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
-    void typesDbLoaded(QStringList types);
+    void columnsLoaded(quint64 requestId, const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
+    void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);
-
 private:
     Table_Explorer* explorer_;
     QString connection_name_;
@@ -50,4 +52,3 @@ private:
     QString db_path_;
     QString dbType_;
 };
-//================================================================================================================

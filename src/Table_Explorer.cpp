@@ -55,7 +55,6 @@ QStringList Table_Explorer::getUserTables() const {
 
             if (dbType_ == "access" && temp.startsWith("MSys_"))
                 continue;
-
             if (dbType_ == "oracle" && (temp.startsWith("SYS_") || temp.startsWith("BIN$")))
                 continue;
 
@@ -138,7 +137,9 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         return cols;
 }
 //================================================================================================================
-QSqlQueryModel *Table_Explorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize, int offset) const {
+QSqlQueryModel *Table_Explorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
+    int offset, const QString& search, const QStringList& searchableColumns) const
+{
     QString sql = QString("SELECT * FROM %1").arg(safeName(table));
 
     if (!filters.isEmpty()) {
@@ -282,6 +283,15 @@ bool Table_Explorer::remove(const QString &table, const QString &idColumn, const
     return exe;
 }
 //================================================================================================================
+bool Table_Explorer::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
+    bool all = true;
+
+    for (const QVariant& v : idValues)
+        all = remove(table, idColumn, v) && all;
+
+    return all;
+}
+//================================================================================================================
 bool Table_Explorer::drop_table(const QString& table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
@@ -324,7 +334,9 @@ bool Table_Explorer::exeQuery(const QString& sql) const {
     return exe;
 }
 //================================================================================================================
-int Table_Explorer::countRows(const QString &table, const FilterList &filters) const {  // Пагинация
+int Table_Explorer::countRows(const QString &table, const FilterList &filters,
+    const QString& search, const QStringList& searchableColumns) const
+{
     QString sql = QString("SELECT COUNT(*) FROM %1").arg(safeName(table));
 
     if (!filters.isEmpty()) {
@@ -376,3 +388,26 @@ QString Table_Explorer::safeName(const QString& name) {
     return result;
 }
 //================================================================================================================
+QString Table_Explorer::buildSearchCondition(const QString& search, const QStringList& cols, QStringList& outParams) const {
+    if (search.isEmpty() || cols.isEmpty()) return QString();
+
+    QString esc = search;
+    const bool useEscape = !(dbType_ == "access" || dbType_ == "odbc");
+    if (useEscape) {
+        esc.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+    const QString pattern = "%" + esc + "%";
+    const QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
+    const QString tail = useEscape ? " ESCAPE '\\'" : "";
+    QStringList ors;
+    for (const QString& c : cols) {
+        QString castExpr;
+        if (dbType_ == "sqlite" || dbType_ == "postgresql") castExpr = QString("CAST(%1 AS TEXT)").arg(safeName(c));
+        else if (dbType_ == "mysql")                       castExpr = QString("CAST(%1 AS CHAR)").arg(safeName(c));
+        else if (dbType_ == "oracle")                     castExpr = QString("TO_CHAR(%1)").arg(safeName(c));
+        else                                              castExpr = safeName(c);   // access/odbc: без каста
+        ors << QString("%1 %2 ?%3").arg(castExpr, op, tail);
+        outParams << pattern;
+    }
+    return "(" + ors.join(" OR ") + ")";
+}

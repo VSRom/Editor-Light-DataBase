@@ -8,6 +8,8 @@
 *.slnx
 **/.vs/
 
+#trash
+trash/
 
 # Build directories
 out/

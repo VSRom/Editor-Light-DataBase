@@ -1,16 +1,38 @@
 <!DOCTYPE RCC>
-	<RCC version="1.0"> 
-	<qresource prefix="/">
-		<file>icons/app_icon.ico</file>
-		<file>icons/arr-down.png</file>
-		<file>resources/style.qss</file>
-		<file>resources/fonts/Anon.ttf</file>
-		<file>resources/fonts/Fira.ttf</file>
-		<file>resources/fonts/Hack.ttf</file>
-		<file>qml_desktop/AddRowDialog.qml</file>
-		<file>qml_desktop/ConnectionWindow.qml</file>
-		<file>qml_desktop/CreateTable.qml</file>
-		<file>qml_desktop/MainWindow.qml</file>
-		<file>qml_desktop/MergeTables.qml</file>
-	</qresource> 
- </RCC>
+<RCC version="1.0">
+  <qresource prefix="/">
+    <file>icons/app_icon.ico</file>
+    <file>icons/arr-down.png</file>
+    <file>resources/fonts/Anon.ttf</file>
+    <file>resources/fonts/Fira.ttf</file>
+    <file>resources/fonts/Hack.ttf</file>
+
+    <file>qml_desktop/App.qml</file>
+    <file>qml_desktop/Theme.qml</file>
+
+    <file>qml_desktop/ConnectionWindow.qml</file>
+    <file>qml_desktop/MainWindow.qml</file>
+
+    <file>qml_desktop/ConfirmPopup.qml</file>
+    <file>qml_desktop/InputPopup.qml</file>
+	<file>qml_desktop/ChoicePopup.qml</file>
+
+    <file>qml_desktop/DataTable.qml</file>
+    <file>qml_desktop/FilterPanel.qml</file>
+    <file>qml_desktop/Notepad.qml</file>
+    <file>qml_desktop/TableList.qml</file>
+    <file>qml_desktop/Console.qml</file>
+
+    <file>qml_desktop/CreateTable.qml</file>
+    <file>qml_desktop/MergeTables.qml</file>
+    <file>qml_desktop/AddRowDialog.qml</file>
+
+    <file>qml_desktop/themed/ThemedButton.qml</file>
+    <file>qml_desktop/themed/ThemedCheckBox.qml</file>
+    <file>qml_desktop/themed/ThemedComboBox.qml</file>
+    <file>qml_desktop/themed/ThemedLabel.qml</file>
+    <file>qml_desktop/themed/ThemedScrollView.qml</file>
+    <file>qml_desktop/themed/ThemedTextArea.qml</file>
+    <file>qml_desktop/themed/ThemedTextField.qml</file>
+  </qresource>
+</RCC>
