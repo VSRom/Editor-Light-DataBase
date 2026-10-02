@@ -35,13 +35,6 @@ Universal database management client written in C++ with a Qt graphical user int
 	- Added database driver support(SQLite, MySQL, MariaDB, PostgreSQL, Oracle, Access/ODBC, InterBase, Mimer).
 	- Port UI from C++ to QML.
 
-<<<<<<< HEAD
-=======
-## UI modernization
-	 
-	- Port the graphical user interface to QML.
-
->>>>>>> a6875e51dc136e21d06814305aa951508d33cbfd
 ## Planned Features
 
 	- User administration capabilities (creation, privilege assignment, blocking/deletion).
