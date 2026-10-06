@@ -51,6 +51,7 @@ Universal database management client written in C++ with a Qt graphical user int
 	- SQL console.
 	- Transactions for batch operations.
 	- Index management (listing, creation, deletion).
+	- Stored routines & triggers management (dedicated windows with built-in validation and a quick-access toolbar).
 
 ## Downloads
 Prebuilt Windows x64 installer: see [Releases](https://github.com/VSRom/Editor-Light-DataBase/releases)
