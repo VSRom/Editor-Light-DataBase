@@ -27,7 +27,8 @@ ApplicationWindow {
 
         if (MainController.noteDirty) {
             event.ignore()
-            noteClose.open() }
+            noteClose.open()
+        }
     }
 
     Loader {
@@ -39,12 +40,14 @@ ApplicationWindow {
 
     Component {
         id: connectionComponent
+
         ConnectionWindow { }
     }
 
     Component {
         id: mainComponent
-        MainWindow { }
+
+        ShellWindows { }
     }
 
     Connections {
@@ -101,14 +104,33 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 spacing: 8
 
-                Item { Layout.fillWidth: true }
-                ThemedButton { text: "Отмена"; onClicked: noteClose.close() }
-                ThemedButton { text: "Не сохранять"; danger: true
+                Item {
+                    Layout.fillWidth: true
+                }
+                ThemedButton {
+                    text: "Отмена"
+                    onClicked: noteClose.close()
+                }
 
-                    onClicked: { noteClose.close(); app.forceClose = true; app.close() } }
+                ThemedButton {
+                    text: "Не сохранять"
+                    danger: true
 
-                ThemedButton { text: "Сохранить"
-                    onClicked: { MainController.saveNote(); noteClose.close(); app.forceClose = true; app.close() } }
+                    onClicked: {
+                        noteClose.close()
+                        app.forceClose = true
+                        app.close() }
+                }
+
+                ThemedButton {
+                    text: "Сохранить"
+                    onClicked: {
+                        MainController.saveNote()
+                        noteClose.close()
+                        app.forceClose = true
+                        app.close()
+                    }
+                }
             }
         }
     }

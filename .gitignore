@@ -47,6 +47,7 @@ instruct.txt
 *pro.user
 *.qbs.user
 *.ui
+.qtcreator/
 
 # BD
 tasks.db
