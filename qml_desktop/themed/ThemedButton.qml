@@ -17,16 +17,28 @@ Button {
         radius: Theme.radius
         border.width: 1
         border.color: {
-            if (!control.enabled)              return Theme.border;
-            if (control.down)                  return Theme.accentDark;
-            if (control.hovered)               return Theme.accent;
-            return Theme.buttonBorder;
+            if (!control.enabled)
+                return Theme.border
+
+            if (control.down)
+                return Theme.accentDark
+
+            if (control.hovered)
+                return Theme.accent
+
+            return Theme.buttonBorder
         }
         color: {
-            if (!control.enabled)              return Theme.panel;
-            if (control.down)                  return Theme.pressed;
-            if (control.hovered)               return Theme.accentDark;
-            return Theme.buttonBg;
+            if (!control.enabled)
+                return Theme.panel
+
+            if (control.down)
+                return Theme.pressed
+
+            if (control.hovered)
+                return Theme.accentDark
+
+            return Theme.buttonBg
         }
     }
 
@@ -37,14 +49,23 @@ Button {
         verticalAlignment: Text.AlignVCenter
         wrapMode: Text.WordWrap
         color: {
-            if (!control.enabled)              return Theme.textDisabled;
+            if (!control.enabled)
+                return Theme.textDisabled
+
             if (control.danger) {
-                if (control.down)              return Theme.dangerPressed;
-                if (control.hovered)           return Theme.dangerHover;
-                return Theme.danger;
+                if (control.down)
+                    return Theme.dangerPressed
+
+                if (control.hovered)
+                    return Theme.dangerHover
+
+                return Theme.danger
             }
-            if (control.hovered || control.down) return Theme.selectionText;
-            return Theme.text;
+
+            if (control.hovered || control.down)
+                return Theme.selectionText
+
+            return Theme.text
         }
     }
 }

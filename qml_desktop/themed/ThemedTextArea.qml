@@ -11,6 +11,7 @@ TextArea {
     font.family: Theme.fontFamily
     font.pointSize: Theme.fontSize
     padding: 8
+
     background: Rectangle {
         radius: Theme.radius
         border.width: 1

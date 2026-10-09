@@ -5,6 +5,7 @@ import "themed"
 
 Rectangle {
     id: root
+
     radius: Theme.radius
     border.width: 1
     border.color: Theme.border
@@ -22,8 +23,7 @@ Rectangle {
             elide: Text.ElideRight
             opacity: 0.85
             text: "Таблица: " + (m.currentTable.length ? m.currentTable : "—")
-                  + "   |   стр. " + (m.currentPage + 1) + "/" + m.totalPages
-                  + "   |   всего: " + m.totalRows
+                  + "   |   стр. " + (m.currentPage + 1) + "/" + m.totalPages + "   |   всего: " + m.totalRows
         }
         ThemedLabel {
             Layout.fillWidth: true

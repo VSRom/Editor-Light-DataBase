@@ -17,7 +17,8 @@ CheckBox {
     }
 
     indicator: Rectangle {
-        implicitWidth: 16; implicitHeight: 16
+        implicitWidth: 16
+        implicitHeight: 16
         radius: 3
         border.width: 1
         border.color: control.checked ? Theme.accentDark : Theme.border

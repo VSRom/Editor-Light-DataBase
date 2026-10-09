@@ -10,7 +10,10 @@ TextField {
     placeholderTextColor: Theme.placeholder
     font.family: Theme.fontFamily
     font.pointSize: Theme.fontSize
-    leftPadding: 8; rightPadding: 8; topPadding: 4; bottomPadding: 4
+    leftPadding: 8
+    rightPadding: 8
+    topPadding: 4
+    bottomPadding: 4
 
     background: Rectangle {
         radius: Theme.radius

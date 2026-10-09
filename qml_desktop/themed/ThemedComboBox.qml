@@ -48,7 +48,9 @@ ComboBox {
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
         }
-        background: Rectangle { color: highlighted ? Theme.selection : Theme.panel }
+        background: Rectangle {
+            color: highlighted ? Theme.selection : Theme.panel
+        }
     }
 
     popup: Popup {
@@ -62,6 +64,7 @@ ComboBox {
             implicitHeight: contentHeight
             model: control.popup.visible ? control.delegateModel : null
             currentIndex: control.highlightedIndex
+
             ScrollIndicator.vertical: ScrollIndicator { }
         }
 

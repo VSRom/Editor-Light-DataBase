@@ -5,6 +5,7 @@ import "themed"
 
 Item {
     id: root
+
     focus: true
     property var tm: MainController.tableModel
 
@@ -17,6 +18,7 @@ Item {
             width: parent.width
             height: 28
             color: Theme.header
+
             Row {
                 Repeater {
                     model: tm.cols
@@ -37,17 +39,22 @@ Item {
         ThemedScrollView {
             width: parent.width
             height: parent.height - 28
+
             ListView {
                 id: lv
+
                 model: tm.rows
                 clip: true
+
                 delegate: Item {
                     width: ListView.view.width
                     height: 28
                     property int r: index
+
                     Row {
                         Repeater {
                             model: tm.cols
+
                             delegate: MouseArea {
                                 width: 140
                                 height: 28
@@ -57,12 +64,13 @@ Item {
                                     else tm.selectOnly(r)
                                 }
                                 onDoubleClicked: MainController.updateCellRequested(r, c)
+
                                 Rectangle {
                                     anchors.fill: parent
                                     border.color: Theme.gridline
                                     border.width: 1
-                                    color: tm.isSelectedAt(r) ? Theme.selection
-                                           : (r % 2 ? Theme.tableAlt : Theme.table)
+                                    color: tm.isSelectedAt(r) ? Theme.selection : (r % 2 ? Theme.tableAlt : Theme.table)
+
                                     ThemedLabel {
                                         anchors.fill: parent
                                         anchors.margins: 4
@@ -84,10 +92,19 @@ Item {
 
     Menu {
         id: ctx
-        MenuItem { text: "Добавить строку"; onTriggered: MainController.requestAddRow() }
+        MenuItem {
+            text: "Добавить строку"
+            onTriggered: MainController.requestAddRow()
+        }
+
         MenuSeparator {}
-        MenuItem { text: "Добавить столбец"; onTriggered: root.addColumnRequested() }
+
+        MenuItem {
+            text: "Добавить столбец"
+            onTriggered: root.addColumnRequested()
+        }
     }
+
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
