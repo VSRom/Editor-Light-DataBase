@@ -138,48 +138,29 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
 }
 //================================================================================================================
 QSqlQueryModel *Table_Explorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
-    int offset, const QString& search, const QStringList& searchableColumns) const
-{
+                                       int offset, const QString& search, const QStringList& searchableColumns) const {
+    QStringList params;
+    QString where = buildWhereClause(filters, logic, search, searchableColumns, params);
+
     QString sql = QString("SELECT * FROM %1").arg(safeName(table));
-
-    if (!filters.isEmpty()) {
-        sql += " WHERE ";
-
-        QStringList conditions;
-
-        for (const auto &f : filters) {
-            if (f.operator_ == "LIKE") {
-                QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
-                QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE" : "";
-                conditions << QString("%1 %2 ?%3").arg(safeName(f.colName_), op, collate);
-            }
-            else
-                conditions << QString("%1 %2 ?").arg(safeName(f.colName_), f.operator_);
-        }
-        sql += conditions.join(logic);
-    }
+    sql += where;
 
     if (pageSize > 0)
         sql += QString(" LIMIT %1 OFFSET %2").arg(pageSize).arg(offset);
 
-    auto *model = new QSqlQueryModel();
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
     qs.prepare(sql);
 
-    if (!filters.isEmpty()) {
-        int idx = 0;
-        for (const auto &f : filters) {
-            if (f.operator_ == "LIKE")
-                qs.bindValue(idx, "%" + f.value_ + "%");
-            else
-                qs.bindValue(idx, f.value_);
-            ++idx;
-        }
-    }
+    for (int i = 0; i < params.size(); i++)
+        qs.bindValue(i, params.at(i));
+
+    auto* model = new QSqlQueryModel();
 
     if (!qs.exec()) {
 #ifdef QT_DEBUG
         qDebug() << "Query error:" << qs.lastError().text();
+        qDebug() << "SQL: " << sql;
+        qDebug() << "Params: " << params;
 #endif
     }
 
@@ -337,38 +318,17 @@ bool Table_Explorer::exeQuery(const QString& sql) const {
 int Table_Explorer::countRows(const QString &table, const FilterList &filters,
     const QString& search, const QStringList& searchableColumns) const
 {
+
+    QStringList params;
+    QString where = buildWhereClause(filters, QStringLiteral(" AND "), search, searchableColumns, params);
     QString sql = QString("SELECT COUNT(*) FROM %1").arg(safeName(table));
-
-    if (!filters.isEmpty()) {
-        sql += " WHERE ";
-
-        QStringList conditions;
-
-        for (const auto &f : filters) {
-            if (f.operator_ == "LIKE") {
-                QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
-                QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE" : "";
-                conditions << QString("%1 %2 ?%3").arg(safeName(f.colName_), op, collate);
-            }
-            else
-                conditions << QString("%1 %2 ?").arg(safeName(f.colName_), f.operator_);
-        }
-        sql += conditions.join(" AND ");
-    }
+    sql += where;
 
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
     qs.prepare(sql);
 
-    if (!filters.isEmpty()) {
-        int idx = 0;
-        for (const auto &f : filters) {
-            if (f.operator_ == "LIKE")
-                qs.bindValue(idx, "%" + f.value_ + "%");
-            else
-                qs.bindValue(idx, f.value_);
-            ++idx;
-        }
-    }
+    for (int i = 0; i < params.size(); i++)
+        qs.bindValue(i, params.at(i));
 
     if (qs.exec() && qs.next())
         return qs.value(0).toInt();
@@ -411,3 +371,41 @@ QString Table_Explorer::buildSearchCondition(const QString& search, const QStrin
     }
     return "(" + ors.join(" OR ") + ")";
 }
+//================================================================================================================
+QString Table_Explorer::buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
+                                         , const QStringList& searchableColumns, QStringList& outParams) const {
+    QStringList conditions;
+    outParams.clear();
+
+    for(const  auto& f : filters) {
+        if(f.operator_ == "LIKE") {
+            QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
+            QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE " : "";
+
+            conditions << QString("%1 %2 %3").arg(safeName(f.colName_), op, collate);
+
+            outParams << "%" + f.value_ + "%";
+
+        }
+        else {
+            conditions << QString("%1 %2 ?").arg(safeName(f.colName_), f.operator_);
+            outParams << f.value_;
+        }
+    }
+
+    QStringList searchParams;
+    QString searchCond = buildSearchCondition(search, searchableColumns, searchParams);
+
+    if (!searchCond.isEmpty()) {
+        conditions << searchCond;
+        outParams += searchParams;
+    }
+
+    if (conditions.isEmpty())
+        return QString();
+
+    const QString joiner = logic.isEmpty() ? QStringLiteral(" AND ") : logic;
+
+    return " WHERE " + conditions.join(joiner);
+}
+//================================================================================================================

@@ -11,8 +11,8 @@ ColumnLayout {
 
     ThemedComboBox {
         Layout.fillWidth: true
-        model: MainController.fonts
-        currentIndex: Math.max(0, MainController.fonts.indexOf(MainController.noteFont))
+        model:            MainController.fonts
+        currentIndex:     Math.max(0, MainController.fonts.indexOf(MainController.noteFont))
         onActivated: function(i) {
             MainController.setUserNoteFont(MainController.fonts[i])
         }
@@ -25,12 +25,14 @@ ColumnLayout {
         TextArea {
             id: ta
 
-            text: MainController.noteText
-            wrapMode: TextArea.Wrap
-            font.family: MainController.noteFont
+            text:           MainController.noteText
+            wrapMode:       TextArea.Wrap
+            font.family:    MainController.noteFont
             font.pointSize: MainController.noteSize
+
             onTextChanged: {
-                if (ta.activeFocus || ta.pressed) MainController.setUserNoteText(text)
+                if (ta.activeFocus || ta.pressed)
+                    MainController.setUserNoteText(text)
             }
             background: null
         }
