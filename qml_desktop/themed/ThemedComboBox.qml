@@ -30,7 +30,8 @@ ComboBox {
 
     indicator: Image {
         source: Theme.arrowDown
-        width: 16; height: 16
+        width: 16
+        height: 16
         x: control.width - width - 5
         anchors.verticalCenter: parent.verticalCenter
         opacity: control.enabled ? 1.0 : 0.5

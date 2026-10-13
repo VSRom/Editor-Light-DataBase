@@ -4,9 +4,9 @@ Universal database management client written in C++ with a Qt graphical user int
 ## Technologies
 
     C++
-    Qt 6 (Widgets, Sql)
-    CMake (build system)
-    Git (version control)
+    Qt 6.12
+	QML
+	SQL
 
 ## Current Features
 	Connection Window:
@@ -48,14 +48,3 @@ Universal database management client written in C++ with a Qt graphical user int
 
 ## Downloads
 Prebuilt Windows x64 installer: see [Releases](https://github.com/VSRom/Editor-Light-DataBase/releases)
-
-Build:
-	
-	x64 Native Tools Command Prompt for VS
-	set QTDIR=C:\QT\*.*.*\msvc2019_64
-	echo %QTDIR%
-	git clone https://github.com
-	cmake --preset=Qt-Release
-	cmake --build out/build/release
-	cd out/build/release
-	"%QTDIR%\bin\windeployqt.exe" Editor-Light-DataBase.exe	// ELDB.exe

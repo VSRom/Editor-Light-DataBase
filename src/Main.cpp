@@ -13,13 +13,17 @@
 
 int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
+
     app.setApplicationName("Manager DataBase");
 
     const QString exeDir = QCoreApplication::applicationDirPath();
+
     QByteArray currentPath = qgetenv("PATH");
+
     currentPath += ";" + QDir::toNativeSeparators(exeDir + "/drivers/mysql").toLocal8Bit();
     currentPath += ";" + QDir::toNativeSeparators(exeDir + "/drivers/pgsql").toLocal8Bit();
     currentPath += ";" + QDir::toNativeSeparators(exeDir + "/drivers/oracle").toLocal8Bit();
+
     qputenv("PATH", currentPath);
 
     QCoreApplication::addLibraryPath(exeDir + "/sqldrivers");
@@ -31,9 +35,14 @@ int main(int argc, char* argv[]) {
                                      ":/resources/fonts/Fira.ttf",
                                      ":/resources/fonts/Anon.ttf" }) {
         const int id = QFontDatabase::addApplicationFont(fontFile);
-        if (id == -1) continue;
+
+        if (id == -1)
+            continue;
+
         const QStringList families = QFontDatabase::applicationFontFamilies(id);
-        if (!families.isEmpty()) fonts << families.at(0);
+
+        if (!families.isEmpty())
+            fonts << families.at(0);
     }
 
     ConnectionController connectionController;
@@ -41,6 +50,7 @@ int main(int argc, char* argv[]) {
 
     qmlRegisterSingletonInstance("App", 1, 0, "ConnectionController", &connectionController);
     qmlRegisterSingletonInstance("App", 1, 0, "MainController", &mainController);
+
     qmlRegisterSingletonType(QUrl("qrc:/qml_desktop/Theme.qml"), "App", 1, 0, "Theme");
 
     QQmlApplicationEngine engine;
@@ -49,8 +59,10 @@ int main(int argc, char* argv[]) {
 
     engine.load(QUrl("qrc:/qml_desktop/App.qml"));
 
-    if (engine.rootObjects().isEmpty()) return -1;
-    if (auto* w = qobject_cast<QQuickWindow*>(engine.rootObjects().first()))
+    if (engine.rootObjects().isEmpty())
+        return -1;
+
+    if (auto* w = qobject_cast<QQuickWindow*>(engine.rootObjects().constFirst()))
         w->setIcon(QIcon(":/icons/app_icon.ico"));
 
     return app.exec();

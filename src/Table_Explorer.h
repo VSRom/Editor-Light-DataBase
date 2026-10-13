@@ -7,6 +7,7 @@
 #include <QVariant>
 #include <QList>
 #include <QHash>
+#include <memory>
 //================================================================================================================
 struct Filtration {
     QString colName_;

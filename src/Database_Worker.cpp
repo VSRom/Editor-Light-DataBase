@@ -7,9 +7,7 @@ Database_Worker::Database_Worker(const QString& connectionName, const QString& d
     : QObject(parent), explorer_(nullptr), dbType_(dbType) {
 }
 
-Database_Worker::~Database_Worker() {
-    delete explorer_;
-}
+Database_Worker::~Database_Worker() { }
 
 void Database_Worker::loadTables() {
     if (!explorer_)
@@ -47,65 +45,107 @@ void Database_Worker::selectTable(quint64 requestId, const QString& table, const
 }
 
 void Database_Worker::executeQuery(const QString& sql) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     bool success = explorer_->exeQuery(sql);
+
     emit operationCompleted(success, success ? "Запрос выполнен" : "Ошибка: " + sql);
 }
 
 void Database_Worker::getColumns(quint64 requestId, const QString& table) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     emit columnsLoaded(requestId, table, explorer_->getColumns(table));
 }
 
 void Database_Worker::insertRow(const QString& table, const Hash& values) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     bool success = explorer_->insert(table, values);
+
     emit operationCompleted(success, success ? "Строка добавлена" : "Ошибка добавления строки");
 }
 
 void Database_Worker::updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
     bool success = explorer_->update(table, idColumn, idValue, newValues);
+
     emit operationCompleted(success, success ? "Строка обновлена" : "Ошибка обновления строки");
 }
 
 void Database_Worker::removeRow(const QString& table, const QString& idColumn, const QVariant& idValue) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     bool success = explorer_->remove(table, idColumn, idValue);
+
     emit operationCompleted(success, success ? "Строка удалена" : "Ошибка удаления строки");
 }
 
 void Database_Worker::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     bool success = explorer_->removeRows(table, idColumn, idValues);
+
     emit operationCompleted(success, success ? "Строки удалены" : "Ошибка удаления строк");
 }
 
 void Database_Worker::getTypesDb(quint64 requestId) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     emit typesDbLoaded(requestId, explorer_->get_types_db());
 }
 
 void Database_Worker::dropTable(const QString& table) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     bool success = explorer_->drop_table(table);
+
     emit operationCompleted(success, success ? "Таблица удалена" : "Ошибка удаления таблицы");
 }
 
 void Database_Worker::renameTable(const QString& oldName, const QString& newName) {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
     bool success = explorer_->rename_table(oldName, newName);
+
     emit operationCompleted(success, success ? "Таблица переименована" : "Ошибка переименования");
 }
 
 void Database_Worker::initConnection(const QString& driver, const QString& dbPath, const QString& db_type, const QString& host, const int port, const QString& log, const QString& pass) {
     connection_name_ = "worker_connection";
-    dbType_ = db_type; db_path_ = dbPath; driver_ = driver;
-    if (QSqlDatabase::contains(connection_name_)) QSqlDatabase::removeDatabase(connection_name_);
+    dbType_ = db_type;
+    db_path_ = dbPath;
+    driver_ = driver;
+
+    if (QSqlDatabase::contains(connection_name_))
+        QSqlDatabase::removeDatabase(connection_name_);
+
     QSqlDatabase db = QSqlDatabase::addDatabase(driver_, connection_name_);
     db.setDatabaseName(db_path_);
-    if (!host.isEmpty()) { db.setHostName(host); db.setPort(port); db.setUserName(log); db.setPassword(pass); }
-    if (!db.open()) { emit errorOccurred("Не удалось открыть БД в воркере: " + db.lastError().text()); return; }
-    explorer_ = new Table_Explorer(connection_name_, dbType_);
+
+    if (!host.isEmpty()) {
+        db.setHostName(host);
+        db.setPort(port);
+        db.setUserName(log);
+        db.setPassword(pass);
+    }
+
+    if (!db.open()) {
+        emit errorOccurred("Не удалось открыть БД в воркере: " + db.lastError().text());
+        QSqlDatabase::removeDatabase(connection_name_);
+        connection_name_ = "";
+        return;
+    }
+
+    explorer_ = std::make_unique<Table_Explorer>(connection_name_, dbType_);
+
     loadTables();
 }

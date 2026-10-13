@@ -41,15 +41,15 @@ QVariant TableDataModel::headerData(int section, Qt::Orientation orientation, in
 
 QHash<int, QByteArray> TableDataModel::roleNames() const {
     return {
-        {DisplayRole, "display"},
-        {RawValueRole, "rawValue"},
+        {DisplayRole,    "display"},
+        {RawValueRole,   "rawValue"},
         {ColumnNameRole, "columnName"},
-        {TypeRole, "columnType"},
-        {IsPkRole, "isPk"},
+        {TypeRole,       "columnType"},
+        {IsPkRole,       "isPk"},
         {IsNullableRole, "isNullable"},
-        {IsNullRole, "isNull"},
-        {RowIdRole, "rowId"},
-        {SelectedRole, "selected"}
+        {IsNullRole,     "isNull"},
+        {RowIdRole,      "rowId"},
+        {SelectedRole,   "selected"}
     };
 }
 
@@ -57,19 +57,18 @@ void TableDataModel::setTable(const QStringList& headers, const QList<QList<QVar
     beginResetModel();
 
     headers_ = headers;
-    srcRaw_ = rawRows;
+    srcRaw_  = rawRows;
 
     srcDisp_.clear();
     srcNull_.clear();
 
     const int cols = headers_.size();
 
-    for (const auto& row : srcRaw_) {
+    for (const auto& row : std::as_const(srcRaw_)) {
         QStringList d;
 
         for (int c = 0; c < cols; ++c) {
             const QVariant v = row.value(c);
-
             const bool isNull = !v.isValid() || v.isNull();
 
             d << (isNull ? QString() : v.toString());

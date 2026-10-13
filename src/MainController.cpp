@@ -89,12 +89,12 @@ void MainController::beginSession(const QString& driver, const QString& dbType, 
     workerThread_ = new QThread(this);
     worker_ = new Database_Worker("worker_connection", dbType);
     worker_->moveToThread(workerThread_);
-    connect(worker_, &Database_Worker::tablesLoaded, this, &MainController::onTablesLoaded);
-    connect(worker_, &Database_Worker::selectFinished, this, &MainController::onSelectFinished);
-    connect(worker_, &Database_Worker::columnsLoaded, this, &MainController::onColumnsLoaded);
-    connect(worker_, &Database_Worker::typesDbLoaded, this, &MainController::onTypesDbLoaded);
+    connect(worker_, &Database_Worker::tablesLoaded,       this, &MainController::onTablesLoaded);
+    connect(worker_, &Database_Worker::selectFinished,     this, &MainController::onSelectFinished);
+    connect(worker_, &Database_Worker::columnsLoaded,      this, &MainController::onColumnsLoaded);
+    connect(worker_, &Database_Worker::typesDbLoaded,      this, &MainController::onTypesDbLoaded);
     connect(worker_, &Database_Worker::operationCompleted, this, &MainController::onOperationCompleted);
-    connect(worker_, &Database_Worker::errorOccurred, this, &MainController::onWorkerError);
+    connect(worker_, &Database_Worker::errorOccurred,      this, &MainController::onWorkerError);
     workerThread_->start();
 
     QMetaObject::invokeMethod(worker_, "initConnection", Qt::QueuedConnection,

@@ -30,6 +30,7 @@ public slots:
     void loadTables();
     void selectTable(quint64 requestId, const QString& table, const FilterList& filters = {}, int pageSize = 0, int offset = 0,
         const QString& search = {}, const QStringList& searchableColumns = {});
+
     void executeQuery(const QString& sql);
     void getColumns(quint64 requestId, const QString& table);
     void insertRow(const QString& table, const Hash& values);
@@ -48,8 +49,9 @@ signals:
     void columnsLoaded(quint64 requestId, const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
     void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);
+
 private:
-    Table_Explorer* explorer_;
+    std::unique_ptr<Table_Explorer> explorer_ = nullptr;
     QString connection_name_;
     QString driver_;
     QString db_path_;
