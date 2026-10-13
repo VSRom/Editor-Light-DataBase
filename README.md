@@ -3,10 +3,7 @@ Universal database management client written in C++ with a Qt graphical user int
 
 ## Technologies
 
-    C++
-    Qt 6.12
-	QML
-	SQL
+    C++ | Qt 6.12 | QML | SQL
 
 ## Current Features
 	Connection Window:
