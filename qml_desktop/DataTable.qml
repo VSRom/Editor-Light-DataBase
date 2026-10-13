@@ -51,14 +51,14 @@ Item {
         id: clickToTable
 
         MenuItem {
-            text: "Добавить строку"
+            text: qsTr("Add row")
             onTriggered: MainController.requestAddRow()
         }
 
         MenuSeparator {}
 
         MenuItem {
-            text: "Добавить столбец"
+            text: qsTr("Add column")
             onTriggered: root.addColumnRequested()
         }
     }

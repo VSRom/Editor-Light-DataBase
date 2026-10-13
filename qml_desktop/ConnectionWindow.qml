@@ -7,7 +7,7 @@ import "themed"
 Item {
     id: root
 
-    property string placeholderConfigName: "Выберите конфигурационные настройки"
+    property string placeholderConfigName: qsTr("Select configuration settings")
     property string pendingSaveName:       ""
     property var controller:               ConnectionController
 
@@ -59,7 +59,7 @@ Item {
 
             ThemedTextField {
                 Layout.columnSpan: controller.isRemote ? 1 : 3
-                placeholderText: controller.isRemote ? "IP или Hostname..." : "Путь к файлу БД..."
+                placeholderText: controller.isRemote ? qsTr("IP or Hostname...") : qsTr("Path to the database file...")
                 text: controller.address
                 onTextChanged: controller.address = text
             }
@@ -71,13 +71,13 @@ Item {
 
             ThemedTextField {
                 visible: controller.isRemote
-                placeholderText: "Port..."
+                placeholderText: qsTr("Port...")
                 text: controller.port
                 onTextChanged: controller.port = text
             }
 
             ThemedLabel {
-                text: "Login:"
+                text: qsTr("Login:")
                 visible: controller.isRemote
             }
 
@@ -88,7 +88,7 @@ Item {
             }
 
             ThemedLabel {
-                text: "Password:"
+                text: qsTr("Password:")
                 visible: controller.isRemote
             }
 
@@ -101,7 +101,7 @@ Item {
 
             ThemedCheckBox {
                 Layout.columnSpan: 4
-                text: "Сетевое подключение"
+                text: qsTr("Network connection")
                 checked: controller.isRemote
                 onToggled: controller.isRemote = checked
             }
@@ -130,22 +130,22 @@ Item {
             spacing: 8
 
             ThemedButton {
-                text: "Очистка ввода"
+                text: qsTr("Clear input")
                 onClicked: controller.resetForm()
             }
 
             ThemedButton {
-                text: "Сохранение конфигурации"
+                text: qsTr("Save configuration")
                 onClicked: root.saveRequested()
             }
 
             ThemedButton {
-                text: "Проверка соединения"
+                text: qsTr("Test connection")
                 onClicked: controller.checkConnection()
             }
 
             ThemedButton {
-                text: "Соединение"
+                text: qsTr("Connect")
                 onClicked: controller.requestConnect()
             }
         }
@@ -169,15 +169,15 @@ Item {
     function saveRequested() {
         const name = configCombo.currentIndex > 0 ? configCombo.currentText : ""
         if (name === "" || name === root.placeholderConfigName) {
-            inputNew.title = "Новая конфигурация"
-            inputNew.label = "Введите имя"
+            inputNew.title = qsTr("New Configuration")
+            inputNew.label = qsTr("Enter Name")
             inputNew.defaultValue = ""
             inputNew.open()
             return
         }
         root.pendingSaveName   = name
-        confirmOverwrite.title = "Перезапись"
-        confirmOverwrite.message = qsTr("Перезаписать конфигурацию '%1'?").arg(name);
+        confirmOverwrite.title = qsTr("Overwrite")
+        confirmOverwrite.message = qsTr("Overwrite configuration '%1'?").arg(name);
         confirmOverwrite.open()
     }
 

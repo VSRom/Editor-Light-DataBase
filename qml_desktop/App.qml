@@ -13,7 +13,7 @@ ApplicationWindow {
     height: 900
     minimumWidth: 1280
     minimumHeight: 860
-    title: "Manager DataBase"
+    title: qsTr("Manager DataBase")
     color: Theme.window
 
     property bool connected: false
@@ -90,12 +90,12 @@ ApplicationWindow {
             spacing: 16
 
             ThemedLabel {
-                text: "Заметки изменены"
+                text: qsTr("Notes modified")
                 font.bold: true
             }
 
             ThemedLabel {
-                text: "Сохранить изменения в заметках перед выходом?";
+                text: qsTr("Save changes to the notes before exiting?");
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -108,12 +108,12 @@ ApplicationWindow {
                     Layout.fillWidth: true
                 }
                 ThemedButton {
-                    text: "Отмена"
+                    text: qsTr("Cancel")
                     onClicked: noteClose.close()
                 }
 
                 ThemedButton {
-                    text: "Не сохранять"
+                    text: qsTr("Do not save")
                     danger: true
 
                     onClicked: {
@@ -123,7 +123,7 @@ ApplicationWindow {
                 }
 
                 ThemedButton {
-                    text: "Сохранить"
+                    text: qsTr("Save")
                     onClicked: {
                         MainController.saveNote()
                         noteClose.close()
