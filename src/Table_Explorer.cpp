@@ -137,8 +137,9 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         return cols;
 }
 //================================================================================================================
-QSqlQueryModel *Table_Explorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
+std::unique_ptr<QSqlQueryModel> Table_Explorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
                                        int offset, const QString& search, const QStringList& searchableColumns) const {
+
     QStringList params;
     QString where = buildWhereClause(filters, logic, search, searchableColumns, params);
 
@@ -154,7 +155,7 @@ QSqlQueryModel *Table_Explorer::select(const QString &table, const FilterList &f
     for (int i = 0; i < params.size(); i++)
         qs.bindValue(i, params.at(i));
 
-    auto* model = new QSqlQueryModel();
+    auto model = std::make_unique<QSqlQueryModel>();
 
     if (!qs.exec()) {
 #ifdef QT_DEBUG

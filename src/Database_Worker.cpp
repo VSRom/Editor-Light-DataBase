@@ -7,30 +7,42 @@ Database_Worker::Database_Worker(const QString& connectionName, const QString& d
     : QObject(parent), explorer_(nullptr), dbType_(dbType) {
 }
 
-Database_Worker::~Database_Worker() { delete explorer_; }
+Database_Worker::~Database_Worker() {
+    delete explorer_;
+}
 
 void Database_Worker::loadTables() {
-    if (!explorer_) return;
+    if (!explorer_)
+        return;
+
     emit tablesLoaded(explorer_->getUserTables());
 }
 
 void Database_Worker::selectTable(quint64 requestId, const QString& table, const FilterList& filters, int pageSize,
     int offset, const QString& search, const QStringList& searchableColumns) 
 {
-    if (!explorer_) return;
-    QSqlQueryModel* model = explorer_->select(table, filters, " AND ", pageSize, offset, search, searchableColumns);   // [+]
+    if (!explorer_)
+        return;
+
+    std::unique_ptr<QSqlQueryModel> model = explorer_->select(table, filters, " AND ", pageSize, offset, search, searchableColumns);
+
     int totalRows = explorer_->countRows(table, filters, search, searchableColumns);
+
     QList<QList<QVariant>> data;
     QStringList headers;
+
     for (int i = 0; i < model->columnCount(); i++)
         headers << model->headerData(i, Qt::Horizontal).toString();
+
     for (int row = 0; row < model->rowCount(); row++) {
         QList<QVariant> rowData;
+
         for (int col = 0; col < model->columnCount(); col++)
-            rowData << model->data(model->index(row, col));   // RAW QVariant, не toString
+            rowData << model->data(model->index(row, col));
+
         data << rowData;
     }
-    delete model;
+
     emit selectFinished(requestId, data, headers, totalRows);
 }
 

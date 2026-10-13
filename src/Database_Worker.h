@@ -10,11 +10,14 @@
 #include "Table_Explorer.h"
 
 typedef QHash<QString, QVariant> Hash;
-typedef QMap<QString, QVariant> Map;
-typedef QMap<QString, QString> MapString;
 Q_DECLARE_METATYPE(Hash)
+
+typedef QMap<QString, QVariant> Map;
 Q_DECLARE_METATYPE(Map)
+
+typedef QMap<QString, QString> MapString;
 Q_DECLARE_METATYPE(MapString)
+
 
 class Database_Worker : public QObject {
     Q_OBJECT

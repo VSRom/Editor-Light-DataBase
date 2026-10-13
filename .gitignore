@@ -6,12 +6,12 @@
 *.userosscache
 *.sln.docstates
 *.slnx
-**/.vs/
 
-#trash
+# Trash & Dist
 trash/
+dist/
 
-# Build directories
+# Build & Output directories
 out/
 build/
 installer_output/
@@ -30,34 +30,25 @@ cmake_install.cmake
 Makefile
 CMakeUserPresets.json
 CMakeSettings.json
-instruct.txt
 
-# Compiled files
+# Compiled & Binary files
 *.exe
 *.dll
 *.pdb
 *.o
 *.obj
-**/*.json
-*.json
 *.lib
 
-# Qt
+# Qt internal files
 *.moc
-*pro.user
+*.pro.user
 *.qbs.user
-*.ui
 .qtcreator/
 
-# BD
+# Databases & Logs
 tasks.db
 *.log
 
-# txt
+# Documentation & Plans
 instruct.txt
-
-# word
 plan_Dev.docx
-
-dist/
-git

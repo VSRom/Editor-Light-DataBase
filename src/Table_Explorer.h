@@ -32,7 +32,7 @@ public:
     QList<ColumnInfo> getColumns(const QString &tableName) const;
     QStringList getUserTables() const;
     QStringList get_types_db() const { return types_db_; }
-    QSqlQueryModel* select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
+    std::unique_ptr<QSqlQueryModel> select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
                            , int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {}) const;
 
     bool insert(const QString &table, const QMap<QString, QVariant> &values) const;
