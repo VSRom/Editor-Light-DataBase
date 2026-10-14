@@ -1,23 +1,23 @@
-#include "Database_Worker.h"
+#include "DatabaseWorker.h"
 #include <QSqlError>
 #include <QSqlQueryModel>
 #include <QSqlDatabase>
 
-Database_Worker::Database_Worker(const QString& connectionName, const QString& dbType, QObject* parent)
+DatabaseWorker::DatabaseWorker(const QString& connectionName, const QString& dbType, QObject* parent)
     : QObject(parent), explorer_(nullptr), dbType_(dbType) {
 }
 
-Database_Worker::~Database_Worker() { }
+DatabaseWorker::~DatabaseWorker() { }
 
-void Database_Worker::loadTables() {
+void DatabaseWorker::loadTables() {
     if (!explorer_)
         return;
 
     emit tablesLoaded(explorer_->getUserTables());
 }
 
-void Database_Worker::selectTable(quint64 requestId, const QString& table, const FilterList& filters, int pageSize,
-    int offset, const QString& search, const QStringList& searchableColumns) 
+void DatabaseWorker::selectTable(quint64 requestId, const QString& table, const FilterList& filters, int pageSize,
+                                  int offset, const QString& search, const QStringList& searchableColumns)
 {
     if (!explorer_)
         return;
@@ -44,82 +44,84 @@ void Database_Worker::selectTable(quint64 requestId, const QString& table, const
     emit selectFinished(requestId, data, headers, totalRows);
 }
 
-void Database_Worker::executeQuery(const QString& sql) {
+void DatabaseWorker::executeQuery(const QString& sql) {
     if (!explorer_)
         return;
 
     bool success = explorer_->exeQuery(sql);
 
-    emit operationCompleted(success, success ? "Запрос выполнен" : "Ошибка: " + sql);
+    emit operationCompleted(success, success ? tr("Query executed") : tr("Error: ") + sql);
 }
 
-void Database_Worker::getColumns(quint64 requestId, const QString& table) {
+void DatabaseWorker::getColumns(quint64 requestId, const QString& table) {
     if (!explorer_)
         return;
 
     emit columnsLoaded(requestId, table, explorer_->getColumns(table));
 }
 
-void Database_Worker::insertRow(const QString& table, const Hash& values) {
+void DatabaseWorker::insertRow(const QString& table, const Hash& values) {
     if (!explorer_)
         return;
 
     bool success = explorer_->insert(table, values);
 
-    emit operationCompleted(success, success ? "Строка добавлена" : "Ошибка добавления строки");
+    emit operationCompleted(success, success ? tr("Row added") : tr("Failed to add row"));
 }
 
-void Database_Worker::updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues) {
+void DatabaseWorker::updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues) {
     if (!explorer_)
         return;
+
     bool success = explorer_->update(table, idColumn, idValue, newValues);
 
-    emit operationCompleted(success, success ? "Строка обновлена" : "Ошибка обновления строки");
+    emit operationCompleted(success, success ? tr("Row updated") : tr("Failed to update row"));
 }
 
-void Database_Worker::removeRow(const QString& table, const QString& idColumn, const QVariant& idValue) {
+void DatabaseWorker::removeRow(const QString& table, const QString& idColumn, const QVariant& idValue) {
     if (!explorer_)
         return;
 
     bool success = explorer_->remove(table, idColumn, idValue);
 
-    emit operationCompleted(success, success ? "Строка удалена" : "Ошибка удаления строки");
+    emit operationCompleted(success, success ? tr("Row deleted") : tr("Failed to delete row"));
 }
 
-void Database_Worker::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) {
+void DatabaseWorker::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) {
     if (!explorer_)
         return;
 
     bool success = explorer_->removeRows(table, idColumn, idValues);
 
-    emit operationCompleted(success, success ? "Строки удалены" : "Ошибка удаления строк");
+    emit operationCompleted(success, success ? tr("Rows deleted") : tr("Failed to delete rows"));
 }
 
-void Database_Worker::getTypesDb(quint64 requestId) {
+void DatabaseWorker::getTypesDb(quint64 requestId) {
     if (!explorer_)
         return;
 
     emit typesDbLoaded(requestId, explorer_->get_types_db());
 }
 
-void Database_Worker::dropTable(const QString& table) {
+void DatabaseWorker::dropTable(const QString& table) {
     if (!explorer_)
         return;
 
     bool success = explorer_->drop_table(table);
 
-    emit operationCompleted(success, success ? "Таблица удалена" : "Ошибка удаления таблицы");
+    emit operationCompleted(success, success ? tr("Table deleted") : tr("Failed to delete table"));
 }
 
-void Database_Worker::renameTable(const QString& oldName, const QString& newName) {
+void DatabaseWorker::renameTable(const QString& oldName, const QString& newName) {
     if (!explorer_)
         return;
     bool success = explorer_->rename_table(oldName, newName);
 
-    emit operationCompleted(success, success ? "Таблица переименована" : "Ошибка переименования");
+    emit operationCompleted(success, success ? tr("Table renamed") : tr("Failed to rename table"));
 }
 
-void Database_Worker::initConnection(const QString& driver, const QString& dbPath, const QString& db_type, const QString& host, const int port, const QString& log, const QString& pass) {
+void DatabaseWorker::initConnection(const QString& driver, const QString& dbPath, const QString& db_type, const QString& host, const int port, const QString& log, const QString& pass) {
+    /* Как разрешить с connection_name */
     connection_name_ = "worker_connection";
     dbType_ = db_type;
     db_path_ = dbPath;
@@ -139,13 +141,14 @@ void Database_Worker::initConnection(const QString& driver, const QString& dbPat
     }
 
     if (!db.open()) {
-        emit errorOccurred("Не удалось открыть БД в воркере: " + db.lastError().text());
+        emit errorOccurred(tr("Failed to open database in worker: ") + db.lastError().text());
         QSqlDatabase::removeDatabase(connection_name_);
+        /* Добавить deleteLater() */
         connection_name_ = "";
         return;
     }
 
-    explorer_ = std::make_unique<Table_Explorer>(connection_name_, dbType_);
+    explorer_ = std::make_unique<TableExplorer>(connection_name_, dbType_);
 
     loadTables();
 }

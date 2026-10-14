@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.30)
 project(Editor-Light-DataBase VERSION 1.0 LANGUAGES CXX)
 
 if(MSVC)
     add_compile_definitions(QT_NO_UNSAFE_ITERATORS)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Od")
 endif()
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(DEFINED ENV{QTDIR})
     list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
@@ -24,8 +24,8 @@ set(SOURCES
     src/StringListModel.cpp
     src/TableDataModel.cpp
     src/FilterModel.cpp
-    src/Table_Explorer.cpp
-    src/Database_Worker.cpp
+    src/TableExplorer.cpp
+    src/DatabaseWorker.cpp
     resources.qrc
     app.rc
 )
@@ -35,11 +35,12 @@ set(HEADERS
     src/StringListModel.h
     src/TableDataModel.h
     src/FilterModel.h
-    src/Table_Explorer.h
-    src/Database_Worker.h
+    src/TableExplorer.h
+    src/DatabaseWorker.h
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS}
+    src/DatabaseManager.h src/DatabaseManager.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE QT_NO_UNSAFE_ITERATORS)
 target_link_libraries(${PROJECT_NAME} PRIVATE

@@ -19,9 +19,9 @@ typedef QList<Filtration> FilterList;
 //================================================================================================================
 Q_DECLARE_METATYPE(FilterList)
 //================================================================================================================
-class Table_Explorer {
+class TableExplorer {
 public:
-    explicit Table_Explorer(const QString &connectionName, const QString& dbType = "sqlite");
+    explicit TableExplorer(const QString &connectionName, const QString& dbType = "sqlite");
 
     struct ColumnInfo {
         QString name;
@@ -59,5 +59,5 @@ private:
     QStringList types_db_;
 };
 //================================================================================================================
-Q_DECLARE_METATYPE(Table_Explorer::ColumnInfo)
+Q_DECLARE_METATYPE(TableExplorer::ColumnInfo)
 //================================================================================================================

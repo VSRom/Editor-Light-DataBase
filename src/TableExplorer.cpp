@@ -1,11 +1,11 @@
-#include "Table_Explorer.h"
+#include "TableExplorer.h"
 #include <QSqlError>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QDebug>
 #include <QSqlIndex>
 //================================================================================================================
-Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
+TableExplorer::TableExplorer(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
 {
     if (dbType_ == "sqlite")
         types_db_ = { "INTEGER", "REAL", "TEXT", "BLOB" };
@@ -21,7 +21,7 @@ Table_Explorer::Table_Explorer(const QString &connectionName, const QString& dbT
         types_db_ = { "INTEGER", "TEXT", "REAL", "BLOB" };
 }
 //================================================================================================================
-QStringList Table_Explorer::getUserTables() const {
+QStringList TableExplorer::getUserTables() const {
     QSqlDatabase db = QSqlDatabase::database(connectionName_);
     QStringList AllTables = db.tables(QSql::Tables);
     QStringList userTables;
@@ -49,7 +49,7 @@ QStringList Table_Explorer::getUserTables() const {
     else {
         QStringList AllTables = QSqlDatabase::database(connectionName_).tables(QSql::Tables);
 
-        for (const QString& temp : AllTables) {
+        for (const auto& temp : std::as_const(AllTables)) {
             if ((dbType_ == "sqlite" || dbType_ == "QSQLITE") && temp.startsWith("sqlite_"))
                 continue;
 
@@ -64,7 +64,7 @@ QStringList Table_Explorer::getUserTables() const {
     return userTables;
 }
 //================================================================================================================
-QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tableName) const {
+QList<TableExplorer::ColumnInfo> TableExplorer::getColumns(const QString &tableName) const {
     QList<ColumnInfo> cols;
 
     QString driver = QSqlDatabase::database(connectionName_).driverName();
@@ -137,7 +137,7 @@ QList<Table_Explorer::ColumnInfo> Table_Explorer::getColumns(const QString &tabl
         return cols;
 }
 //================================================================================================================
-std::unique_ptr<QSqlQueryModel> Table_Explorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
+std::unique_ptr<QSqlQueryModel> TableExplorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
                                        int offset, const QString& search, const QStringList& searchableColumns) const {
 
     QStringList params;
@@ -169,69 +169,29 @@ std::unique_ptr<QSqlQueryModel> Table_Explorer::select(const QString &table, con
     return model;
 }
 //================================================================================================================
-bool Table_Explorer::insert(const QString &table, const QMap<QString, QVariant> &values) const {
+bool TableExplorer::insert(const QString &table, const QMap<QString, QVariant> &values) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QStringList place(values.size(), "?");
     QStringList tempColum = values.keys();
     QStringList resultColum{};
 
-    for (QString col : tempColum) {
+    for (const auto& col : std::as_const(tempColum)) {
         QString column = safeName(col);
             resultColum += column;
     }
 
     QString colum = resultColum.join(", ");
-    QString placer = place.join(", ");                              // Подготовка данных
+    QString placer = place.join(", ");
 
     QString sql = QString("INSERT INTO %1 (%2) VALUES (%3)").arg(safeName(table), colum, placer);
 
-    qs.prepare(sql);                                                // Подготовка запроса
+    qs.prepare(sql);
 
-    const QList<QVariant> val = values.values();                    // Привязка значений (Извлечение данных и привязка через bindValue)
-    for (int i = 0; i < val.size(); ++i)
-    qs.bindValue(i, val.at(i));
+    const QList<QVariant> val = values.values();
 
-    bool exe = qs.exec();                                           // Один вызов!
-
-    if (!exe) {
-#ifdef QT_DEBUG
-        qDebug() << "Query error:" << qs.lastError().text();
-#endif
-        return false;
-    }
-
-    return exe;
-}
-//================================================================================================================
-bool Table_Explorer::insert(const QString& table, const QHash<QString, QVariant>& values) const {
-    QMap<QString, QVariant> map;
-    for (auto it = values.begin(); it != values.end(); it++)
-        map[it.key()] = it.value();
-
-    return insert(table, map);
-}
-//================================================================================================================
-bool Table_Explorer::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
-{
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
-
-    QStringList list{};
-
-    for (auto it = newValues.constBegin(); it != newValues.constEnd(); it++)
-        list << QString("%1 = ?").arg(safeName(it.key()));            // Взяли все значения в строку с разделителем %1 = ?
-
-    QString result = list.join(", ");                           // Склеили полученную выше строку с разделителем ,
-
-    QString sql = QString("UPDATE %1 SET %2 WHERE %3 = ?").arg(safeName(table), result, safeName(idColumn));
-
-    qs.prepare(sql);                                            // Подготовка запроса
-
-    const QList<QVariant> val = newValues.values();             // Привязка значений (Извлечение данных и привязка через bindValue)
     for (int i = 0; i < val.size(); ++i)
         qs.bindValue(i, val.at(i));
-
-    qs.bindValue(newValues.size(), idValue);                    // Привязали idValue в запрос = ?
 
     bool exe = qs.exec();
 
@@ -245,7 +205,47 @@ bool Table_Explorer::update(const QString &table, const QString &idColumn, const
     return exe;
 }
 //================================================================================================================
-bool Table_Explorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
+bool TableExplorer::insert(const QString& table, const QHash<QString, QVariant>& values) const {
+    QMap<QString, QVariant> map;
+    for (auto it = values.begin(); it != values.end(); it++)
+        map[it.key()] = it.value();
+
+    return insert(table, map);
+}
+//================================================================================================================
+bool TableExplorer::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
+{
+    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+
+    QStringList list{};
+
+    for (auto it = newValues.constBegin(); it != newValues.constEnd(); it++)
+        list << QString("%1 = ?").arg(safeName(it.key()));
+
+    QString result = list.join(", ");
+    QString sql = QString("UPDATE %1 SET %2 WHERE %3 = ?").arg(safeName(table), result, safeName(idColumn));
+
+    qs.prepare(sql);
+
+    const QList<QVariant> val = newValues.values();
+    for (int i = 0; i < val.size(); ++i)
+        qs.bindValue(i, val.at(i));
+
+    qs.bindValue(newValues.size(), idValue);
+
+    bool exe = qs.exec();
+
+    if (!exe) {
+#ifdef QT_DEBUG
+        qDebug() << "Query error:" << qs.lastError().text();
+#endif
+        return false;
+    }
+
+    return exe;
+}
+//================================================================================================================
+bool TableExplorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(safeName(table), safeName(idColumn));
@@ -265,7 +265,7 @@ bool Table_Explorer::remove(const QString &table, const QString &idColumn, const
     return exe;
 }
 //================================================================================================================
-bool Table_Explorer::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
+bool TableExplorer::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
     bool all = true;
 
     for (const QVariant& v : idValues)
@@ -274,7 +274,7 @@ bool Table_Explorer::removeRows(const QString& table, const QString& idColumn, c
     return all;
 }
 //================================================================================================================
-bool Table_Explorer::drop_table(const QString& table) const {
+bool TableExplorer::drop_table(const QString& table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     if (table.isEmpty()) return false;
@@ -292,7 +292,7 @@ bool Table_Explorer::drop_table(const QString& table) const {
     return exe;
 }
 //================================================================================================================
-bool Table_Explorer::rename_table(const QString& table, const QString& new_name_table) const {
+bool TableExplorer::rename_table(const QString& table, const QString& new_name_table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     if (table.isEmpty() || new_name_table.isEmpty()) return false;
@@ -310,13 +310,13 @@ bool Table_Explorer::rename_table(const QString& table, const QString& new_name_
     return exe;
 }
 //================================================================================================================
-bool Table_Explorer::exeQuery(const QString& sql) const {
+bool TableExplorer::exeQuery(const QString& sql) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
     bool exe = qs.exec(sql);
     return exe;
 }
 //================================================================================================================
-int Table_Explorer::countRows(const QString &table, const FilterList &filters,
+int TableExplorer::countRows(const QString &table, const FilterList &filters,
     const QString& search, const QStringList& searchableColumns) const
 {
 
@@ -337,7 +337,7 @@ int Table_Explorer::countRows(const QString &table, const FilterList &filters,
         return 0;
 }
 //================================================================================================================
-QString Table_Explorer::safeName(const QString& name) {
+QString TableExplorer::safeName(const QString& name) {
     if (name.isEmpty()) 
         return QString();
 
@@ -349,7 +349,7 @@ QString Table_Explorer::safeName(const QString& name) {
     return result;
 }
 //================================================================================================================
-QString Table_Explorer::buildSearchCondition(const QString& search, const QStringList& cols, QStringList& outParams) const {
+QString TableExplorer::buildSearchCondition(const QString& search, const QStringList& cols, QStringList& outParams) const {
     if (search.isEmpty() || cols.isEmpty()) return QString();
 
     QString esc = search;
@@ -360,33 +360,41 @@ QString Table_Explorer::buildSearchCondition(const QString& search, const QStrin
     const QString pattern = "%" + esc + "%";
     const QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
     const QString tail = useEscape ? " ESCAPE '\\'" : "";
+
     QStringList ors;
-    for (const QString& c : cols) {
+
+    for (const auto& c : std::as_const(cols)) {
         QString castExpr;
-        if (dbType_ == "sqlite" || dbType_ == "postgresql") castExpr = QString("CAST(%1 AS TEXT)").arg(safeName(c));
-        else if (dbType_ == "mysql")                       castExpr = QString("CAST(%1 AS CHAR)").arg(safeName(c));
-        else if (dbType_ == "oracle")                     castExpr = QString("TO_CHAR(%1)").arg(safeName(c));
-        else                                              castExpr = safeName(c);   // access/odbc: без каста
+        if (dbType_ == "sqlite" || dbType_ == "postgresql")
+            castExpr = QString("CAST(%1 AS TEXT)").arg(safeName(c));
+
+        else if (dbType_ == "mysql")
+            castExpr = QString("CAST(%1 AS CHAR)").arg(safeName(c));
+
+        else if (dbType_ == "oracle")
+            castExpr = QString("TO_CHAR(%1)").arg(safeName(c));
+        else
+            castExpr = safeName(c);
+
         ors << QString("%1 %2 ?%3").arg(castExpr, op, tail);
+
         outParams << pattern;
     }
     return "(" + ors.join(" OR ") + ")";
 }
 //================================================================================================================
-QString Table_Explorer::buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
+QString TableExplorer::buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
                                          , const QStringList& searchableColumns, QStringList& outParams) const {
     QStringList conditions;
     outParams.clear();
 
-    for(const  auto& f : filters) {
+    for(const auto& f : std::as_const(filters)) {
         if(f.operator_ == "LIKE") {
             QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
             QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE " : "";
 
             conditions << QString("%1 %2 %3").arg(safeName(f.colName_), op, collate);
-
             outParams << "%" + f.value_ + "%";
-
         }
         else {
             conditions << QString("%1 %2 ?").arg(safeName(f.colName_), f.operator_);

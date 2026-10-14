@@ -17,7 +17,7 @@
 <context>
     <name>App</name>
     <message>
-        <location filename="../qml_desktop/App.qml" line="16"/>
+        <location filename="../qml_desktop/App.qml" line="14"/>
         <source>Manager DataBase</source>
         <translation>Менеджер баз данных</translation>
     </message>
@@ -121,7 +121,13 @@
         <translation>Путь содержит недопустимые символы: &apos;;&apos;, &apos;{&apos;, &apos;}&apos;</translation>
     </message>
     <message>
+        <location filename="../src/ConnectionController.cpp" line="270"/>
+        <source>Connected!</source>
+        <translation>Подключено!</translation>
+    </message>
+    <message>
         <location filename="../src/ConnectionController.cpp" line="272"/>
+        <location filename="../src/ConnectionController.cpp" line="277"/>
         <source>Connection error: </source>
         <translation>Ошибка подключения: </translation>
     </message>
@@ -134,77 +140,87 @@
 <context>
     <name>ConnectionWindow</name>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="10"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="15"/>
         <source>Select configuration settings</source>
         <translation>Выберите конфигурационные настройки</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="62"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="53"/>
+        <source>DataBase:</source>
+        <translation>База данных:</translation>
+    </message>
+    <message>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="68"/>
+        <source>Address:</source>
+        <translation>Address:</translation>
+    </message>
+    <message>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="74"/>
         <source>IP or Hostname...</source>
         <translation>IP или Hostname...</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="62"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="74"/>
         <source>Path to the database file...</source>
         <translation>Путь к файлу БД...</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="74"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="88"/>
         <source>Port...</source>
         <translation>Port...</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="80"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="94"/>
         <source>Login:</source>
         <translation>Login:</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="91"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="106"/>
         <source>Password:</source>
         <translation>Password:</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="104"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="122"/>
         <source>Network connection</source>
         <translation>Сетевое подключение</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="133"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="153"/>
         <source>Clear input</source>
         <translation>Очистить ввод</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="138"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="159"/>
         <source>Save configuration</source>
         <translation>Сохранить конфигурацию</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="143"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="165"/>
         <source>Test connection</source>
         <translation>Проверка соединения</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="148"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="171"/>
         <source>Connect</source>
         <translation>Соединение</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="172"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="195"/>
         <source>New Configuration</source>
         <translation>Новая конфигурация</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="173"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="196"/>
         <source>Enter Name</source>
         <translation>Введите имя</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="179"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="202"/>
         <source>Overwrite</source>
         <translation>Перезапись</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ConnectionWindow.qml" line="180"/>
+        <location filename="../qml_desktop/ConnectionWindow.qml" line="203"/>
         <source>Overwrite configuration &apos;%1&apos;?</source>
         <translation>Перезаписать конфигурацию &apos;%1&apos;?</translation>
     </message>
@@ -299,6 +315,84 @@
     </message>
 </context>
 <context>
+    <name>DatabaseWorker</name>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="53"/>
+        <source>Query executed</source>
+        <translation>Запрос выполнен</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="53"/>
+        <source>Error: </source>
+        <translation>Ошибка: </translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="69"/>
+        <source>Row added</source>
+        <translation>Строка добавлена</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="69"/>
+        <source>Failed to add row</source>
+        <translation>Ошибка добавления строки</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="78"/>
+        <source>Row updated</source>
+        <translation>Строка обновлена</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="78"/>
+        <source>Failed to update row</source>
+        <translation>Ошибка обновления строки</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="87"/>
+        <source>Row deleted</source>
+        <translation>Строка удалена</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="87"/>
+        <source>Failed to delete row</source>
+        <translation>Ошибка удаления строки</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="96"/>
+        <source>Rows deleted</source>
+        <translation>Строки удалены</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="96"/>
+        <source>Failed to delete rows</source>
+        <translation>Ошибка удаления строк</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="112"/>
+        <source>Table deleted</source>
+        <translation>Таблица удалена</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="112"/>
+        <source>Failed to delete table</source>
+        <translation>Ошибка удаления таблицы</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="120"/>
+        <source>Table renamed</source>
+        <translation>Таблица переименована</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="120"/>
+        <source>Failed to rename table</source>
+        <translation>Ошибка переименования таблицы</translation>
+    </message>
+    <message>
+        <location filename="../src/DatabaseWorker.cpp" line="144"/>
+        <source>Failed to open database in worker: </source>
+        <translation>Не удалось открыть БД: </translation>
+    </message>
+</context>
+<context>
     <name>FilterPanel</name>
     <message>
         <location filename="../qml_desktop/FilterPanel.qml" line="40"/>
@@ -317,6 +411,77 @@
         <location filename="../qml_desktop/InputPopup.qml" line="63"/>
         <source>OK</source>
         <translation>OK</translation>
+    </message>
+</context>
+<context>
+    <name>MainController</name>
+    <message>
+        <location filename="../src/MainController.cpp" line="85"/>
+        <source>Connecting to database...</source>
+        <translation>Подключение к базе данных...</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="143"/>
+        <source>Refreshing table list...</source>
+        <translation>Обновление списка таблиц...</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="257"/>
+        <source>No table selected</source>
+        <translation>Таблица не выбрана</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="267"/>
+        <source>Cannot merge fewer than 2 tables</source>
+        <translation>Невозможно объединить менее 2 таблиц</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="291"/>
+        <location filename="../src/MainController.cpp" line="310"/>
+        <source>The table has no primary key; editing is unavailable</source>
+        <translation>У таблицы нет первичного ключа, редактирование недоступно</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="296"/>
+        <source>Cannot modify the ID</source>
+        <translation>Нельзя изменить ID</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="305"/>
+        <source>New value</source>
+        <translation>Новое значение</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="305"/>
+        <source>Input</source>
+        <translation>Ввод</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="317"/>
+        <source>No row selected for deletion</source>
+        <translation>Строка для удаления не выделена</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="323"/>
+        <source>Confirm deletion</source>
+        <translation>Подтверждение удаления</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="323"/>
+        <source>Delete the selected row(s)?</source>
+        <translation>Удалить выбранную(ые) строку(и)?</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="338"/>
+        <location filename="../src/MainController.cpp" line="340"/>
+        <location filename="../src/MainController.cpp" line="350"/>
+        <source>Operation canceled</source>
+        <translation>Операция отменена</translation>
+    </message>
+    <message>
+        <location filename="../src/MainController.cpp" line="583"/>
+        <source>Tables loaded: </source>
+        <translation>Загружено таблиц: </translation>
     </message>
 </context>
 <context>
@@ -488,27 +653,27 @@ table</source>
 <context>
     <name>ShellWindows</name>
     <message>
-        <location filename="../qml_desktop/ShellWindows.qml" line="20"/>
+        <location filename="../qml_desktop/ShellWindows.qml" line="23"/>
         <source>Tables</source>
         <translation>Таблицы</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ShellWindows.qml" line="20"/>
+        <location filename="../qml_desktop/ShellWindows.qml" line="23"/>
         <source>Console SQL</source>
         <translation>Консоль SQL</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ShellWindows.qml" line="20"/>
+        <location filename="../qml_desktop/ShellWindows.qml" line="23"/>
         <source>Services</source>
         <translation>Сервисы</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ShellWindows.qml" line="51"/>
+        <location filename="../qml_desktop/ShellWindows.qml" line="54"/>
         <source>Empty for now, waiting ConsoleSQL</source>
         <translation>Пока пусто, ожидаем Консоль SQL</translation>
     </message>
     <message>
-        <location filename="../qml_desktop/ShellWindows.qml" line="62"/>
+        <location filename="../qml_desktop/ShellWindows.qml" line="65"/>
         <source>Empty for now, waiting Services</source>
         <translation>Пока пусто, ожидаем Сервисы</translation>
     </message>

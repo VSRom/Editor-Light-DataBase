@@ -36,6 +36,7 @@ QVariant TableDataModel::data(const QModelIndex& index, int role) const {
 QVariant TableDataModel::headerData(int section, Qt::Orientation orientation, int role) const {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= 0 && section < headers_.size())
         return headers_.at(section);
+
     return {};
 }
 
@@ -90,7 +91,6 @@ void TableDataModel::rebuildDisplay() {
     dispToSrc_.clear();
 
     const int cols = headers_.size();
-
     const QString term = searchTerm_;
 
     for (int sr = 0; sr < srcRaw_.size(); ++sr) {
@@ -144,22 +144,28 @@ QString TableDataModel::headerAt(int col) const {
     return headers_.value(col);
 }
 
-QString TableDataModel::displayAt(int row, int col) const {
+QString TableDataModel::displayAt(int row, int col) const
+{
     return (row >= 0 && row < dispDisp_.size()) ? dispDisp_[row].value(col) : QString();
 }
-QVariant TableDataModel::rawAt(int row, int col) const {
+QVariant TableDataModel::rawAt(int row, int col) const
+{
     return (row >= 0 && row < dispRaw_.size()) ? dispRaw_[row].value(col) : QVariant();
 }
-QString TableDataModel::columnNameAt(int col) const {
+QString TableDataModel::columnNameAt(int col) const
+{
     return meta_.value(col).toMap().value("name", headers_.value(col)).toString();
 }
-QString TableDataModel::typeAt(int col) const {
+QString TableDataModel::typeAt(int col) const
+{
     return meta_.value(col).toMap().value("type").toString();
 }
-bool TableDataModel::isPkAt(int col) const {
+bool TableDataModel::isPkAt(int col) const
+{
     return meta_.value(col).toMap().value("isPrimaryKey", false).toBool();
 }
-bool TableDataModel::isNullAt(int row, int col) const {
+bool TableDataModel::isNullAt(int row, int col) const
+{
     return (row < 0 || col < 0 || col >= headers_.size()) ? true : dispNull_.value(row * headers_.size() + col, true);
 }
 QVariant TableDataModel::rowIdAt(int row) const {
@@ -170,7 +176,8 @@ QVariant TableDataModel::rowIdAt(int row) const {
 
     return srcRaw_.value(sr).value(pkCol_);
 }
-bool TableDataModel::isSelectedAt(int row) const {
+bool TableDataModel::isSelectedAt(int row) const
+{
     return selected_.value(row, false);
 }
 

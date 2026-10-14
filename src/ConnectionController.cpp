@@ -267,14 +267,14 @@ bool ConnectionController::tryOpenConnection(const QString& prefix, QString& err
 void ConnectionController::checkConnection() {
     QString e, d, t, p, h, l; int pt = 0;
     if (tryOpenConnection("test_connection", e, d, t, p, h, pt, l, password_))
-        appendLog("Подключено!");
+        appendLog(tr("Connected!"));
     else
         appendLog(tr("Connection error: ") + e);
 }
 void ConnectionController::requestConnect() {
     QString e, d, t, p, h, l; int pt = 0; QString pw;
     if (!tryOpenConnection("preflight_connection", e, d, t, p, h, pt, l, pw)) {
-        appendLog("Ошибка подключения: " + e);
+        appendLog(tr("Connection error: ") + e);
 
         emit connectionFailed(e);
 

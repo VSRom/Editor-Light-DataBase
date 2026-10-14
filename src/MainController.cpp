@@ -1,6 +1,6 @@
 #include "MainController.h"
-#include "Database_Worker.h"
-#include "Table_Explorer.h"
+#include "DatabaseWorker.h"
+#include "TableExplorer.h"
 #include <QThread>
 #include <QMetaObject>
 #include <QMetaType>
@@ -15,8 +15,8 @@ MainController::MainController(const QStringList& fonts, QObject* parent)
     qRegisterMetaType<Map>("Map");
     qRegisterMetaType<QMap<QString, QString>>("QMap<QString,QString>");
     qRegisterMetaType<FilterList>("FilterList");
-    qRegisterMetaType<Table_Explorer::ColumnInfo>("Table_Explorer::ColumnInfo");
-    qRegisterMetaType<QList<Table_Explorer::ColumnInfo>>("QList<Table_Explorer::ColumnInfo>");
+    qRegisterMetaType<TableExplorer::ColumnInfo>("TableExplorer::ColumnInfo");
+    qRegisterMetaType<QList<TableExplorer::ColumnInfo>>("QList<TableExplorer::ColumnInfo>");
 
     tablesModel_ = new StringListModel(this);
     tableModel_ = new TableDataModel(this);
@@ -51,7 +51,7 @@ quint64 MainController::startRequest(Kind k, const QString& table, const QString
 }
 void MainController::setCurrentTable(const QString& v) {
     if (currentTable_ == v)return;
-        currentTable_ = v;
+    currentTable_ = v;
 
     emit currentTableChanged();
 }
@@ -73,7 +73,7 @@ void MainController::setBusy(bool v) {
     emit busyChanged();
 }
 void MainController::beginSession(const QString& driver, const QString& dbType, const QString& host,
-    int port, const QString& login, const QString& password, const QString& dbPath) {
+                                  int port, const QString& login, const QString& password, const QString& dbPath) {
     endSession();
     dbTypeCache_ = dbType;
 
@@ -82,24 +82,24 @@ void MainController::beginSession(const QString& driver, const QString& dbType, 
 
     emit errorChanged();
 
-    statusText_ = "Подключение к базе данных...";
+    statusText_ = tr("Connecting to database...");
 
     emit statusChanged();
 
     workerThread_ = new QThread(this);
-    worker_ = new Database_Worker("worker_connection", dbType);
+    worker_ = new DatabaseWorker("worker_connection", dbType);
     worker_->moveToThread(workerThread_);
-    connect(worker_, &Database_Worker::tablesLoaded,       this, &MainController::onTablesLoaded);
-    connect(worker_, &Database_Worker::selectFinished,     this, &MainController::onSelectFinished);
-    connect(worker_, &Database_Worker::columnsLoaded,      this, &MainController::onColumnsLoaded);
-    connect(worker_, &Database_Worker::typesDbLoaded,      this, &MainController::onTypesDbLoaded);
-    connect(worker_, &Database_Worker::operationCompleted, this, &MainController::onOperationCompleted);
-    connect(worker_, &Database_Worker::errorOccurred,      this, &MainController::onWorkerError);
+    connect(worker_, &DatabaseWorker::tablesLoaded,       this, &MainController::onTablesLoaded);
+    connect(worker_, &DatabaseWorker::selectFinished,     this, &MainController::onSelectFinished);
+    connect(worker_, &DatabaseWorker::columnsLoaded,      this, &MainController::onColumnsLoaded);
+    connect(worker_, &DatabaseWorker::typesDbLoaded,      this, &MainController::onTypesDbLoaded);
+    connect(worker_, &DatabaseWorker::operationCompleted, this, &MainController::onOperationCompleted);
+    connect(worker_, &DatabaseWorker::errorOccurred,      this, &MainController::onWorkerError);
     workerThread_->start();
 
     QMetaObject::invokeMethod(worker_, "initConnection", Qt::QueuedConnection,
-        Q_ARG(QString, driver), Q_ARG(QString, dbPath), Q_ARG(QString, dbType),
-        Q_ARG(QString, host), Q_ARG(int, port), Q_ARG(QString, login), Q_ARG(QString, password));
+                              Q_ARG(QString, driver), Q_ARG(QString, dbPath), Q_ARG(QString, dbType),
+                              Q_ARG(QString, host), Q_ARG(int, port), Q_ARG(QString, login), Q_ARG(QString, password));
 }
 
 void MainController::endSession() {
@@ -140,7 +140,7 @@ void MainController::refreshTables() {
     if (!worker_ || !workerThread_ || !workerThread_->isRunning())
         return;
 
-    statusText_ = "Обновление списка таблиц...";
+    statusText_ = tr("Refreshing table list...");
 
     emit statusChanged();
 
@@ -236,8 +236,8 @@ void MainController::reloadCurrentPage() {
     const quint64 id = startRequest(SelectPage, currentTable_);
 
     QMetaObject::invokeMethod(worker_, "selectTable", Qt::QueuedConnection,
-        Q_ARG(quint64, id), Q_ARG(QString, currentTable_), Q_ARG(FilterList, filtersModel_->collect()),
-        Q_ARG(int, pageSize_), Q_ARG(int, currentPage_ * pageSize_), Q_ARG(QString, searchText_), Q_ARG(QStringList, sc));
+                              Q_ARG(quint64, id), Q_ARG(QString, currentTable_), Q_ARG(FilterList, filtersModel_->collect()),
+                              Q_ARG(int, pageSize_), Q_ARG(int, currentPage_ * pageSize_), Q_ARG(QString, searchText_), Q_ARG(QStringList, sc));
 }
 
 void MainController::requestCreateTable() {
@@ -254,7 +254,7 @@ void MainController::requestAddColumn(const QString& colName) {
 }
 void MainController::requestAddRow() {
     if (currentTable_.isEmpty()) {
-        emit showError("Таблица не выбрана");
+        emit showError(tr("No table selected"));
         return;
     }
 
@@ -264,7 +264,7 @@ void MainController::requestAddRow() {
 }
 void MainController::requestMergeTables(const QStringList& names) {
     if (names.size() < 2) {
-        emit showError("Невозможно объединить менее 2 таблиц");
+        emit showError(tr("Cannot merge fewer than 2 tables"));
         return;
     }
 
@@ -288,12 +288,12 @@ void MainController::dropTable(const QString& name) {
 
 void MainController::updateCellRequested(int row, int col) {
     if (tableModel_->pkColumn() < 0) {
-        emit showError("У таблицы нет первичного ключа, редактирование недоступно");
+        emit showError(tr("The table has no primary key; editing is unavailable"));
         return;
     }
 
     if (col == tableModel_->pkColumn()) {
-        emit showError("Нельзя изменить id");
+        emit showError(tr("Cannot modify the ID"));
         return;
     }
 
@@ -302,25 +302,25 @@ void MainController::updateCellRequested(int row, int col) {
     const QVariant id     = tableModel_->rowIdAt(row);
     const quint64 rid     = startRequest(AddRow, currentTable_, {}, { {"rowId",id}, {"col",colName}, {"old",old} });
 
-    emit askInput("Новое значение", "Ввод", old, (int)rid);
+    emit askInput(tr("New value"), tr("Input"), old, (int)rid);
 }
 
 void MainController::deleteSelectedRowsRequested() {
     if (tableModel_->pkColumn() < 0) {
-        emit showError("У таблицы нет первичного ключа, редактирование недоступно");
+        emit showError(tr("The table has no primary key; editing is unavailable"));
         return;
     }
 
     const QVariantList ids = tableModel_->selectedRowIds();
 
     if (ids.isEmpty()) {
-        emit showError("Строка для удаления не выделена");
+        emit showError(tr("No row selected for deletion"));
         return;
     }
 
     const quint64 rid = startRequest(AddRow, currentTable_, {}, { {"ids",QVariant(ids)} });
 
-    emit askConfirm("Подтверждение удаления", "Удалить выбранную(ые) строку(и)?", (int)rid);
+    emit askConfirm(tr("Confirm deletion"), tr("Delete the selected row(s)?"), (int)rid);
 }
 
 void MainController::confirmResult(int requestId, bool accepted) {
@@ -335,9 +335,9 @@ void MainController::confirmResult(int requestId, bool accepted) {
         if (accepted && worker_)
             QMetaObject::invokeMethod(worker_, "removeRows", Qt::QueuedConnection, Q_ARG(QString, currentTable_)
                                       , Q_ARG(QString, pkName()), Q_ARG(QVariantList, r.payload.value("ids").toList()));
-        else emit showInfo("Операция отменена");
+        else emit showInfo(tr("Operation canceled"));
     }
-    else emit showInfo("Операция отменена");
+    else emit showInfo(tr("Operation canceled"));
 }
 
 void MainController::inputResult(int requestId, const QString& text, bool accepted) {
@@ -347,7 +347,7 @@ void MainController::inputResult(int requestId, const QString& text, bool accept
 
     PendingReq r = it.value(); pending_.erase(it);
 
-    if (!accepted) { emit showInfo("Операция отменена");
+    if (!accepted) { emit showInfo(tr("Operation canceled"));
         return;
     }
 
@@ -402,14 +402,14 @@ void MainController::addRowFromDraft(const QVariantMap& values) {
 }
 
 void MainController::addColumnFromDraft(const QString& colName, const QString& type) {
-    const QString sql = QString("ALTER TABLE %1 ADD COLUMN %2 %3").arg(Table_Explorer::safeName(currentTable_)
-                                                                       , Table_Explorer::safeName(colName), type);
+    const QString sql = QString("ALTER TABLE %1 ADD COLUMN %2 %3").arg(TableExplorer::safeName(currentTable_)
+                                                                       , TableExplorer::safeName(colName), type);
     if (worker_)
         QMetaObject::invokeMethod(worker_, "executeQuery", Qt::QueuedConnection, Q_ARG(QString, sql));
 }
 
 QString MainController::safeName(const QString& n) const {
-    return Table_Explorer::safeName(n);
+    return TableExplorer::safeName(n);
 }
 
 QString MainController::buildCreateTableSql(const QVariantMap& draft) const {
@@ -437,7 +437,7 @@ QString MainController::buildCreateTableSql(const QVariantMap& draft) const {
         return QString();
     };
 
-    QStringList cols; cols << QString("%1 %2").arg(Table_Explorer::safeName("id"), pkType(dbTypeCache_));
+    QStringList cols; cols << QString("%1 %2").arg(TableExplorer::safeName("id"), pkType(dbTypeCache_));
 
     const QVariantList cl = draft.value("columns").toList();
 
@@ -449,9 +449,9 @@ QString MainController::buildCreateTableSql(const QVariantMap& draft) const {
         if (nm.toLower() == "id" || nm.isEmpty())
             continue;
 
-        cols << QString("%1 %2").arg(Table_Explorer::safeName(nm), ty);
+        cols << QString("%1 %2").arg(TableExplorer::safeName(nm), ty);
     }
-    return QString("CREATE TABLE IF NOT EXISTS %1 (%2);").arg(Table_Explorer::safeName(nameTab), cols.join(", "));
+    return QString("CREATE TABLE IF NOT EXISTS %1 (%2);").arg(TableExplorer::safeName(nameTab), cols.join(", "));
 }
 
 QString MainController::buildMergeTablesSql(const QVariantMap& draft) const {
@@ -473,20 +473,20 @@ QString MainController::buildMergeTablesSql(const QVariantMap& draft) const {
         const QVariantList cs = t.value("columns").toList();
 
         for (const QVariant& cv : cs)
-            selectCols << al + "." + Table_Explorer::safeName(cv.toString());
+            selectCols << al + "." + TableExplorer::safeName(cv.toString());
     }
 
     if (selectCols.isEmpty())
         return QString();
 
     const QVariantMap first = tabs.first().toMap();
-    QString from = "FROM " + Table_Explorer::safeName(first.value("table").toString()) + " " + first.value("alias").toString();
+    QString from = "FROM " + TableExplorer::safeName(first.value("table").toString()) + " " + first.value("alias").toString();
     QStringList avail; avail << first.value("alias").toString();
 
     for (int i = 1; i < tabs.size(); ++i) {
         const QVariantMap t = tabs[i].toMap();
         const QString al = t.value("alias").toString();
-        from += " " + join + " JOIN " + Table_Explorer::safeName(t.value("table").toString()) + " " + al;
+        from += " " + join + " JOIN " + TableExplorer::safeName(t.value("table").toString()) + " " + al;
 
         QStringList cond;
         const QVariantList ons = draft.value("conditions").toList();
@@ -513,13 +513,13 @@ QString MainController::buildMergeTablesSql(const QVariantMap& draft) const {
                 continue;
 
             if (QStringList({ "=","<>","<",">","<=",">=" }).contains(op))
-                cond << l + "." + Table_Explorer::safeName(lc) + " " + op + " " + r + "." + Table_Explorer::safeName(rc);
+                cond << l + "." + TableExplorer::safeName(lc) + " " + op + " " + r + "." + TableExplorer::safeName(rc);
         }
         if (cond.isEmpty())
             return QString{}; from += " ON (" + cond.join(" AND ") + ")";
         avail << al;
     }
-    return QString("CREATE TABLE %1 AS SELECT %2 %3").arg(Table_Explorer::safeName(nameTab), selectCols.join(", "), from);
+    return QString("CREATE TABLE %1 AS SELECT %2 %3").arg(TableExplorer::safeName(nameTab), selectCols.join(", "), from);
 }
 
 void MainController::loadNote() {
@@ -580,7 +580,7 @@ void MainController::saveNote() {
 
 void MainController::onTablesLoaded(const QStringList& tables) {
     tablesModel_->setStrings(tables);
-    statusText_ = "Таблиц загружено: " + QString::number(tables.size());
+    statusText_ = tr("Tables loaded: ") + QString::number(tables.size());
 
     emit statusChanged();
 
@@ -603,7 +603,7 @@ void MainController::onSelectFinished(quint64 requestId, const QList<QList<QVari
     setBusy(false);
 }
 
-void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<Table_Explorer::ColumnInfo>& cols) {
+void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableExplorer::ColumnInfo>& cols) {
     auto it = pending_.find(requestId);
 
     if (it == pending_.end())
@@ -615,9 +615,9 @@ void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName
             columns_.clear();
             for (const auto& c : cols)
                 columns_ << QVariantMap{ {"name",c.name}
-                                        ,{"type",c.type}
-                                        ,{"isNullable",c.isNullable}
-                                        ,{"isPrimaryKey",c.isPrimaryKey}
+                    ,{"type",c.type}
+                    ,{"isNullable",c.isNullable}
+                    ,{"isPrimaryKey",c.isPrimaryKey}
                 };
 
             int pk = -1;
@@ -632,7 +632,7 @@ void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName
                 QStringList n;
                 for (const auto& c : cols)
                     n << c.name;
-                    return n; }());
+                return n; }());
 
             emit columnsChanged();
         }
@@ -645,9 +645,9 @@ void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName
 
         for (const auto& c : cols)
             cl << QVariantMap{ {"name",c.name}
-                              ,{"type",c.type}
-                              ,{"isNullable",c.isNullable}
-                              ,{"isPrimaryKey",c.isPrimaryKey}
+                ,{"type",c.type}
+                ,{"isNullable",c.isNullable}
+                ,{"isPrimaryKey",c.isPrimaryKey}
             };
 
         emit openAddRowDialog(cl);
@@ -659,9 +659,9 @@ void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName
         per[tableName] = [&] {
             QVariantList l;
 
-         for (const auto& c : cols)
-            l << QVariantMap{ {"name",c.name},{"type",c.type} };
-         return QVariant(l); }();
+            for (const auto& c : cols)
+                l << QVariantMap{ {"name",c.name},{"type",c.type} };
+            return QVariant(l); }();
 
         it.value().collected = per;
         if (per.size() == r.expected.size()) {

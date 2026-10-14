@@ -5,14 +5,14 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include <QHash>
-#include "Table_Explorer.h"
+#include "TableExplorer.h"
 #include "StringListModel.h"
 #include "TableDataModel.h"
 #include "FilterModel.h"
 
 class QThread;
 class QTimer;
-class Database_Worker;
+class DatabaseWorker;
 
 class MainController : public QObject {
     Q_OBJECT
@@ -133,7 +133,7 @@ signals:
 private slots:
     void onTablesLoaded(const QStringList& tables);
     void onSelectFinished(quint64 requestId, const QList<QList<QVariant>>& data, const QStringList& headers, int totalRows);
-    void onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<Table_Explorer::ColumnInfo>& cols);
+    void onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableExplorer::ColumnInfo>& cols);
     void onTypesDbLoaded(quint64 requestId, const QStringList& types);
     void onOperationCompleted(bool success, const QString& message);
     void onWorkerError(const QString& error);
@@ -157,7 +157,7 @@ private:
     TableDataModel* tableModel_ = nullptr;
     FilterModel* filtersModel_ = nullptr;
     QThread* workerThread_ = nullptr;
-    Database_Worker* worker_ = nullptr;
+    DatabaseWorker* worker_ = nullptr;
     QTimer* filterTimer_ = nullptr;
     QTimer* noteTimer_ = nullptr;
 

@@ -7,7 +7,7 @@
 #include <QVariantList>
 #include <QMap>
 #include <QHash>
-#include "Table_Explorer.h"
+#include "TableExplorer.h"
 
 typedef QHash<QString, QVariant> Hash;
 Q_DECLARE_METATYPE(Hash)
@@ -19,12 +19,12 @@ typedef QMap<QString, QString> MapString;
 Q_DECLARE_METATYPE(MapString)
 
 
-class Database_Worker : public QObject {
+class DatabaseWorker : public QObject {
     Q_OBJECT
 
 public:
-    explicit Database_Worker(const QString& connectionName, const QString& dbType, QObject* parent = nullptr);
-    ~Database_Worker();
+    explicit DatabaseWorker(const QString& connectionName, const QString& dbType, QObject* parent = nullptr);
+    ~DatabaseWorker();
 
 public slots:
     void loadTables();
@@ -46,12 +46,12 @@ signals:
     void tablesLoaded(QStringList tables);
     void selectFinished(quint64 requestId, QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void operationCompleted(bool success, const QString& message);
-    void columnsLoaded(quint64 requestId, const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
+    void columnsLoaded(quint64 requestId, const QString& tableName, QList<TableExplorer::ColumnInfo> columns);
     void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);
 
 private:
-    std::unique_ptr<Table_Explorer> explorer_ = nullptr;
+    std::unique_ptr<TableExplorer> explorer_ = nullptr;
     QString connection_name_;
     QString driver_;
     QString db_path_;
