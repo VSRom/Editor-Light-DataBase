@@ -148,7 +148,7 @@ void DatabaseWorker::initConnection(const QString& driver, const QString& dbPath
         return;
     }
 
-    explorer_ = std::make_unique<TableExplorer>(connection_name_, dbType_);
+    explorer_ = std::make_unique<TableRepository>(connection_name_, dbType_);
 
     loadTables();
 }

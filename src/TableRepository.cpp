@@ -1,11 +1,11 @@
-#include "TableExplorer.h"
+#include "TableRepository.h"
 #include <QSqlError>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QDebug>
 #include <QSqlIndex>
 //================================================================================================================
-TableExplorer::TableExplorer(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
+TableRepository::TableRepository(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
 {
     if (dbType_ == "sqlite")
         types_db_ = { "INTEGER", "REAL", "TEXT", "BLOB" };
@@ -21,7 +21,7 @@ TableExplorer::TableExplorer(const QString &connectionName, const QString& dbTyp
         types_db_ = { "INTEGER", "TEXT", "REAL", "BLOB" };
 }
 //================================================================================================================
-QStringList TableExplorer::getUserTables() const {
+QStringList TableRepository::getUserTables() const {
     QSqlDatabase db = QSqlDatabase::database(connectionName_);
     QStringList AllTables = db.tables(QSql::Tables);
     QStringList userTables;
@@ -64,7 +64,7 @@ QStringList TableExplorer::getUserTables() const {
     return userTables;
 }
 //================================================================================================================
-QList<TableExplorer::ColumnInfo> TableExplorer::getColumns(const QString &tableName) const {
+QList<TableRepository::ColumnInfo> TableRepository::getColumns(const QString &tableName) const {
     QList<ColumnInfo> cols;
 
     QString driver = QSqlDatabase::database(connectionName_).driverName();
@@ -137,7 +137,7 @@ QList<TableExplorer::ColumnInfo> TableExplorer::getColumns(const QString &tableN
         return cols;
 }
 //================================================================================================================
-std::unique_ptr<QSqlQueryModel> TableExplorer::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
+std::unique_ptr<QSqlQueryModel> TableRepository::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
                                        int offset, const QString& search, const QStringList& searchableColumns) const {
 
     QStringList params;
@@ -169,7 +169,7 @@ std::unique_ptr<QSqlQueryModel> TableExplorer::select(const QString &table, cons
     return model;
 }
 //================================================================================================================
-bool TableExplorer::insert(const QString &table, const QMap<QString, QVariant> &values) const {
+bool TableRepository::insert(const QString &table, const QMap<QString, QVariant> &values) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QStringList place(values.size(), "?");
@@ -205,7 +205,7 @@ bool TableExplorer::insert(const QString &table, const QMap<QString, QVariant> &
     return exe;
 }
 //================================================================================================================
-bool TableExplorer::insert(const QString& table, const QHash<QString, QVariant>& values) const {
+bool TableRepository::insert(const QString& table, const QHash<QString, QVariant>& values) const {
     QMap<QString, QVariant> map;
     for (auto it = values.begin(); it != values.end(); it++)
         map[it.key()] = it.value();
@@ -213,7 +213,7 @@ bool TableExplorer::insert(const QString& table, const QHash<QString, QVariant>&
     return insert(table, map);
 }
 //================================================================================================================
-bool TableExplorer::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
+bool TableRepository::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
 {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
@@ -245,7 +245,7 @@ bool TableExplorer::update(const QString &table, const QString &idColumn, const 
     return exe;
 }
 //================================================================================================================
-bool TableExplorer::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
+bool TableRepository::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(safeName(table), safeName(idColumn));
@@ -265,7 +265,7 @@ bool TableExplorer::remove(const QString &table, const QString &idColumn, const 
     return exe;
 }
 //================================================================================================================
-bool TableExplorer::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
+bool TableRepository::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
     bool all = true;
 
     for (const QVariant& v : idValues)
@@ -274,7 +274,7 @@ bool TableExplorer::removeRows(const QString& table, const QString& idColumn, co
     return all;
 }
 //================================================================================================================
-bool TableExplorer::drop_table(const QString& table) const {
+bool TableRepository::drop_table(const QString& table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     if (table.isEmpty()) return false;
@@ -292,7 +292,7 @@ bool TableExplorer::drop_table(const QString& table) const {
     return exe;
 }
 //================================================================================================================
-bool TableExplorer::rename_table(const QString& table, const QString& new_name_table) const {
+bool TableRepository::rename_table(const QString& table, const QString& new_name_table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
     if (table.isEmpty() || new_name_table.isEmpty()) return false;
@@ -310,13 +310,13 @@ bool TableExplorer::rename_table(const QString& table, const QString& new_name_t
     return exe;
 }
 //================================================================================================================
-bool TableExplorer::exeQuery(const QString& sql) const {
+bool TableRepository::exeQuery(const QString& sql) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
     bool exe = qs.exec(sql);
     return exe;
 }
 //================================================================================================================
-int TableExplorer::countRows(const QString &table, const FilterList &filters,
+int TableRepository::countRows(const QString &table, const FilterList &filters,
     const QString& search, const QStringList& searchableColumns) const
 {
 
@@ -337,7 +337,7 @@ int TableExplorer::countRows(const QString &table, const FilterList &filters,
         return 0;
 }
 //================================================================================================================
-QString TableExplorer::safeName(const QString& name) {
+QString TableRepository::safeName(const QString& name) {
     if (name.isEmpty()) 
         return QString();
 
@@ -349,7 +349,7 @@ QString TableExplorer::safeName(const QString& name) {
     return result;
 }
 //================================================================================================================
-QString TableExplorer::buildSearchCondition(const QString& search, const QStringList& cols, QStringList& outParams) const {
+QString TableRepository::buildSearchCondition(const QString& search, const QStringList& cols, QStringList& outParams) const {
     if (search.isEmpty() || cols.isEmpty()) return QString();
 
     QString esc = search;
@@ -383,7 +383,7 @@ QString TableExplorer::buildSearchCondition(const QString& search, const QString
     return "(" + ors.join(" OR ") + ")";
 }
 //================================================================================================================
-QString TableExplorer::buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
+QString TableRepository::buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
                                          , const QStringList& searchableColumns, QStringList& outParams) const {
     QStringList conditions;
     outParams.clear();

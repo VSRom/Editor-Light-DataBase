@@ -7,7 +7,7 @@
 #include <QVariantList>
 #include <QMap>
 #include <QHash>
-#include "TableExplorer.h"
+#include "TableRepository.h"
 
 typedef QHash<QString, QVariant> Hash;
 Q_DECLARE_METATYPE(Hash)
@@ -46,12 +46,13 @@ signals:
     void tablesLoaded(QStringList tables);
     void selectFinished(quint64 requestId, QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void operationCompleted(bool success, const QString& message);
-    void columnsLoaded(quint64 requestId, const QString& tableName, QList<TableExplorer::ColumnInfo> columns);
+    void columnsLoaded(quint64 requestId, const QString& tableName, QList<TableRepository::ColumnInfo> columns);
     void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);
 
 private:
-    std::unique_ptr<TableExplorer> explorer_ = nullptr;
+    // session_
+    std::unique_ptr<TableRepository> explorer_ = nullptr;
     QString connection_name_;
     QString driver_;
     QString db_path_;

@@ -1,7 +1,7 @@
 #pragma once
 #include <QAbstractListModel>
 #include <QStringList>
-#include "TableExplorer.h"
+#include "TableRepository.h"
 
 class FilterModel : public QAbstractListModel {
     Q_OBJECT

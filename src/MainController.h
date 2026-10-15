@@ -5,7 +5,7 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include <QHash>
-#include "TableExplorer.h"
+#include "TableRepository.h"
 #include "StringListModel.h"
 #include "TableDataModel.h"
 #include "FilterModel.h"
@@ -133,7 +133,7 @@ signals:
 private slots:
     void onTablesLoaded(const QStringList& tables);
     void onSelectFinished(quint64 requestId, const QList<QList<QVariant>>& data, const QStringList& headers, int totalRows);
-    void onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableExplorer::ColumnInfo>& cols);
+    void onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableRepository::ColumnInfo>& cols);
     void onTypesDbLoaded(quint64 requestId, const QStringList& types);
     void onOperationCompleted(bool success, const QString& message);
     void onWorkerError(const QString& error);

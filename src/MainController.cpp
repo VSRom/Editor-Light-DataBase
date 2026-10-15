@@ -1,6 +1,6 @@
 #include "MainController.h"
 #include "DatabaseWorker.h"
-#include "TableExplorer.h"
+#include "TableRepository.h"
 #include <QThread>
 #include <QMetaObject>
 #include <QMetaType>
@@ -15,8 +15,8 @@ MainController::MainController(const QStringList& fonts, QObject* parent)
     qRegisterMetaType<Map>("Map");
     qRegisterMetaType<QMap<QString, QString>>("QMap<QString,QString>");
     qRegisterMetaType<FilterList>("FilterList");
-    qRegisterMetaType<TableExplorer::ColumnInfo>("TableExplorer::ColumnInfo");
-    qRegisterMetaType<QList<TableExplorer::ColumnInfo>>("QList<TableExplorer::ColumnInfo>");
+    qRegisterMetaType<TableRepository::ColumnInfo>("TableRepository::ColumnInfo");
+    qRegisterMetaType<QList<TableRepository::ColumnInfo>>("QList<TableRepository::ColumnInfo>");
 
     tablesModel_ = new StringListModel(this);
     tableModel_ = new TableDataModel(this);
@@ -402,14 +402,14 @@ void MainController::addRowFromDraft(const QVariantMap& values) {
 }
 
 void MainController::addColumnFromDraft(const QString& colName, const QString& type) {
-    const QString sql = QString("ALTER TABLE %1 ADD COLUMN %2 %3").arg(TableExplorer::safeName(currentTable_)
-                                                                       , TableExplorer::safeName(colName), type);
+    const QString sql = QString("ALTER TABLE %1 ADD COLUMN %2 %3").arg(TableRepository::safeName(currentTable_)
+                                                                       , TableRepository::safeName(colName), type);
     if (worker_)
         QMetaObject::invokeMethod(worker_, "executeQuery", Qt::QueuedConnection, Q_ARG(QString, sql));
 }
 
 QString MainController::safeName(const QString& n) const {
-    return TableExplorer::safeName(n);
+    return TableRepository::safeName(n);
 }
 
 QString MainController::buildCreateTableSql(const QVariantMap& draft) const {
@@ -437,7 +437,7 @@ QString MainController::buildCreateTableSql(const QVariantMap& draft) const {
         return QString();
     };
 
-    QStringList cols; cols << QString("%1 %2").arg(TableExplorer::safeName("id"), pkType(dbTypeCache_));
+    QStringList cols; cols << QString("%1 %2").arg(TableRepository::safeName("id"), pkType(dbTypeCache_));
 
     const QVariantList cl = draft.value("columns").toList();
 
@@ -449,9 +449,9 @@ QString MainController::buildCreateTableSql(const QVariantMap& draft) const {
         if (nm.toLower() == "id" || nm.isEmpty())
             continue;
 
-        cols << QString("%1 %2").arg(TableExplorer::safeName(nm), ty);
+        cols << QString("%1 %2").arg(TableRepository::safeName(nm), ty);
     }
-    return QString("CREATE TABLE IF NOT EXISTS %1 (%2);").arg(TableExplorer::safeName(nameTab), cols.join(", "));
+    return QString("CREATE TABLE IF NOT EXISTS %1 (%2);").arg(TableRepository::safeName(nameTab), cols.join(", "));
 }
 
 QString MainController::buildMergeTablesSql(const QVariantMap& draft) const {
@@ -473,20 +473,20 @@ QString MainController::buildMergeTablesSql(const QVariantMap& draft) const {
         const QVariantList cs = t.value("columns").toList();
 
         for (const QVariant& cv : cs)
-            selectCols << al + "." + TableExplorer::safeName(cv.toString());
+            selectCols << al + "." + TableRepository::safeName(cv.toString());
     }
 
     if (selectCols.isEmpty())
         return QString();
 
     const QVariantMap first = tabs.first().toMap();
-    QString from = "FROM " + TableExplorer::safeName(first.value("table").toString()) + " " + first.value("alias").toString();
+    QString from = "FROM " + TableRepository::safeName(first.value("table").toString()) + " " + first.value("alias").toString();
     QStringList avail; avail << first.value("alias").toString();
 
     for (int i = 1; i < tabs.size(); ++i) {
         const QVariantMap t = tabs[i].toMap();
         const QString al = t.value("alias").toString();
-        from += " " + join + " JOIN " + TableExplorer::safeName(t.value("table").toString()) + " " + al;
+        from += " " + join + " JOIN " + TableRepository::safeName(t.value("table").toString()) + " " + al;
 
         QStringList cond;
         const QVariantList ons = draft.value("conditions").toList();
@@ -513,13 +513,13 @@ QString MainController::buildMergeTablesSql(const QVariantMap& draft) const {
                 continue;
 
             if (QStringList({ "=","<>","<",">","<=",">=" }).contains(op))
-                cond << l + "." + TableExplorer::safeName(lc) + " " + op + " " + r + "." + TableExplorer::safeName(rc);
+                cond << l + "." + TableRepository::safeName(lc) + " " + op + " " + r + "." + TableRepository::safeName(rc);
         }
         if (cond.isEmpty())
             return QString{}; from += " ON (" + cond.join(" AND ") + ")";
         avail << al;
     }
-    return QString("CREATE TABLE %1 AS SELECT %2 %3").arg(TableExplorer::safeName(nameTab), selectCols.join(", "), from);
+    return QString("CREATE TABLE %1 AS SELECT %2 %3").arg(TableRepository::safeName(nameTab), selectCols.join(", "), from);
 }
 
 void MainController::loadNote() {
@@ -603,7 +603,7 @@ void MainController::onSelectFinished(quint64 requestId, const QList<QList<QVari
     setBusy(false);
 }
 
-void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableExplorer::ColumnInfo>& cols) {
+void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableRepository::ColumnInfo>& cols) {
     auto it = pending_.find(requestId);
 
     if (it == pending_.end())
