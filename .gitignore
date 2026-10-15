@@ -22,6 +22,8 @@ Release/
 x64/
 x86/
 drivers/
+src/CppProperties.json
+
 
 # CMake
 CMakeCache.txt
