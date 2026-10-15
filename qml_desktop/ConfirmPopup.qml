@@ -48,11 +48,11 @@ Popup {
             }
 
             ThemedButton {
-                text: "Нет"
+                text: qsTr("No")
                 onClicked: control.finish(false)
             }
             ThemedButton {
-                text: "Да"
+                text: qsTr("Yes")
                 onClicked: control.finish(true)
             }
         }

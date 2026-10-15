@@ -7,107 +7,59 @@ Item {
     id: root
 
     focus: true
-    property var tm: MainController.tableModel
 
     signal addColumnRequested()
 
-    Column {
-        anchors.fill: parent
-
-        Rectangle {
-            width: parent.width
-            height: 28
-            color: Theme.header
-
-            Row {
-                Repeater {
-                    model: tm.cols
-                    delegate: ThemedLabel {
-                        width: 140
-                        height: 28
-                        verticalAlignment: Text.AlignVCenter
-                        leftPadding: 4
-                        text: tm.headerAt(index)
-                        color: Theme.selectionText
-                        font.bold: true
-                        elide: Text.ElideRight
-                    }
-                }
-            }
-        }
-
         ThemedScrollView {
-            width: parent.width
-            height: parent.height - 28
+            width:  parent.width
+            height: parent.height
 
-            ListView {
-                id: lv
+            TableView {
+                id: table
 
-                model: tm.rows
-                clip: true
+                clip:         true
+                anchors {
+                    fill:    parent
+                    margins: 10
+                }
 
-                delegate: Item {
-                    width: ListView.view.width
-                    height: 28
-                    property int r: index
+                model: MainController.tableModel
 
-                    Row {
-                        Repeater {
-                            model: tm.cols
+                delegate: Rectangle {
+                    implicitWidth:  150
+                    implicitHeight: 35
+                    color:          model.selected ? Theme.selection : (row % 2 ? Theme.tableAlt : Theme.table)
 
-                            delegate: MouseArea {
-                                width: 140
-                                height: 28
-                                property int c: index
-                                onClicked: function(mo) {
-                                    if (mo.modifiers & Qt.ControlModifier) tm.toggleSelected(r)
-                                    else tm.selectOnly(r)
-                                }
-                                onDoubleClicked: MainController.updateCellRequested(r, c)
+                    Text {
+                        anchors.fill: parent
+                        text:         model.isNull ? "NULL" : model.display
+                        color:        model.selected ? Theme.selectionText : Theme.text
+                    }
 
-                                Rectangle {
-                                    anchors.fill: parent
-                                    border.color: Theme.gridline
-                                    border.width: 1
-                                    color: tm.isSelectedAt(r) ? Theme.selection : (r % 2 ? Theme.tableAlt : Theme.table)
-
-                                    ThemedLabel {
-                                        anchors.fill: parent
-                                        anchors.margins: 4
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: tm.isNullAt(r, c) ? "NULL" : tm.displayAt(r, c)
-                                        color: tm.isSelectedAt(r) ? Theme.selectionText : Theme.text
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                            }
-                        }
+                    MouseArea {
+                        anchors.fill:    parent
+                        acceptedButtons: Qt.RightButton
+                        onClicked: (mouse) => clickToTable.popup()
                     }
                 }
             }
         }
-    }
 
     Keys.onDeletePressed: MainController.deleteSelectedRowsRequested()
 
     Menu {
-        id: ctx
+        id: clickToTable
+
         MenuItem {
-            text: "Добавить строку"
+            text: qsTr("Add row")
             onTriggered: MainController.requestAddRow()
         }
 
         MenuSeparator {}
 
         MenuItem {
-            text: "Добавить столбец"
+            text: qsTr("Add column")
             onTriggered: root.addColumnRequested()
         }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.RightButton
-        onClicked: function(e) { ctx.popup(e.mouseX, e.mouseY) }
     }
 }

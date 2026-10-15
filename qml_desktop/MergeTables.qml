@@ -56,7 +56,7 @@ Popup {
         spacing: 10
 
         ThemedLabel {
-            text: "Объединение таблиц"
+            text: qsTr("Merge Tables")
             font.bold: true
         }
 
@@ -64,7 +64,7 @@ Popup {
             spacing: 6
 
             ThemedLabel {
-                text: "Имя новой таблицы:"
+                text: qsTr("New table name:")
             }
 
             ThemedTextField {
@@ -118,7 +118,7 @@ Popup {
                             spacing: 4
 
                             ThemedLabel {
-                                text: tableCard.tbl + "  (как " + control.aliasOf(tableCard.tbl) + ")"
+                                text: qsTr("%1  (as %2)").arg(tableCard.tbl).arg(control.aliasOf(tableCard.tbl))
                                 font.bold: true
                             }
 
@@ -140,7 +140,7 @@ Popup {
         }
 
         ThemedLabel {
-            text: "Условия связи ON"
+            text: qsTr("ON Join Conditions")
             font.bold: true
         }
 
@@ -218,7 +218,7 @@ Popup {
         }
 
         ThemedButton {
-            text: "+ Добавить условие"
+            text: qsTr("+ Add condition")
             onClicked: control.conds = control.conds.concat([
                 { lt: control.tableNames[0] || "", lc: "", op: "=", rt: control.tableNames[1] || "", rc: "" }
             ])
@@ -232,12 +232,12 @@ Popup {
             }
 
             ThemedButton {
-                text: "Отмена"
+                text: qsTr("Cancel")
                 onClicked: control.close()
             }
 
             ThemedButton {
-                text: "OK"
+                text: qsTr("OK")
                 onClicked: control.submit()
             }
         }
@@ -246,7 +246,7 @@ Popup {
     function submit() {
         var nm = nameField.text.trim()
 
-        if (nm.length === 0) { MainController.showError("Введите имя таблицы")
+        if (nm.length === 0) { MainController.showError(qsTr("Enter table name"))
             return
         }
 
@@ -265,7 +265,7 @@ Popup {
             tables.push({ table: t, alias: aliasOf(t), columns: cols })
         }
         if (!anyCol) {
-            MainController.showError("Не выбрана ни одна колонка")
+            MainController.showError(qsTr("No columns selected"))
             return
         }
         var conditions = []
@@ -273,14 +273,14 @@ Popup {
         for (var c = 0; c < conds.length; ++c) {
             var o = conds[c]
             if (!o.lc || !o.rc) {
-                MainController.showError("Заполните колонки в условии #" + (c + 1))
+                MainController.showError(qsTr("Fill in columns in condition #%1").arg(c + 1))
                 return
             }
             conditions.push({ leftTable: aliasOf(o.lt), leftCol: o.lc, op: o.op, rightTable: aliasOf(o.rt), rightCol: o.rc })
         }
 
         if (conditions.length === 0) {
-            MainController.showError("Добавьте хотя бы одно условие ON")
+            MainController.showError(qsTr("Add at least one ON condition"))
             return
         }
 

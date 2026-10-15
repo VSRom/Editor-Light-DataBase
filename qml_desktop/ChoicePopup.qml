@@ -49,11 +49,11 @@ Popup {
             }
 
             ThemedButton {
-                text: "Отмена"
+                text: qsTr("Cancel")
                 onClicked: control.finish(false)
             }
             ThemedButton {
-                text: "OK"
+                text: qsTr("OK")
                 onClicked: control.finish(true)
             }
         }

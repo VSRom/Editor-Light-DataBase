@@ -37,7 +37,7 @@ ColumnLayout {
             }
 
             ThemedButton {
-                text: "X"
+                text: qsTr("X")
                 danger: true
                 Layout.preferredWidth: 28
                 onClicked: fm.removeRow(index)

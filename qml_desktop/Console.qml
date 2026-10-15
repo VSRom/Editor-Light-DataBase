@@ -22,8 +22,12 @@ Rectangle {
             Layout.fillWidth: true
             elide: Text.ElideRight
             opacity: 0.85
-            text: "Таблица: " + (m.currentTable.length ? m.currentTable : "—")
-                  + "   |   стр. " + (m.currentPage + 1) + "/" + m.totalPages + "   |   всего: " + m.totalRows
+            text: qsTr("Table: %1   |   Page %2/%3   |   Total: %4")
+                    .arg(m.currentTable.length ? m.currentTable : "—")
+                    .arg(m.currentPage + 1)
+                    .arg(m.totalPages)
+                    .arg(m.totalRows)
+
         }
         ThemedLabel {
             Layout.fillWidth: true

@@ -7,26 +7,30 @@
 #include <QVariantList>
 #include <QMap>
 #include <QHash>
-#include "Table_Explorer.h"
+#include "TableRepository.h"
 
 typedef QHash<QString, QVariant> Hash;
-typedef QMap<QString, QVariant> Map;
-typedef QMap<QString, QString> MapString;
 Q_DECLARE_METATYPE(Hash)
+
+typedef QMap<QString, QVariant> Map;
 Q_DECLARE_METATYPE(Map)
+
+typedef QMap<QString, QString> MapString;
 Q_DECLARE_METATYPE(MapString)
 
-class Database_Worker : public QObject {
+
+class DatabaseWorker : public QObject {
     Q_OBJECT
 
 public:
-    explicit Database_Worker(const QString& connectionName, const QString& dbType, QObject* parent = nullptr);
-    ~Database_Worker();
+    explicit DatabaseWorker(const QString& connectionName, const QString& dbType, QObject* parent = nullptr);
+    ~DatabaseWorker();
 
 public slots:
     void loadTables();
     void selectTable(quint64 requestId, const QString& table, const FilterList& filters = {}, int pageSize = 0, int offset = 0,
         const QString& search = {}, const QStringList& searchableColumns = {});
+
     void executeQuery(const QString& sql);
     void getColumns(quint64 requestId, const QString& table);
     void insertRow(const QString& table, const Hash& values);
@@ -42,11 +46,13 @@ signals:
     void tablesLoaded(QStringList tables);
     void selectFinished(quint64 requestId, QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void operationCompleted(bool success, const QString& message);
-    void columnsLoaded(quint64 requestId, const QString& tableName, QList<Table_Explorer::ColumnInfo> columns);
+    void columnsLoaded(quint64 requestId, const QString& tableName, QList<TableRepository::ColumnInfo> columns);
     void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);
+
 private:
-    Table_Explorer* explorer_;
+    // session_
+    std::unique_ptr<TableRepository> explorer_ = nullptr;
     QString connection_name_;
     QString driver_;
     QString db_path_;

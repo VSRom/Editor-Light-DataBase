@@ -7,7 +7,7 @@ import "themed"
 Item {
     id: root
 
-    property var m: MainController
+    property var mainController: MainController
     property string pendingRenameOld: ""
     property string pendingAddColName: ""
 
@@ -24,18 +24,18 @@ Item {
             RowLayout {
                 ThemedTextField {
                     Layout.fillWidth: true
-                    placeholderText: "Search..."
-                    text: m.searchText
-                    onTextChanged: m.searchText = text
-                    onAccepted: m.applySearch()
+                    placeholderText: qsTr("Search...")
+                    text: mainController.searchText
+                    onTextChanged: mainController.searchText = text
+                    onAccepted: mainController.applySearch()
                 }
                 ThemedButton {
-                    text: "+ Фильтр"
-                    onClicked: m.addFilter()
+                    text: qsTr("+ Filter")
+                    onClicked: mainController.addFilter()
                 }
             }
             FilterPanel {
-                visible: m.filtersModel.count > 0
+                visible: mainController.filtersModel.count > 0
             }
 
             DataTable {
@@ -48,20 +48,21 @@ Item {
                 spacing: 8
 
                 ThemedButton {
-                    text: "◀"
-                    enabled: m.canPrev
-                    onClicked: m.prevPage()
+                    text: qsTr("◀")
+                    enabled: mainController.canPrev
+                    onClicked: mainController.prevPage()
                 }
 
                 ThemedLabel {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    text: "Страница " + (m.currentPage + 1) + " из " + m.totalPages + "  (всего " + m.totalRows + ")"
+                    text: qsTr("Page ") + (mainController.currentPage + 1) + qsTr(" from ")
+                          + mainController.totalPages + qsTr("  (total ") + mainController.totalRows + ")"
                 }
                 ThemedButton {
-                    text: "▶"
-                    enabled: m.canNext
-                    onClicked: m.nextPage()
+                    text: qsTr("▶")
+                    enabled: mainController.canNext
+                    onClicked: mainController.nextPage()
                 }
             }
 
@@ -78,22 +79,22 @@ Item {
             GridLayout {
                 columns: 2
                 ThemedButton {
-                    text: "Объединить\nтаблицы"
-                    onClicked: m.requestMergeTables(tableList.selectedNames())
+                    text: qsTr("Merge\ntables")
+                    onClicked: mainController.requestMergeTables(tableList.selectedNames())
                 }
 
                 ThemedButton {
-                    text: "Создать\nтаблицу"
-                    onClicked: m.requestCreateTable()
+                    text: qsTr("Create\ntable")
+                    onClicked: mainController.requestCreateTable()
                 }
 
                 ThemedButton {
-                    text: "Переименовать\nтаблицу"
+                    text: qsTr("Rename\ntable")
                     onClicked: root.startRename(tableList.currentName)
                 }
 
                 ThemedButton {
-                    text: "Удалить\nтаблицу"
+                    text: qsTr("Delete\ntable")
                     onClicked: root.startDrop(tableList.currentName)
                 }
             }
@@ -114,21 +115,24 @@ Item {
         id: confirmPop
 
         property int rid: 0
+
         onConfirmed: function(acc) {
-            m.confirmResult(rid, acc)
+            mainController.confirmResult(rid, acc)
         }
     }
 
     InputPopup {
         id: inputPop
+
         property int rid: 0
+
         onAccepted: function(t, ok) {
-            m.inputResult(rid, t, ok)
+            mainController.inputResult(rid, t, ok)
         }
     }
 
     Connections {
-        target: m
+        target: mainController
 
         function onOpenCreateDialog(types){
             createDlg.types = types
@@ -168,7 +172,7 @@ Item {
 
     function startRename(name) {
         if (!name) {
-            m.showError("Таблица не выбрана")
+            mainController.showError(qsTr("No table selected"))
             return
         }
 
@@ -179,12 +183,12 @@ Item {
 
     function startDrop(name) {
         if (!name) {
-            m.showError("Таблица не выбрана")
+            mainController.showError(qsTr("No table selected"))
             return
         }
 
         dropConfirm.tgt = name
-        dropConfirm.message = qsTr("Все данные таблицы '%1' удалятся! Вы уверены?").arg(name)
+        dropConfirm.message = qsTr("All data in table '%1' will be deleted! Are you sure?").arg(name)
         dropConfirm.open()
     }
 
@@ -205,7 +209,7 @@ Item {
 
     onChosen: function(t, ok){
         if (ok && t.length)
-            m.addColumnFromDraft(root.pendingAddColName, t)
+            mainController.addColumnFromDraft(root.pendingAddColName, t)
         }
     }
 
@@ -217,7 +221,7 @@ InputPopup    {
     onAccepted: function(t, ok){
         if (ok && t.trim().length){
             root.pendingAddColName = t.trim();
-            m.requestAddColumn(root.pendingAddColName)
+            mainController.requestAddColumn(root.pendingAddColName)
         }
     }
 }
@@ -227,14 +231,14 @@ InputPopup    {
 
         property string targetName: ""
 
-        title: "Новое имя таблицы"
-        label: "Ввод"
+        title: qsTr("New name table")
+        label: qsTr("Enter")
         onAccepted: function(t, ok) {
             if (!ok || t.trim().length === 0)
                 return
 
             renameConfirm.oldName = targetName; renameConfirm.newName = t.trim()
-            renameConfirm.message = qsTr("Имя '%1' изменится на '%2'. Вы уверены?").arg(targetName).arg(t.trim())
+            renameConfirm.message = qsTr("The name '%1' will change to '%2'. Are you sure?").arg(targetName).arg(t.trim())
             renameConfirm.open()
         }
     }
@@ -244,11 +248,11 @@ InputPopup    {
         property string oldName: ""
         property string newName: ""
 
-        title: "Переименование"
+        title: qsTr("Rename")
         onConfirmed: function(acc) {
-            if (acc) m.renameTable(oldName, newName)
+            if (acc) mainController.renameTable(oldName, newName)
             else
-                m.showInfo("Операция отменена")
+                mainController.showInfo(qsTr("Operation cancelled"))
         }
     }
     ConfirmPopup {
@@ -256,11 +260,11 @@ InputPopup    {
 
         property string tgt: ""
 
-        title: "Предупреждение"
+        title: qsTr("Warning")
         onConfirmed: function(acc) {
-            if (acc) m.dropTable(tgt)
+            if (acc) mainController.dropTable(tgt)
             else
-                m.showInfo("Операция отменена")
+                mainController.showInfo(qsTr("Operation cancelled"))
         }
     }
 }

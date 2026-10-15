@@ -27,21 +27,22 @@ Popup {
     contentItem: ColumnLayout {
         spacing: 10
         ThemedLabel {
-            text: "Создание таблицы"
+            text: qsTr("Create table")
             font.bold: true
         }
 
         RowLayout {
             spacing: 6
             ThemedLabel {
-                text: "Имя таблицы:"
+                text: qsTr("Table name:")
             }
 
             ThemedTextField {
                 id: nameField
 
                 Layout.fillWidth: true
-                placeholderText: "Поле ввода"
+                placeholderText: qsTr("Input field")
+
             }
         }
         Flickable {
@@ -63,7 +64,7 @@ Popup {
 
                         ThemedTextField {
                             Layout.preferredWidth: 220
-                            placeholderText: "имя колонки"
+                            placeholderText: qsTr("Column name")
                             text: modelData.name
                             onTextChanged: control.rows[index].name = text
                         }
@@ -77,13 +78,13 @@ Popup {
                             onEditTextChanged: control.rows[index].type = editText
                         }
                         ThemedButton {
-                            text: "X"
+                            text: qsTr("X")
                             danger: true
                             Layout.preferredWidth: 28
 
                             onClicked: {
                                 if (control.rows.length <= 1) {
-                                    MainController.showError("Нельзя удалить последнюю строку")
+                                    MainController.showError(qsTr("Cannot delete the last row"))
                                     return
                                 }
                                 control.rows = control.rows.filter(function(_, i){ return i !== index })
@@ -96,7 +97,7 @@ Popup {
         RowLayout {
             spacing: 8
             ThemedButton {
-                text: "+ Колонка"
+                text: qsTr("+ Column")
                 onClicked: control.rows = control.rows.concat([{ name: "", type: (control.types[0] || "") }]) }
 
             Item {
@@ -104,12 +105,12 @@ Popup {
             }
 
             ThemedButton {
-                text: "Отмена"
+                text: qsTr("Cancel")
                 onClicked: control.close()
             }
 
             ThemedButton {
-                text: "OK"
+                text: qsTr("OK")
                 onClicked: control.submit()
             }
         }
@@ -118,7 +119,7 @@ Popup {
     function submit() {
         var nm = nameField.text.trim()
         if (nm.length === 0) {
-            MainController.showError("Введите имя таблицы")
+            MainController.showError(qsTr("Enter table name"))
             return
         }
         var cols = []
@@ -127,15 +128,15 @@ Popup {
             var c = control.rows[i]
             var cn = c.name.trim()
             if (cn.length === 0) {
-                MainController.showError("Имя колонки #" + (i+1) + " пустое")
+                MainController.showError(qsTr("Column name #%1 is empty").arg(i + 1))
                 return
             }
             if (cn.toLowerCase() === "id") {
-                MainController.showError("Колонка 'id' создаётся автоматически")
+                MainController.showError(qsTr("Column 'id' is created automatically"))
                 return
             }
             if (c.type.trim().length === 0) {
-                MainController.showError("Тип для '" + cn + "' не выбран")
+                MainController.showError(qsTr("Type for '%1' is not selected").arg(cn))
                 return
             }
             cols.push({name: cn, type: c.type.trim() })

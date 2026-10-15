@@ -7,6 +7,9 @@ import "themed"
 Item {
     id: root
 
+    implicitWidth:  1440
+    implicitHeight: 900
+
     ColumnLayout {
         anchors.fill: parent
 

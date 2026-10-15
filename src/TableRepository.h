@@ -7,6 +7,7 @@
 #include <QVariant>
 #include <QList>
 #include <QHash>
+#include <memory>
 //================================================================================================================
 struct Filtration {
     QString colName_;
@@ -18,9 +19,9 @@ typedef QList<Filtration> FilterList;
 //================================================================================================================
 Q_DECLARE_METATYPE(FilterList)
 //================================================================================================================
-class Table_Explorer {
+class TableRepository {
 public:
-    explicit Table_Explorer(const QString &connectionName, const QString& dbType = "sqlite");
+    explicit TableRepository(const QString &connectionName, const QString& dbType = "sqlite");
 
     struct ColumnInfo {
         QString name;
@@ -32,8 +33,9 @@ public:
     QList<ColumnInfo> getColumns(const QString &tableName) const;
     QStringList getUserTables() const;
     QStringList get_types_db() const { return types_db_; }
-    QSqlQueryModel* select(const QString& table, const FilterList& filters = {}, const QString& logic = {},
-        int pageSize = 0, int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {}) const;
+    std::unique_ptr<QSqlQueryModel> select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
+                           , int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {}) const;
+
     bool insert(const QString &table, const QMap<QString, QVariant> &values) const;
     bool insert(const QString& table, const QHash<QString, QVariant>& values) const;
     bool update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const;
@@ -42,17 +44,20 @@ public:
     bool drop_table(const QString& table) const;
     bool rename_table(const QString& table, const QString& new_name_table) const;
     bool exeQuery(const QString& sql) const;
-    int  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {}, const QStringList& searchableColumns = {}) const;
+    int  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {}
+                  , const QStringList& searchableColumns = {}) const;
 
     static QString safeName(const QString& name);
 
 private:
     QString buildSearchCondition(const QString& search, const QStringList& cols, QStringList& outParams) const;
+    QString buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
+                             , const QStringList& searchableColumns, QStringList& outParams) const;
 
     QString connectionName_;
     QString dbType_;
     QStringList types_db_;
 };
 //================================================================================================================
-Q_DECLARE_METATYPE(Table_Explorer::ColumnInfo)
+Q_DECLARE_METATYPE(TableRepository::ColumnInfo)
 //================================================================================================================

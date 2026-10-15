@@ -1,15 +1,23 @@
 #pragma once
 #include <QAbstractListModel>
 #include <QStringList>
-#include "Table_Explorer.h"
+#include "TableRepository.h"
 
 class FilterModel : public QAbstractListModel {
     Q_OBJECT
         Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
 public:
-    enum Roles { ColumnRole = Qt::DisplayRole, OpRole, ValueRole };
+    enum Roles {
+        ColumnRole = Qt::DisplayRole,
+        OpRole,
+        ValueRole
+    };
 
-    struct Row { QString column, op, value; };
+    struct Row {
+        QString column;
+        QString op;
+        QString value;
+    };
 
     explicit FilterModel(QObject* parent = nullptr);
 

@@ -26,7 +26,7 @@ Popup {
     contentItem: ColumnLayout {
         spacing: 10
         ThemedLabel {
-            text: "Добавить строку"
+            text: qsTr("Add row")
             font.bold: true
         }
 
@@ -75,7 +75,7 @@ Popup {
                 onClicked: control.close()
             }
 
-            ThemedButton { text: "OK"
+            ThemedButton { text: qsTr("OK")
                 onClicked: control.submit()
             }
         }
