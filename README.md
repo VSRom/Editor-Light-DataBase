@@ -4,7 +4,7 @@ Universal database management client written in C++ with a Qt graphical user int
 ## Technologies
 
     C++
-    Qt 6 (Widgets, Sql)
+    Qt 6.12 (Widgets, Sql)
     CMake (build system)
     Git (version control)
 

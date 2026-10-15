@@ -15,7 +15,6 @@ Item {
 
             Layout.fillWidth: true
             position:         TabBar.Header
-            //backgroundChanged: enabled ? "#3A5A3A" : "#143E1D"
 
             Repeater {
                 model: [qsTr("Tables"), qsTr("Console SQL"), qsTr("Services")]
