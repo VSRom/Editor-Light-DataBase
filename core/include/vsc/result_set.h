@@ -3,12 +3,22 @@
 #include "column_metadata.h"
 #include "value.h"
 #include <vector>
+#include <cstdint>
+#include <optional>
 
 namespace vsc {
     struct ResultSet {
-        std::vector<vsc::ColumnMetaData> metadata;
-        std::vector<std::vector<vsc::Value>> value;
-        std::vector<std::int64_t> affectedRows;
-        std::int64_t lastInsertId;
+        enum class ResultKind {
+            rows,
+            affected,
+            none
+        };
+
+        ResultKind kind{ResultKind::none};
+
+        std::vector<vsc::ColumnMetaData> cols;
+        std::vector<std::vector<vsc::Value>> rows;
+        std::int64_t affectedRows{-1};
+        std::optional<std::int64_t> lastInsertId{};
     };
 }
