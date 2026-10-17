@@ -2,9 +2,10 @@
 
 #include "column_metadata.h"
 #include "value.h"
+
+#include <optional>
 #include <vector>
 #include <cstdint>
-#include <optional>
 
 namespace vsc {
     struct ResultSet {
@@ -18,6 +19,7 @@ namespace vsc {
 
         std::vector<vsc::ColumnMetaData> cols;
         std::vector<std::vector<vsc::Value>> rows;
+
         std::int64_t affectedRows{-1};
         std::optional<std::int64_t> lastInsertId{};
     };

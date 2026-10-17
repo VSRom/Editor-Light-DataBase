@@ -1,18 +1,15 @@
 #pragma once
 
+#include "types.h"
+
 #include <variant>
 #include <string>
-#include <vector>
 #include <cstdint>
+#include <utility>
 #include <optional>
 #include <type_traits>
-#include <utility>
 
 namespace vsc {
-
-    using Blob = std::vector<std::uint8_t>;
-    using Text = std::string;
-
     struct Decimal {
         Text repr;
 

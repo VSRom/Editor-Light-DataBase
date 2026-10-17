@@ -1,11 +1,11 @@
 #pragma once
 
-#include <string>
+#include "types.h"
 
 namespace vsc {
     struct ColumnMetaData {
-        std::string nameColumn{};
-        std::string type{};
+        Text nameColumn{};
+        Text type{};
         bool isPk{false};
         bool isNullable{true};
         int  ordinal{0};

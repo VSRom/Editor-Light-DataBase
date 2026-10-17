@@ -1,11 +1,34 @@
 #pragma once
 
-#include <string>
+#include "types.h"
 
 namespace vsc {
     struct SqlError {
-        int codeError{0};
-        std::string message{};
-        std::string source{};
+        enum class SourceError {
+            connection,
+            statement,
+            transaction,
+            driver
+        };
+
+        enum class MessageError {
+            driverMissing,
+            connectionFailed,
+            notOpen,
+            syntax,
+            constraintViolation,
+            timeout,
+            unsupported,
+            internal
+        };
+
+        SqlError(MessageError c, SourceError s, Text m, Text nc)
+            : codeError(c), source(s), message(m), nativeCode(nc)
+        { }
+
+        MessageError codeError;
+        SourceError source;
+        Text message;
+        Text nativeCode;
     };
 }
