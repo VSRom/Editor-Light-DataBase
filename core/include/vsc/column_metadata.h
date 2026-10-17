@@ -7,6 +7,7 @@ namespace vsc {
         std::string nameColumn{};
         std::string type{};
         bool isPk{false};
-        int ordinal{0};
+        bool isNullable{true};
+        int  ordinal{0};
     };
 }
