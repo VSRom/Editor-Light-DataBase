@@ -1,11 +1,10 @@
 #pragma once
 
 #include "value.h"
-#include <string>
 
 namespace vsc {
     struct CmdQuery {
-        std::string sqlText{};
+        Text sqlText{};
         std::vector<vsc::Value> sqlParams{};
         bool timeOut{false};
 

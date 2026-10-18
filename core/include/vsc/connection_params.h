@@ -1,16 +1,26 @@
 #pragma once
 
-#include <string>
+#include "types.h"
+#include <optional>
 
 namespace vsc {
-    struct ConnectionParameters {
-        int port{0};
-        std::string host{0};
-        std::string login{};
-        std::string password{};
-        std::string path{};
-        std::string driver{};
-        std::string option{};
+    enum class DbTypes {
+        none,
+        sqlite,
+        mysql,
+        psql,
+        oracle,
+        access
+    };
 
+    struct ConnectionParameters {
+        DbTypes type{DbTypes::none};
+
+        std::optional<int> port{};
+        std::optional<Text> host{};
+        std::optional<Text> dataBaseName{};
+        std::optional<Text> pathDb{};
+        std::optional<Text> login{};
+        std::optional<Text> password{};
     };
 }
