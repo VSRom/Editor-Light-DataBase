@@ -6,16 +6,6 @@
 #include <type_traits>
 #include <utility>
 
-[[noreturn]] inline void unreachable() noexcept {
-#if defined(__clang__) || defined(__GNUC__)
-    __builtin_unreachable();
-#elif defined(_MSC_VER)
-    __assume(0);
-#else
-#error "Unknown compiler: unreachable() is not implemented."
-#endif
-}
-
 template <typename T, typename E>
 class [[nodiscard]] Result {
 public:
@@ -41,31 +31,31 @@ public:
 
     T& operator*() & {
         assert(has_value());
-        if (!has_value()) [[unlikely]] unreachable();
+        if (!has_value()) [[unlikely]] std::unreachable();
         return std::get<T>(v_);
     }
 
     T* operator->() & {
         assert(has_value());
-        if (!has_value()) [[unlikely]] unreachable();
+        if (!has_value()) [[unlikely]] std::unreachable();
         return &std::get<T>(v_);
     }
 
     const T& operator*() const & {
         assert(has_value());
-        if (!has_value()) [[unlikely]] unreachable();
+        if (!has_value()) [[unlikely]] std::unreachable();
         return std::get<T>(v_);
     }
 
     const T* operator->() const & {
         assert(has_value());
-        if (!has_value()) [[unlikely]] unreachable();
+        if (!has_value()) [[unlikely]] std::unreachable();
         return &std::get<T>(v_);
     }
 
     T&& operator*() && {
         assert(has_value());
-        if (!has_value()) [[unlikely]] unreachable();
+        if (!has_value()) [[unlikely]] std::unreachable();
         return std::get<T>(std::move(v_));
     }
 
@@ -81,13 +71,13 @@ public:
 
     E& error() & {
         assert(has_error());
-        if (!has_error()) [[unlikely]] unreachable();
+        if (!has_error()) [[unlikely]] std::unreachable();
         return std::get<E>(v_);
     }
 
     const E& error() const & {
         assert(has_error());
-        if (!has_error()) [[unlikely]] unreachable();
+        if (!has_error()) [[unlikely]] std::unreachable();
         return std::get<E>(v_);
     }
 
@@ -122,18 +112,18 @@ public:
 
     void value() const {
         assert(has_value());
-        if (!has_value()) [[unlikely]] unreachable();
+        if (!has_value()) [[unlikely]] std::unreachable();
     }
 
     E& error() & {
         assert(has_error());
-        if (!has_error()) [[unlikely]] unreachable();
+        if (!has_error()) [[unlikely]] std::unreachable();
         return *opt_error_;
     }
 
     const E& error() const & {
         assert(has_error());
-        if (!has_error()) [[unlikely]] unreachable();
+        if (!has_error()) [[unlikely]] std::unreachable();
         return *opt_error_;
     }
 
