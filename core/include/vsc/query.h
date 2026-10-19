@@ -1,12 +1,13 @@
 #pragma once
 
 #include "value.h"
+#include <optional>
 
 namespace vsc {
     struct CmdQuery {
         Text sqlText{};
-        std::vector<vsc::Value> sqlParams{};
-        bool timeOut{false};
+        std::vector<Value> sqlParams{};
+        std::optional<int> timeOutMs{};
 
         enum class Mode {
             read,
@@ -14,5 +15,7 @@ namespace vsc {
             ddl,
             metadata
         };
+
+        Mode mode{Mode::read};
     };
 }

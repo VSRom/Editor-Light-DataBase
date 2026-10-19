@@ -22,8 +22,8 @@ namespace vsc {
             internal
         };
 
-        SqlError(MessageError c, SourceError s, Text m, Text nc)
-            : codeError(c), source(s), message(m), nativeCode(nc)
+        SqlError(MessageError c, SourceError s, Text m, Text nc) noexcept
+            : codeError(c), source(s), message(std::move(m)), nativeCode(std::move(nc))
         { }
 
         MessageError codeError;

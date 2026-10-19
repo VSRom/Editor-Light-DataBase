@@ -13,7 +13,7 @@ namespace vsc {
     struct Decimal {
         Text repr;
 
-        explicit Decimal(Text repr)
+        explicit Decimal(Text repr) noexcept
             : repr(std::move(repr))
         {}
 
@@ -63,7 +63,7 @@ namespace vsc {
         Decimal                   // DECIMAL
         >;
 
-        explicit Value(Var v)
+        explicit Value(Var v) noexcept
             : v_(std::move(v))
         {}
 
@@ -106,48 +106,48 @@ namespace vsc {
                 if (const T* p = std::get_if<T>(&v_))
                     return *p;
 
-                return std::nullopt;
+                [[unlikely]] return std::nullopt;
             }
     };
 
 
-    inline Value makeNull() {
+    [[nodiscard]] inline Value makeNull() noexcept {
         return Value {
             Value::Var{std::in_place_type<std::monostate>}
         };
     }
 
-    inline Value makeInt(std::int64_t i) {
+    [[nodiscard]] inline Value makeInt(std::int64_t i) noexcept {
         return Value {
             Value::Var{std::in_place_type<std::int64_t>, i}
         };
     }
 
-    inline Value makeReal(double d) {
+    [[nodiscard]] inline Value makeReal(double d) noexcept {
         return Value {
             Value::Var{std::in_place_type<double>, d}
         };
     }
 
-    inline Value makeBool(bool b) {
+    [[nodiscard]] inline Value makeBool(bool b) noexcept {
         return Value {
             Value::Var{std::in_place_type<bool>, b}
         };
     }
 
-    inline Value makeText(Text s) {
+    [[nodiscard]] inline Value makeText(Text s) noexcept {
         return Value {
             Value::Var{std::in_place_type<Text>, std::move(s)}
         };
     }
 
-    inline Value makeBlob(Blob bytes) {
+    [[nodiscard]] inline Value makeBlob(Blob bytes) noexcept {
         return Value {
             Value::Var{std::in_place_type<Blob>, std::move(bytes)}
         };
     }
 
-    inline Value makeDecimal(Text repr) {
+    [[nodiscard]] inline Value makeDecimal(Text repr) noexcept {
         return Value {
             Value::Var{std::in_place_type<Decimal>, std::move(repr)}
         };
