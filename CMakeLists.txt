@@ -15,6 +15,8 @@ endif()
 
 find_package(Qt6 COMPONENTS Core Gui Qml Quick QuickControls2 Sql REQUIRED)
 
+add_subdirectory(core)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -41,8 +43,6 @@ set(HEADERS
     src/DatabaseWorker.h
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE core/vsc)
-
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS}
     src/IConnection.h src/IConnection.cpp
     src/QtDbSession.h src/QtDbSession.cpp
@@ -52,11 +52,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE QT_NO_UNSAFE_ITERATORS)
 
-target_sources(Editor-Light-DataBase
-  PRIVATE
-    core/include/vsc/result.h
-)
-
 target_link_libraries(${PROJECT_NAME} PRIVATE
+    vsc_core
     Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::Sql
 )

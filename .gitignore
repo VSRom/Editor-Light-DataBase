@@ -54,3 +54,6 @@ tasks.db
 # Documentation & Plans
 instruct.txt
 plan_Dev.docx
+
+# README
+core/README.md
