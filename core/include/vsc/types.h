@@ -3,8 +3,9 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <memory_resource>
 
 namespace vsc {
-	using Text = std::string;
-    using Blob = std::vector<std::uint8_t>;
+    using Text = std::pmr::string;
+    using Blob = std::pmr::vector<std::uint8_t>;
 }

@@ -2,11 +2,12 @@
 
 #include "value.h"
 #include <optional>
+#include <memory_resource>
 
 namespace vsc {
     struct CmdQuery {
         Text sqlText{};
-        std::vector<Value> sqlParams{};
+        std::pmr::vector<Value> sqlParams{};
         std::optional<int> timeOutMs{};
 
         enum class Mode {

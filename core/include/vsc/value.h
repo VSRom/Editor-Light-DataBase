@@ -11,13 +11,25 @@
 
 namespace vsc {
     struct Decimal {
+        using allocator_type = std::pmr::polymorphic_allocator<char>;
         Text repr;
 
-        explicit Decimal(Text repr) noexcept
-            : repr(std::move(repr))
-        {}
+        explicit Decimal(allocator_type alloc = {}) noexcept
+            : repr(alloc)
+        { }
 
-        /* Сравнение по строковому представлению */
+        explicit Decimal(Text repr, allocator_type alloc = {}) noexcept
+            : repr(std::move(repr), alloc)
+        { }
+
+        Decimal(const Decimal& other, allocator_type alloc)
+            : repr(other.repr, alloc)
+        { }
+
+        Decimal(Decimal&& other, allocator_type alloc)
+            : repr(std::move(other.repr), alloc)
+        { }
+
         bool operator==(const Decimal& other) const {
             return this->repr == other.repr;
         }
@@ -63,9 +75,37 @@ namespace vsc {
         Decimal                   // DECIMAL
         >;
 
+        using allocator_type = std::pmr::polymorphic_allocator<char>;
+
         explicit Value(Var v) noexcept
             : v_(std::move(v))
-        {}
+        { }
+
+        explicit Value(allocator_type alloc = {}) noexcept
+            : v_(std::monostate{})
+        { }
+
+        Value(const Value& other, allocator_type alloc) {
+            v_ = std::visit([alloc](const auto& val) -> Var {
+                using T = std::remove_cvref_t<decltype(val)>;
+
+                if constexpr (std::is_same_v<T, Text> || std::is_same_v<T, Blob> || std::is_same_v<T, Decimal>)
+                    return Var(std::in_place_type<T>, val, alloc);
+                else
+                    return Var(std::in_place_type<T>, val);
+            }, other.v_);
+        }
+
+        Value(Value&& other, allocator_type alloc) noexcept {
+            v_ = std::visit([alloc](auto&& val) -> Var {
+                using T = std::remove_cvref_t<decltype(val)>;
+
+                if constexpr (std::is_same_v<T, Text> || std::is_same_v<T, Blob> || std::is_same_v<T, Decimal>)
+                    return Var(std::in_place_type<T>, std::move(val), alloc);
+                else
+                    return Var(std::in_place_type<T>, std::move(val));
+            }, std::move(other.v_));
+        }
 
         ValueType type() const {
             return std::visit([](const auto& x) {
@@ -91,9 +131,9 @@ namespace vsc {
                 [](std::int64_t val)   -> std::string { return std::to_string(val); },
                 [](double val)         -> std::string { return std::to_string(val); },
                 [](bool val)           -> std::string { return val ? "true" : "false"; },
-                [](const Text& val)    -> std::string { return val; },
+                [](const Text& val)    -> std::string { return std::string(val); },
                 [](const Blob& val)    -> std::string { return "[Blob: " + std::to_string(val.size()) + " bytes]";},
-                [](const Decimal& val) -> std::string { return val.repr; }
+                [](const Decimal& val) -> std::string { return std::string(val.repr); }
                               }, v_);
         }
 
@@ -153,3 +193,9 @@ namespace vsc {
         };
     }
 }
+
+template <typename Alloc>
+struct std::uses_allocator<vsc::Decimal, Alloc> : std::true_type {};
+
+template <typename Alloc>
+struct std::uses_allocator<vsc::Value, Alloc> : std::true_type {};

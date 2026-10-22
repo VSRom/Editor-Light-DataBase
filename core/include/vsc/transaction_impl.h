@@ -1,0 +1,63 @@
+#pragma once
+
+#include "i_transaction.h"
+#include "i_connection.h"
+#include "query.h"
+#include "sql_error.h"
+
+#include <memory>
+#include <atomic>
+#include <expected>
+
+namespace vsc {
+    class TransactionImpl final : public ITransaction {
+    public:
+        TransactionImpl(std::unique_ptr<IConnection> connection, std::uint32_t workerId)
+            : connection_(std::move(connection)), workerId_(workerId)
+        { }
+
+        ~TransactionImpl() override {
+            if (isCompleted_ == false)
+                static_cast<void>(rollback());
+        }
+
+        std::expected<void, SqlError> commit() override {
+            if (!isCompleted_.exchange(true)) {
+                CmdQuery query{"COMMIT"};
+                query.mode = CmdQuery::Mode::write;
+                auto exp = connection_->execute(query);
+                return exp.transform([](const ResultSet&){});
+            }
+            else
+                return std::unexpected(SqlError{ SqlError::MessageError::internal
+                                                , SqlError::SourceError::transaction
+                                                , "Transaction already finalized", ""
+                });
+        }
+
+        std::expected<void, SqlError> rollback() override {
+            if (!isCompleted_.exchange(true)) {
+                CmdQuery query{"ROLLBACK"};
+                query.mode = CmdQuery::Mode::write;
+                auto exp = connection_->execute(query);
+                return exp.transform([](const ResultSet&){});
+            }
+            else
+                return std::unexpected(SqlError{ SqlError::MessageError::internal
+                                                , SqlError::SourceError::transaction
+                                                , "Transaction already finalized", ""
+                });
+        }
+
+        [[nodiscard]] std::uint32_t getWorkerId() const noexcept { return workerId_; }
+
+        IConnection& getConnection() { return *connection_; }
+
+        std::unique_ptr<IConnection> releaseConnection() { return std::move(connection_); }
+
+    private:
+        std::unique_ptr<IConnection> connection_;
+        std::uint32_t workerId_;
+        std::atomic<bool> isCompleted_{false};
+    };
+}

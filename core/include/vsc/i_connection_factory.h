@@ -8,9 +8,6 @@
 #include <memory>
 
 namespace vsc {
-
-// A factory chooses and constructs a driver-specific connection. Keep driver
-// selection and driver libraries outside the core target.
     class IConnectionFactory {
     public:
         virtual ~IConnectionFactory() = default;

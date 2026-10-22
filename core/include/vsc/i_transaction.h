@@ -5,9 +5,6 @@
 #include <expected>
 
 namespace vsc {
-
-// A transaction is an explicit, single-use unit of work. Implementations
-// should define what destruction without commit means (normally rollback).
     class ITransaction {
     public:
         virtual ~ITransaction() = default;

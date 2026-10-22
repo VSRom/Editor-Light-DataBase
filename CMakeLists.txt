@@ -46,7 +46,10 @@ set(HEADERS
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS}
     src/IConnection.h src/IConnection.cpp
     src/QtDbSession.h src/QtDbSession.cpp
-    src/DbSessionFactory.h src/DbSessionFactory.cpp)
+    src/DbSessionFactory.h src/DbSessionFactory.cpp
+    core/include/vsc/i_task_scheduler.h
+    core/include/vsc/transaction_impl.h
+    core/include/vsc/vsc_engine.h)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 
