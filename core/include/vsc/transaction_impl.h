@@ -12,12 +12,17 @@
 namespace vsc {
     class TransactionImpl final : public ITransaction {
     public:
-        TransactionImpl(std::unique_ptr<IConnection> connection, std::uint32_t workerId)
-            : connection_(std::move(connection)), workerId_(workerId)
-        { }
+        static std::expected<std::unique_ptr<TransactionImpl>, SqlError> create(
+            std::unique_ptr<IConnection> connection, std::uint32_t workerId) {
+            CmdQuery q{ .sqlText = "BEGIN", .mode = CmdQuery::Mode::write };
+            auto r = connection->execute(q);
+            if (!r)
+                return std::unexpected(std::move(r.error()));
+            return std::unique_ptr<TransactionImpl>(new TransactionImpl(std::move(connection), workerId));
+        }
 
         ~TransactionImpl() override {
-            if (isCompleted_ == false)
+            if (!isCompleted_)
                 static_cast<void>(rollback());
         }
 
@@ -51,11 +56,11 @@ namespace vsc {
 
         [[nodiscard]] std::uint32_t getWorkerId() const noexcept { return workerId_; }
 
-        IConnection& getConnection() { return *connection_; }
-
-        std::unique_ptr<IConnection> releaseConnection() { return std::move(connection_); }
-
     private:
+        TransactionImpl(std::unique_ptr<IConnection> connection, std::uint32_t workerId)
+            : connection_(std::move(connection)), workerId_(workerId)
+        { }
+
         std::unique_ptr<IConnection> connection_;
         std::uint32_t workerId_;
         std::atomic<bool> isCompleted_{false};

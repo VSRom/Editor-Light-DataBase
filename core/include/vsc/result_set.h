@@ -11,7 +11,11 @@
 
 namespace vsc {
     struct ResultSet {
+    private:
         std::unique_ptr<std::pmr::monotonic_buffer_resource> arena;
+
+    public:
+        [[nodiscard]] std::pmr::polymorphic_allocator<char> allocator() const noexcept { return arena.get(); }
 
         enum class ResultKind {
             rows,

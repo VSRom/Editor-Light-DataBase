@@ -8,6 +8,6 @@ namespace vsc {
     public:
         virtual ~ITaskScheduler() = default;
         virtual void schedule(std::function<void()>, std::uint32_t affinityHint = 0) = 0;
-
+        virtual void drain() = 0;
     };
 }

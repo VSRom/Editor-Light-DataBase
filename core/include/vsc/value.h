@@ -2,23 +2,26 @@
 
 #include "types.h"
 
+#include <span>
 #include <variant>
 #include <string>
 #include <cstdint>
 #include <utility>
 #include <optional>
 #include <type_traits>
+#include <memory_resource>
 
 namespace vsc {
     struct Decimal {
         using allocator_type = std::pmr::polymorphic_allocator<char>;
+
         Text repr;
 
         explicit Decimal(allocator_type alloc = {}) noexcept
             : repr(alloc)
         { }
 
-        explicit Decimal(Text repr, allocator_type alloc = {}) noexcept
+        explicit Decimal(Text repr, allocator_type alloc)
             : repr(std::move(repr), alloc)
         { }
 
@@ -81,9 +84,16 @@ namespace vsc {
             : v_(std::move(v))
         { }
 
-        explicit Value(allocator_type alloc = {}) noexcept
-            : v_(std::monostate{})
-        { }
+        explicit Value(Var v, allocator_type alloc) {
+            v_ = std::visit([alloc](auto&& val) -> Var {
+                using T = std::remove_cvref_t<decltype(val)>;
+
+                if constexpr (std::is_same_v<T, Text> || std::is_same_v<T, Blob> || std::is_same_v<T, Decimal>)
+                    return Var(std::in_place_type<T>, std::move(val), alloc);
+                else
+                    return Var(std::in_place_type<T>, std::move(val));
+            }, std::move(v));
+        }
 
         Value(const Value& other, allocator_type alloc) {
             v_ = std::visit([alloc](const auto& val) -> Var {
@@ -131,9 +141,9 @@ namespace vsc {
                 [](std::int64_t val)   -> std::string { return std::to_string(val); },
                 [](double val)         -> std::string { return std::to_string(val); },
                 [](bool val)           -> std::string { return val ? "true" : "false"; },
-                [](const Text& val)    -> std::string { return std::string(val); },
+                [](const Text& val)    -> std::string { return { val.data(), val.size() }; },
                 [](const Blob& val)    -> std::string { return "[Blob: " + std::to_string(val.size()) + " bytes]";},
-                [](const Decimal& val) -> std::string { return std::string(val.repr); }
+                [](const Decimal& val) -> std::string { return { val.repr.data(), val.repr.size() }; }
                               }, v_);
         }
 
@@ -175,22 +185,22 @@ namespace vsc {
         };
     }
 
-    [[nodiscard]] inline Value makeText(Text s) noexcept {
-        return Value {
-            Value::Var{std::in_place_type<Text>, std::move(s)}
-        };
+    [[nodiscard]] inline Value makeText(Text::allocator_type alloc, std::string_view src) {
+        Text t(alloc);
+        t.assign(src.begin(), src.end());
+        return Value{ Value::Var{ std::in_place_type<Text>, std::move(t), alloc } };
     }
 
-    [[nodiscard]] inline Value makeBlob(Blob bytes) noexcept {
-        return Value {
-            Value::Var{std::in_place_type<Blob>, std::move(bytes)}
-        };
+    [[nodiscard]] inline Value makeBlob(Text::allocator_type alloc, std::span<const std::uint8_t> src) {
+        Blob b(alloc);
+        b.assign(src.begin(), src.end());
+        return Value { Value::Var{std::in_place_type<Blob>, std::move(b), alloc} };
     }
 
-    [[nodiscard]] inline Value makeDecimal(Text repr) noexcept {
-        return Value {
-            Value::Var{std::in_place_type<Decimal>, std::move(repr)}
-        };
+    [[nodiscard]] inline Value makeDecimal(Text::allocator_type alloc, std::string_view src) {
+        Decimal d(alloc);
+        d.repr.assign(src.begin(), src.end());
+        return Value { Value::Var{std::in_place_type<Decimal>, std::move(d), alloc} };
     }
 }
 

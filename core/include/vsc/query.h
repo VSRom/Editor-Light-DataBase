@@ -2,7 +2,6 @@
 
 #include "value.h"
 #include <optional>
-#include <memory_resource>
 
 namespace vsc {
     struct CmdQuery {
