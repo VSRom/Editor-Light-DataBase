@@ -44,7 +44,6 @@ set(HEADERS
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS}
-    src/IConnection.h src/IConnection.cpp
     src/QtDbSession.h src/QtDbSession.cpp
     src/DbSessionFactory.h src/DbSessionFactory.cpp
     core/include/vsc/i_task_scheduler.h

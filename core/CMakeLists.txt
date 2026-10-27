@@ -20,7 +20,7 @@ target_sources(vsc_core INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vsc/sql_error.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vsc/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vsc/value.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vsc_engine.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vsc/vsc_engine.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vsc/transaction_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vsc/i_task_scheduler.h
 )
