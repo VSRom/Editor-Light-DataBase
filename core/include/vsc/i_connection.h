@@ -23,7 +23,6 @@ namespace vsc {
         [[nodiscard]] virtual std::expected<ResultSet, SqlError>
         execute(const CmdQuery& query) = 0;
         [[nodiscard]] virtual std::expected<std::unique_ptr<ITransaction>, SqlError>
-        beginTransaction() = 0;
         [[nodiscard]] virtual std::expected<void, SqlError> close() = 0;
 
     protected:
