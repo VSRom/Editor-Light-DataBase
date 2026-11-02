@@ -231,13 +231,13 @@ bool ConnectionController::tryOpenConnection(const QString& prefix, QString& err
 
         dbName = QString("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%1;").arg(outDbPath);
     }
+
     const QString cn = QString("%1_%2").arg(prefix).arg(++tempConnectionCounter_);
 
-    if (QSqlDatabase::contains(cn)) { {
-            QSqlDatabase od = QSqlDatabase::database(cn);
-            od.close();
-        }
-
+    if (QSqlDatabase::contains(cn)) {
+        QSqlDatabase old = QSqlDatabase::database(cn);
+        old.close();
+        old = QSqlDatabase();
         QSqlDatabase::removeDatabase(cn);
     }
 
@@ -259,20 +259,25 @@ bool ConnectionController::tryOpenConnection(const QString& prefix, QString& err
 
         db.close();
     }
-    QSqlDatabase::removeDatabase(cn);
 
+    QSqlDatabase::removeDatabase(cn);
     return ok;
+
 }
 
 void ConnectionController::checkConnection() {
-    QString e, d, t, p, h, l; int pt = 0;
+    QString e, d, t, p, h, l;
+    int pt = 0;
+
     if (tryOpenConnection("test_connection", e, d, t, p, h, pt, l, password_))
         appendLog(tr("Connected!"));
     else
         appendLog(tr("Connection error: ") + e);
 }
 void ConnectionController::requestConnect() {
-    QString e, d, t, p, h, l; int pt = 0; QString pw;
+    QString e, d, t, p, h, l, pw;
+    int pt = 0;
+
     if (!tryOpenConnection("preflight_connection", e, d, t, p, h, pt, l, pw)) {
         appendLog(tr("Connection error: ") + e);
 
