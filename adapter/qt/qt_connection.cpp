@@ -97,36 +97,48 @@ std::expected<vsc::ResultSet, vsc::SqlError> vsc::qt::QtConnection::execute(cons
         return result;
     }
 
-    // return std::unexpected(vsc::SqlError{
-        // vsc::SqlError::MessageError::unsupported,
-        // vsc::SqlError::SourceError::statement,
-        // "SELECT result conversion is not implemented yet",
-        // {}
-    // });
-
-    // QVariant -> vsc::Value
+    result.kind = vsc::ResultSet::ResultKind::rows;
+    auto* resource = result.allocator().resource();
 
     const QSqlRecord record = qtQuery.record();
+    const int colCount = record.count();
 
-    while(qtQuery.next()) {
-        for(int i = 0; i < record.count(); i++) {
-            //std::pmr::vector<vsc::Value> row{resource};
-            const QVariant cell = qtQuery.value(i);
-            const QSqlField field = record.field(i);
-            const QString colName = field.name();
-            const QMetaType metaType = field.metaType();
-            const char* rawTypeName = metaType.name();
-            const QString typeName = rawTypeName ? QString::fromLatin1(rawTypeName) : QString{};
+    for (int i = 0; i < colCount; ++i)
+    {
+        const QSqlField field = record.field(i);
+        const QString colName = field.name();
+        const QMetaType metaType = field.metaType();
+        const char* rawTypeName = metaType.name();
+        const QString typeName = rawTypeName ? QString::fromLatin1(rawTypeName) : QString{};
 
-            //auto convertCell = fromQtValue(cell, result.allocator());
-        }
-
-
+        vsc::ColumnMetaData col { outStringPmr(colName, result.allocator()),
+                                  outStringPmr(typeName, result.allocator()), false,
+                                  field.requiredStatus() != QSqlField::Required, i
+                                };
 
 
+        result.cols.push_back(std::move(col));
     }
 
 
+
+    while(qtQuery.next()) {
+        std::pmr::vector<vsc::Value> row{resource};
+        row.reserve(colCount);
+
+        for(int i = 0; i < colCount; ++i)
+        {
+            const QVariant cell = qtQuery.value(i);
+            auto convertCell = fromQtValue(cell, result.allocator());
+
+            if (!convertCell)
+                return std::unexpected(convertCell.error());
+
+            row.push_back(std::move(*convertCell));
+        }
+        result.rows.push_back(std::move(row));
+    }
+    return result;
 }
 //================================================================================================//================================================================================================
 //================================================================================================//================================================================================================
@@ -273,4 +285,13 @@ std::expected<vsc::Value, vsc::SqlError> vsc::qt::QtConnection::fromQtValue(cons
             {}
         });
     }
+}
+
+vsc::Text vsc::qt::QtConnection::outStringPmr(const QString& str, vsc::Text::allocator_type alloc) {
+    vsc::Text output{alloc};
+    const QByteArray utf8 = str.toUtf8();
+
+    output.assign(utf8.constData(), static_cast<std::size_t>(utf8.size()));
+
+    return output;
 }

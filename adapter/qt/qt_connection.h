@@ -21,7 +21,8 @@ namespace vsc::qt {
 
 
         ConState state() const noexcept override;
-        std::expected<ResultSet, SqlError> execute(const CmdQuery& query) override;
+        std::expected<ResultSet, SqlError>
+        execute(const CmdQuery &query) override;
         std::expected<std::unique_ptr<ITransaction>, SqlError> beginTransaction() override;
         std::expected<void, SqlError> close() override;
 
@@ -34,6 +35,7 @@ namespace vsc::qt {
 
         static std::expected<QVariant, vsc::SqlError> toQtValue(const vsc::Value& value);
         static std::expected<vsc::Value, vsc::SqlError> fromQtValue(const QVariant& value, vsc::Text::allocator_type alloc);
+        static vsc::Text outStringPmr(const QString& str, vsc::Text::allocator_type alloc);
     };
 
 }   // owner connection
