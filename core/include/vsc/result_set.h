@@ -30,7 +30,7 @@ namespace vsc {
         std::int64_t affectedRows{-1};
         std::optional<std::int64_t> lastInsertId{};
 
-        explicit ResultSet(size_t initial_buffer_size = 4096)
+        explicit ResultSet(std::size_t initial_buffer_size = 4096)
             : arena(std::make_unique<std::pmr::monotonic_buffer_resource>(initial_buffer_size))
             , cols(arena.get())
             , rows(arena.get())
