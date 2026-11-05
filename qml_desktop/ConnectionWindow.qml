@@ -77,7 +77,21 @@ Item {
             }
 
             ThemedLabel {
-                text: "Port:"
+                text: qsTr("Database name:")
+                visible: controller.isRemote
+            }
+
+            ThemedTextField {
+                Layout.columnSpan: 3
+                Layout.fillWidth: true
+                placeholderText: qsTr("Database name...")
+                text: controller.databaseName
+                visible: controller.isRemote
+                onTextChanged: controller.databaseName = text
+            }
+
+            ThemedLabel {
+                text: qsTr("Port:")
                 visible: controller.isRemote
             }
 

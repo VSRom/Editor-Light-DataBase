@@ -13,6 +13,7 @@ class ConnectionController : public QObject {
         Q_PROPERTY(QStringList configs READ configs NOTIFY configsChanged)
         Q_PROPERTY(QString     currentConfig READ currentConfig WRITE setCurrentConfig NOTIFY currentConfigChanged)
         Q_PROPERTY(QString     logText READ logText NOTIFY logTextChanged)
+        Q_PROPERTY(QString     databaseName READ databaseName WRITE setDatabaseName NOTIFY databaseNameChanged)
 public:
     explicit ConnectionController(QObject* parent = nullptr);
 
@@ -29,6 +30,7 @@ public:
 
     int dbTypeIndex() const       { return dbTypeIndex_; }
     bool isRemote() const         { return isRemote_; }
+    QString databaseName() const  { return databaseName_; }
     QString address() const       { return address_; }
     QString port() const          { return port_; }
     QString login() const         { return login_; }
@@ -40,6 +42,7 @@ public:
 public slots:
     void setDbTypeIndex(int value);
     void setIsRemote(bool value);
+    void setDatabaseName(const QString& value);
     void setAddress(const QString& value);
     void setPort(const QString& value);
     void setLogin(const QString& value);
@@ -55,6 +58,7 @@ signals:
     void passwordChanged();
     void configsChanged();
     void currentConfigChanged();
+    void databaseNameChanged();
     void logTextChanged();
 
     void connected(const QString& driver, const QString& dbType, const QString& host,
@@ -73,6 +77,7 @@ private:
     int dbTypeIndex_ = 0;
     bool isRemote_ = true;
 
+    QString databaseName_;
     QString address_;
     QString port_;
     QString login_;

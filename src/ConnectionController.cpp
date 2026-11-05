@@ -31,6 +31,15 @@ void ConnectionController::setIsRemote(bool v) {
     emit isRemoteChanged();
 }
 
+void ConnectionController::setDatabaseName(const QString& v) {
+    if (databaseName_ == v)
+        return;
+
+    databaseName_ = v;
+
+    emit databaseNameChanged();
+}
+
 void ConnectionController::setAddress(const QString& v) {
     if (address_ == v)
         return;
@@ -140,6 +149,7 @@ void ConnectionController::loadConfig(const QString& name) {
         setDbTypeIndex(idx);
 
     setIsRemote(s.value("isRemote").toBool());
+    setDatabaseName(s.value("databaseName").toString());
     setAddress(s.value("address").toString());
     setPort(s.value("port").toString());
     setLogin(s.value("login").toString());
@@ -157,6 +167,7 @@ void ConnectionController::saveConfig(const QString& name) {
     s.beginGroup(n);
     s.setValue("dbType", displayTypeForIndex(dbTypeIndex_));
     s.setValue("isRemote", isRemote_);
+    s.setValue("databaseName", databaseName_);
     s.setValue("address", address_);
     s.setValue("port", port_);
     s.setValue("login", login_);
@@ -169,6 +180,7 @@ void ConnectionController::saveConfig(const QString& name) {
 }
 
 void ConnectionController::resetForm() {
+    setDatabaseName({});
     setAddress({});
     setPort({});
     setLogin({});
