@@ -5,6 +5,20 @@
 #include <QFileInfo>
 #include <QSqlDatabase>
 #include <QSqlError>
+#include <QByteArray>
+#include <cstddef>
+
+namespace {
+    vsc::Text toVscText(const QString& text)
+    {
+        const QByteArray utf8 = text.toUtf8();
+
+        return vsc::Text{
+            utf8.constData(),
+            static_cast<std::size_t>(utf8.size())
+        };
+    }
+}
 
 static const QStringList kDbDisplayNames = { "SQLite", "MySQL", "PostgreSQL", "Access", "Oracle" };
 
@@ -18,6 +32,8 @@ void ConnectionController::setDbTypeIndex(int v) {
         return;
 
     dbTypeIndex_ = v;
+
+    setIsRemote(v == 1 || v == 2 || v == 4);
 
     emit dbTypeIndexChanged();
 }
@@ -148,7 +164,6 @@ void ConnectionController::loadConfig(const QString& name) {
     if (idx >= 0)
         setDbTypeIndex(idx);
 
-    setIsRemote(s.value("isRemote").toBool());
     setDatabaseName(s.value("databaseName").toString());
     setAddress(s.value("address").toString());
     setPort(s.value("port").toString());
@@ -274,7 +289,56 @@ bool ConnectionController::tryOpenConnection(const QString& prefix, QString& err
 
     QSqlDatabase::removeDatabase(cn);
     return ok;
+}
 
+std::expected<vsc::ConnectionParameters, QString> ConnectionController::makeConnectionParameters() const {
+    vsc::ConnectionParameters params;
+
+    switch(dbTypeIndex_) {
+        case 0: params.type = vsc::DbTypes::sqlite; break;
+        case 1: params.type = vsc::DbTypes::mysql;  break;
+        case 2: params.type = vsc::DbTypes::psql;   break;
+        case 3: params.type = vsc::DbTypes::access; break;
+        case 4: params.type = vsc::DbTypes::oracle; break;
+
+            default:
+                return std::unexpected(tr("Unknown database type"));
+    }
+
+    const bool netDatabase = params.type == vsc::DbTypes::mysql
+                          || params.type == vsc::DbTypes::psql
+                          || params.type == vsc::DbTypes::oracle;
+
+    if (netDatabase) {
+        const QString host = address_.trimmed();
+        const QString databaseName = databaseName_.trimmed();
+        const QString login = login_.trimmed();
+
+        if (host.isEmpty() || databaseName.isEmpty() || login.isEmpty())
+            return std::unexpected(tr("Fill in host, database name, and login"));
+
+        bool validPort = false;
+        const int port = port_.trimmed().toInt(&validPort);
+
+        if (!validPort || port < 1 || port > 65535)
+            return std::unexpected(tr("Invalid port into database"));
+
+        params.host = toVscText(host);
+        params.dataBaseName = toVscText(databaseName);
+        params.login = toVscText(login);
+        params.port = port;
+
+        if (!password_.isEmpty())
+            params.password = toVscText(password_);
+    } else {
+        const QString pathDb = address_.trimmed();
+
+        if (pathDb.isEmpty())
+            return std::unexpected(tr("Invalid path to db"));
+
+        params.pathDb = toVscText(pathDb);
+    }
+    return params;
 }
 
 void ConnectionController::checkConnection() {

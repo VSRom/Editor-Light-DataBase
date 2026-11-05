@@ -1,6 +1,10 @@
 #pragma once
+
+#include "vsc/connection_params.h"
+
 #include <QObject>
 #include <QStringList>
+#include <expected>
 
 class ConnectionController : public QObject {
     Q_OBJECT
@@ -73,9 +77,10 @@ private:
     void appendLog(const QString& message);
     bool tryOpenConnection(const QString& prefix, QString& error, QString& outDriver, QString& outDbType,
                             QString& outDbPath, QString& outHost, int& outPort, QString& outLogin, QString& outPassword);
+    std::expected<vsc::ConnectionParameters, QString> makeConnectionParameters() const;
 
     int dbTypeIndex_ = 0;
-    bool isRemote_ = true;
+    bool isRemote_ = false;
 
     QString databaseName_;
     QString address_;

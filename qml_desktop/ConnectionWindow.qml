@@ -135,7 +135,7 @@ Item {
                 Layout.alignment: Qt.AlignVCenter
                 text: qsTr("Network connection")
                 checked: controller.isRemote
-                onToggled: controller.isRemote = checked
+                enabled: false
             }
 
             ThemedComboBox {
