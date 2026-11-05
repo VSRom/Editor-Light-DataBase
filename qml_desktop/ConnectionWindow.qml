@@ -82,7 +82,6 @@ Item {
             }
 
             ThemedTextField {
-                Layout.columnSpan: 3
                 Layout.fillWidth: true
                 placeholderText: qsTr("Database name...")
                 text: controller.databaseName
@@ -123,19 +122,11 @@ Item {
 
             ThemedTextField {
                 Layout.fillWidth: true
+                Layout.columnSpan: 3
                 visible: controller.isRemote
                 echoMode: TextInput.Password
                 text: controller.password
                 onTextChanged: controller.password = text
-            }
-
-            ThemedCheckBox {
-                Layout.fillWidth: true
-                Layout.columnSpan: 4
-                Layout.alignment: Qt.AlignVCenter
-                text: qsTr("Network connection")
-                checked: controller.isRemote
-                enabled: false
             }
 
             ThemedComboBox {

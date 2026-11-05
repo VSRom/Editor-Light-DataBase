@@ -1,4 +1,6 @@
 #include "ConnectionController.h"
+#include "qt/qt_connection_factory.h"
+
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDir>
@@ -9,14 +11,17 @@
 #include <cstddef>
 
 namespace {
-    vsc::Text toVscText(const QString& text)
-    {
+    vsc::Text toVscText(const QString& text) {
         const QByteArray utf8 = text.toUtf8();
 
         return vsc::Text{
             utf8.constData(),
             static_cast<std::size_t>(utf8.size())
         };
+    }
+
+    QString fromVscText(const vsc::Text& text) {
+        return QString::fromUtf8(text.data(), static_cast<qsizetype>(text.size()));
     }
 }
 
@@ -342,14 +347,27 @@ std::expected<vsc::ConnectionParameters, QString> ConnectionController::makeConn
 }
 
 void ConnectionController::checkConnection() {
-    QString e, d, t, p, h, l;
-    int pt = 0;
+    auto params = makeConnectionParameters();
 
-    if (tryOpenConnection("test_connection", e, d, t, p, h, pt, l, password_))
-        appendLog(tr("Connected!"));
-    else
-        appendLog(tr("Connection error: ") + e);
+    if (!params) {
+        appendLog(tr("Connection error: ") + params.error());
+        return;
+    }
+    else {
+        vsc::qt::QtConnectionFactory factory;
+        auto connection = factory.open(*params);
+
+        if (!connection) {
+            appendLog(tr("Connection error: ") + fromVscText(connection.error().message));
+            return;
+        }
+        else
+            appendLog(tr("Connected!"));
+
+
+    }
 }
+
 void ConnectionController::requestConnect() {
     QString e, d, t, p, h, l, pw;
     int pt = 0;

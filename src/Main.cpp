@@ -33,7 +33,9 @@ int main(int argc, char* argv[]) {
     QStringList fonts;
     for (const QString& fontFile : { ":/resources/fonts/Hack.ttf",
                                      ":/resources/fonts/Fira.ttf",
-                                     ":/resources/fonts/Anon.ttf" }) {
+                                     ":/resources/fonts/Anon.ttf",
+                                     ":/resources/fonts/JB.ttf" })
+        {
         const int id = QFontDatabase::addApplicationFont(fontFile);
 
         if (id == -1)

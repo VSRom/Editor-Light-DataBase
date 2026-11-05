@@ -5,6 +5,7 @@
         <file>resources/fonts/Anon.ttf</file>
         <file>resources/fonts/Fira.ttf</file>
         <file>resources/fonts/Hack.ttf</file>
+        <file>resources/fonts/JB.ttf</file>
 
             <file>qml_desktop/themed/ThemedButton.qml</file>
             <file>qml_desktop/themed/ThemedCheckBox.qml</file>
