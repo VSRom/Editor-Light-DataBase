@@ -48,19 +48,8 @@ QStringList TableRepository::getUserTables() const {
     }
     else {
         QStringList AllTables = QSqlDatabase::database(connectionName_).tables(QSql::Tables);
-
-        for (const auto& temp : std::as_const(AllTables)) {
-            if ((dbType_ == "sqlite" || dbType_ == "QSQLITE") && temp.startsWith("sqlite_"))
-                continue;
-
-            if (dbType_ == "access" && temp.startsWith("MSys_"))
-                continue;
-            if (dbType_ == "oracle" && (temp.startsWith("SYS_") || temp.startsWith("BIN$")))
-                continue;
-
-            userTables.append(temp);
-        }
     }
+
     return userTables;
 }
 //================================================================================================================
