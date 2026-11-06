@@ -10,6 +10,8 @@
 #include <memory>
 
 namespace vsc {
+class IDatabaseMetadata;
+
     class IConnection {
     public:
         virtual ~IConnection() = default;
@@ -23,6 +25,8 @@ namespace vsc {
         [[nodiscard]] virtual std::expected<ResultSet, SqlError> execute(const CmdQuery& query) = 0;
         [[nodiscard]] virtual std::expected<std::unique_ptr<ITransaction>, SqlError> beginTransaction() = 0;
         [[nodiscard]] virtual std::expected<void, SqlError> close() = 0;
+
+        [[nodiscard]] virtual IDatabaseMetadata* metadata() noexcept = 0;
 
     protected:
         IConnection() = default;

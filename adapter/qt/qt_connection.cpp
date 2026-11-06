@@ -9,6 +9,8 @@
 #include <span>
 #include <string_view>
 #include <cstdint>
+#include <QSqlIndex>
+#include <QSqlDriver>
 
 namespace {
 
@@ -109,16 +111,15 @@ std::expected<vsc::ResultSet, vsc::SqlError> vsc::qt::QtConnection::execute(cons
         const char* rawTypeName = metaType.name();
         const QString typeName = rawTypeName ? QString::fromLatin1(rawTypeName) : QString{};
 
-        vsc::ColumnMetaData col { outStringPmr(colName, result.allocator()),
-                                  outStringPmr(typeName, result.allocator()), false,
-                                  field.requiredStatus() != QSqlField::Required, i
-                                };
-
+        vsc::ColumnMetaData col { result.allocator().resource() };
+        col.nameColumn = outStringPmr(colName, result.allocator());
+        col.type = outStringPmr(typeName, result.allocator());
+        col.ordinal = i;
+        col.isPk = false;
+        col.isNullable = field.requiredStatus() != QSqlField::Required;
 
         result.cols.push_back(std::move(col));
     }
-
-
 
     while(qtQuery.next()) {
         std::pmr::vector<vsc::Value> row{resource};
@@ -290,4 +291,167 @@ vsc::Text vsc::qt::QtConnection::outStringPmr(const QString& str, vsc::Text::all
     output.assign(utf8.constData(), static_cast<std::size_t>(utf8.size()));
 
     return output;
+}
+
+vsc::IDatabaseMetadata* vsc::qt::QtConnection::metadata() noexcept {
+    return this;
+}
+
+std::expected<vsc::TableList, vsc::SqlError> vsc::qt::QtConnection::listUserTables() {
+    if (state_ != vsc::ConState::open || !database_.isValid() || !database_.isOpen())
+    {
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::notOpen,
+            vsc::SqlError::SourceError::connection,
+            "Database is not valid",
+            {}
+        });
+    }
+
+    TableList result;
+    const QString driver = database_.driverName();
+    const QStringList allTables = database_.tables(QSql::Tables);
+
+    for (const auto& tableName : std::as_const(allTables)) {
+        if (driver == "QSQLITE" && tableName.startsWith("sqlite_", Qt::CaseInsensitive))
+            continue;
+        if (driver == "QODBC" && tableName.startsWith("MSys_", Qt::CaseInsensitive))
+            continue;
+        if (driver == "QOCI" && ( tableName.startsWith("SYS_", Qt::CaseInsensitive) || tableName.startsWith("BIN$", Qt::CaseInsensitive) ))
+            continue;
+
+        result.tables.push_back(outStringPmr(tableName, result.allocator()));
+    }
+    return result;
+}
+
+std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describeTable(std::string_view tableName) {
+    if (state_ != vsc::ConState::open || !database_.isValid() || !database_.isOpen())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::notOpen,
+            vsc::SqlError::SourceError::connection,
+            "Database is not valid",
+            {}
+        });
+
+    if (tableName.empty())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::syntax,
+            vsc::SqlError::SourceError::statement,
+            "Table name is empty",
+            {}
+        });
+
+
+    vsc::TableMetadata result;
+    const QString qtTableName = QString::fromUtf8(tableName.data(), static_cast<qsizetype>(tableName.size()));
+
+    result.tableName = outStringPmr(qtTableName, result.allocator());
+
+    const QSqlIndex primaryKey = database_.primaryIndex(qtTableName);
+    QStringList pkColumns;
+
+    for (int i = 0; i < primaryKey.count(); ++i)
+        pkColumns.append(primaryKey.fieldName(i));
+
+    const QString driver = database_.driverName();
+    QSqlQuery query{database_};
+
+    if (driver == "QSQLITE") {
+        const QString escapedTable = database_.driver()->escapeIdentifier(
+            qtTableName,
+            QSqlDriver::TableName
+            );
+
+        if (!query.exec(QString("PRAGMA table_info(%1)").arg(escapedTable)))
+            return std::unexpected(makeStatementError(query.lastError()));
+    }
+    else if (driver == "QMYSQL") {
+        const QString escapedTable = database_.driver()->escapeIdentifier(
+            qtTableName,
+            QSqlDriver::TableName
+            );
+
+        if (!query.exec(QString("SHOW COLUMNS FROM %1").arg(escapedTable)))
+            return std::unexpected(makeStatementError(query.lastError()));
+    }
+    else if (driver == "QPSQL") {
+        if (!query.prepare(
+                "SELECT column_name, data_type, is_nullable "
+                "FROM information_schema.columns "
+                "WHERE table_name = :tableName "
+                "AND table_schema = 'public' "
+                "ORDER BY ordinal_position"
+                ))
+            return std::unexpected(makeStatementError(query.lastError()));
+
+        query.bindValue(":tableName", qtTableName);
+
+        if (!query.exec())
+            return std::unexpected(makeStatementError(query.lastError()));
+    }
+    else if (driver == "QOCI") {
+        if (!query.prepare(
+                "SELECT column_name, data_type, nullable "
+                "FROM user_tab_columns "
+                "WHERE table_name = :tableName "
+                "ORDER BY column_id"
+                ))
+            return std::unexpected(makeStatementError(query.lastError()));
+
+        query.bindValue(":tableName", qtTableName.toUpper());
+
+        if (!query.exec())
+            return std::unexpected(makeStatementError(query.lastError()));
+    }
+    else if (driver == "QODBC") {
+        if (!query.prepare(
+                "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE "
+                "FROM INFORMATION_SCHEMA.COLUMNS "
+                "WHERE TABLE_NAME = :tableName "
+                "ORDER BY ORDINAL_POSITION"
+                ))
+            return std::unexpected(makeStatementError(query.lastError()));
+
+        query.bindValue(":tableName", qtTableName);
+
+        if (!query.exec())
+            return std::unexpected(makeStatementError(query.lastError()));
+    }
+    else {
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::unsupported,
+            vsc::SqlError::SourceError::driver,
+            "Metadata is unsupported for this driver",
+            {}
+        });
+    }
+
+    int ordinal = 0;
+
+    while (query.next()) {
+        const bool isSqlite = driver == "QSQLITE";
+        const QString columnName = query.value(isSqlite ? 1 : 0).toString();
+        const QString typeName = query.value(isSqlite ? 2 : 1).toString();
+
+        bool isNullable = true;
+
+        if (isSqlite)
+            isNullable = !query.value(3).toBool();
+        else if (driver == "QOCI")
+            isNullable = query.value(2).toString().compare("Y", Qt::CaseInsensitive) == 0;
+        else
+            isNullable = query.value(2).toString().compare("YES", Qt::CaseInsensitive) == 0;
+
+        vsc::ColumnMetaData column{result.allocator().resource()};
+        column.nameColumn = outStringPmr(columnName, result.allocator());
+        column.type = outStringPmr(typeName, result.allocator());
+        column.isPk = pkColumns.contains(columnName, Qt::CaseInsensitive);
+        column.isNullable = isNullable;
+        column.ordinal = ordinal++;
+
+        result.columns.push_back(std::move(column));
+    }
+
+    return result;
 }

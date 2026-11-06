@@ -1,14 +1,17 @@
 #pragma once
 
 #include "vsc/i_connection.h"
+#include "vsc/i_database_metadata.h"
+
 #include <QSqlDatabase>
 #include <QString>
 #include <QVariant>
 #include <utility>
+#include <string_view>
 
 namespace vsc::qt {
 
-    class QtConnection final : public vsc::IConnection {
+    class QtConnection final : public vsc::IConnection, public vsc::IDatabaseMetadata {
 
     public:
         QtConnection(QSqlDatabase database, QString connectionName);
@@ -26,7 +29,9 @@ namespace vsc::qt {
         std::expected<std::unique_ptr<ITransaction>, SqlError> beginTransaction() override;
         std::expected<void, SqlError> close() override;
 
-
+        IDatabaseMetadata* metadata() noexcept override;
+        std::expected<vsc::TableList, vsc::SqlError> listUserTables() override;
+        std::expected<vsc::TableMetadata, vsc::SqlError> describeTable(std::string_view tableName) override;
 
     private:
         QSqlDatabase database_;
