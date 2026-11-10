@@ -5,6 +5,8 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include <QHash>
+
+#include "vsc/connection_params.h"
 #include "TableRepository.h"
 #include "StringListModel.h"
 #include "TableDataModel.h"
@@ -71,9 +73,6 @@ public slots:
     void setBusy(bool v);
 
 public:
-    Q_INVOKABLE void beginSession(const QString& driver, const QString& dbType, const QString& host,
-        int port, const QString& login, const QString& password, const QString& dbPath);
-
     Q_INVOKABLE void endSession();
     Q_INVOKABLE void refreshTables();
     Q_INVOKABLE void selectTable(const QString& name);
@@ -105,6 +104,8 @@ public:
     Q_INVOKABLE void confirmResult(int requestId, bool accepted);
     Q_INVOKABLE void inputResult(int requestId, const QString& text, bool accepted);
 
+    void beginSession(vsc::ConnectionParameters params);
+
 signals:
     void columnsChanged();
     void typesChanged();
@@ -130,6 +131,8 @@ signals:
     void showInfo(const QString& msg);
     void requestCloseNote(int requestId);
 
+    void sessionOpened();
+
 private slots:
     void onTablesLoaded(const QStringList& tables);
     void onSelectFinished(quint64 requestId, const QList<QList<QVariant>>& data, const QStringList& headers, int totalRows);
@@ -138,10 +141,18 @@ private slots:
     void onOperationCompleted(bool success, const QString& message);
     void onWorkerError(const QString& error);
     void flushFilters();
+    void onSessionOpened();
 
 private:
     enum Kind { LoadPk, AddRow, CreateTable, AddColumn, MergeTables, SelectPage };
-    struct PendingReq { Kind kind; QString table; QStringList expected; QVariantMap collected; QVariantMap payload; };
+
+    struct PendingReq {
+        Kind kind;
+        QString table;
+        QStringList expected;
+        QVariantMap collected;
+        QVariantMap payload;
+    };
 
     quint64 startRequest(Kind k, const QString& table = {}, const QStringList& expected = {}, const QVariantMap& payload = {});
     void reloadCurrentPage();

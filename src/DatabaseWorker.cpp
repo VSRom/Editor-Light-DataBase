@@ -1,19 +1,25 @@
-#include "DatabaseWorker.h"
-#include <QSqlError>
 #include <QSqlQueryModel>
-#include <QSqlDatabase>
 
-DatabaseWorker::DatabaseWorker(const QString& connectionName, const QString& dbType, QObject* parent)
-    : QObject(parent), explorer_(nullptr), dbType_(dbType) {
+#include "DatabaseWorker.h"
+#include "qt/qt_connection_factory.h"
+#include "qt/qt_text_codec.h"
+
+DatabaseWorker::DatabaseWorker(QObject* parent)
+    : QObject(parent) {
 }
-
-DatabaseWorker::~DatabaseWorker() { }
 
 void DatabaseWorker::loadTables() {
     if (!explorer_)
         return;
 
-    emit tablesLoaded(explorer_->getUserTables());
+    auto result = explorer_->getUserTables();
+
+    if (!result) {
+        emit errorOccurred("Failed to load tables: " + vsc::qt::toQtText(result.error().message));
+        return;
+    }
+
+    emit tablesLoaded(*result);
 }
 
 void DatabaseWorker::selectTable(quint64 requestId, const QString& table, const FilterList& filters, int pageSize,
@@ -57,7 +63,14 @@ void DatabaseWorker::getColumns(quint64 requestId, const QString& table) {
     if (!explorer_)
         return;
 
-    emit columnsLoaded(requestId, table, explorer_->getColumns(table));
+    auto result = explorer_->getColumns(table);
+
+    if (!result) {
+        emit errorOccurred("Failed to load columns: " + vsc::qt::toQtText(result.error().message));
+        return;
+    }
+
+    emit columnsLoaded(requestId, table, *result);
 }
 
 void DatabaseWorker::insertRow(const QString& table, const Hash& values) {
@@ -120,35 +133,21 @@ void DatabaseWorker::renameTable(const QString& oldName, const QString& newName)
     emit operationCompleted(success, success ? tr("Table renamed") : tr("Failed to rename table"));
 }
 
-void DatabaseWorker::initConnection(const QString& driver, const QString& dbPath, const QString& db_type, const QString& host, const int port, const QString& log, const QString& pass) {
-    /* Как разрешить с connection_name */
-    connection_name_ = "worker_connection";
-    dbType_ = db_type;
-    db_path_ = dbPath;
-    driver_ = driver;
+void DatabaseWorker::initConnection(const vsc::ConnectionParameters& params) {
+    vsc::qt::QtConnectionFactory factory;
+    auto result = factory.open(params);
 
-    if (QSqlDatabase::contains(connection_name_))
-        QSqlDatabase::removeDatabase(connection_name_);
-
-    QSqlDatabase db = QSqlDatabase::addDatabase(driver_, connection_name_);
-    db.setDatabaseName(db_path_);
-
-    if (!host.isEmpty()) {
-        db.setHostName(host);
-        db.setPort(port);
-        db.setUserName(log);
-        db.setPassword(pass);
-    }
-
-    if (!db.open()) {
-        emit errorOccurred(tr("Failed to open database in worker: ") + db.lastError().text());
-        QSqlDatabase::removeDatabase(connection_name_);
-        /* Добавить deleteLater() */
-        connection_name_ = "";
+    if (!result) {
+        emit errorOccurred("Failed to open database in worker: " + vsc::qt::toQtText(result.error().message));
         return;
     }
 
-    explorer_ = std::make_unique<TableRepository>(connection_name_, dbType_);
+    explorer_.reset();
+    connection_.reset();
+    connection_ = std::move(result.value());
+    explorer_ = std::make_unique<TableRepository>(connection_.get(), params.type);
+
+    emit connectionOpened();
 
     loadTables();
 }

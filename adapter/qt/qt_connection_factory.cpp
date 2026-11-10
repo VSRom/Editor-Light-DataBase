@@ -1,4 +1,5 @@
 #include "qt_connection_factory.h"
+#include "qt/qt_text_codec.h"
 #include "qt_connection.h"
 
 #include <QByteArray>
@@ -25,30 +26,13 @@ QString driverDb(vsc::DbTypes type)
     return {};
 }
 
-QString toQtText(const vsc::Text& text)
-{
-    return QString::fromUtf8(
-        text.data(),
-        static_cast<qsizetype>(text.size()));
-}
-
-vsc::Text toVscText(const QString& text)
-{
-    const QByteArray utf8 = text.toUtf8();
-
-    return vsc::Text{
-        utf8.constData(),
-        static_cast<std::size_t>(utf8.size())
-    };
-}
-
 vsc::SqlError makeConnectionError(const QSqlError& error)
 {
     return vsc::SqlError{
         vsc::SqlError::MessageError::connectionFailed,
         vsc::SqlError::SourceError::connection,
-        toVscText(error.text()),
-        toVscText(error.nativeErrorCode())
+        vsc::qt::toVscText(error.text()),
+        vsc::qt::toVscText(error.nativeErrorCode())
     };
 }
 
@@ -65,106 +49,105 @@ void removeConnection(QSqlDatabase& database, const QString& connectionName)
 
 namespace vsc::qt {
 
-std::expected<std::unique_ptr<vsc::IConnection>, vsc::SqlError>
-QtConnectionFactory::open(const vsc::ConnectionParameters& parameters)
-{
-    if (parameters.type == vsc::DbTypes::sqlite
-        || parameters.type == vsc::DbTypes::access) {
-        if (!parameters.pathDb || parameters.pathDb->empty()) {
+    std::expected<std::unique_ptr<vsc::IConnection>, vsc::SqlError>
+    QtConnectionFactory::open(const vsc::ConnectionParameters& parameters)
+    {
+        if (parameters.type == vsc::DbTypes::sqlite
+            || parameters.type == vsc::DbTypes::access) {
+            if (!parameters.pathDb || parameters.pathDb->empty()) {
+                return std::unexpected(vsc::SqlError{
+                    vsc::SqlError::MessageError::connectionFailed,
+                    vsc::SqlError::SourceError::connection,
+                    "Database path is missing",
+                    {}
+                });
+            }
+        } else if (parameters.type == vsc::DbTypes::mysql
+                   || parameters.type == vsc::DbTypes::psql
+                   || parameters.type == vsc::DbTypes::oracle) {
+            if (!parameters.host || parameters.host->empty()
+                || !parameters.port
+                || *parameters.port <= 0 || *parameters.port > 65535
+                || !parameters.dataBaseName || parameters.dataBaseName->empty()
+                || !parameters.login || parameters.login->empty()) {
+                return std::unexpected(vsc::SqlError{
+                    vsc::SqlError::MessageError::connectionFailed,
+                    vsc::SqlError::SourceError::connection,
+                    "Remote connection parameters are incomplete",
+                    {}
+                });
+            }
+        } else {
             return std::unexpected(vsc::SqlError{
-                vsc::SqlError::MessageError::connectionFailed,
-                vsc::SqlError::SourceError::connection,
-                "Database path is missing",
+                vsc::SqlError::MessageError::unsupported,
+                vsc::SqlError::SourceError::driver,
+                "Unsupported database type",
                 {}
             });
         }
-    } else if (parameters.type == vsc::DbTypes::mysql
-               || parameters.type == vsc::DbTypes::psql
-               || parameters.type == vsc::DbTypes::oracle) {
-        if (!parameters.host || parameters.host->empty()
-            || !parameters.port
-            || *parameters.port <= 0 || *parameters.port > 65535
-            || !parameters.dataBaseName || parameters.dataBaseName->empty()
-            || !parameters.login || parameters.login->empty()) {
+
+        const QString dbDriver = driverDb(parameters.type);
+
+        if (!QSqlDatabase::isDriverAvailable(dbDriver)) {
             return std::unexpected(vsc::SqlError{
-                vsc::SqlError::MessageError::connectionFailed,
-                vsc::SqlError::SourceError::connection,
-                "Remote connection parameters are incomplete",
+                vsc::SqlError::MessageError::driverMissing,
+                vsc::SqlError::SourceError::driver,
+                "Qt SQL driver is not available",
                 {}
             });
         }
-    } else {
-        return std::unexpected(vsc::SqlError{
-            vsc::SqlError::MessageError::unsupported,
-            vsc::SqlError::SourceError::driver,
-            "Unsupported database type",
-            {}
-        });
-    }
 
-    const QString dbDriver = driverDb(parameters.type);
+        const QString connectionName = QStringLiteral("vsc_qt_")
+            + QUuid::createUuid().toString(QUuid::WithoutBraces);
+        QSqlDatabase database = QSqlDatabase::addDatabase(dbDriver, connectionName);
 
-    if (!QSqlDatabase::isDriverAvailable(dbDriver)) {
-        return std::unexpected(vsc::SqlError{
-            vsc::SqlError::MessageError::driverMissing,
-            vsc::SqlError::SourceError::driver,
-            "Qt SQL driver is not available",
-            {}
-        });
-    }
-
-    const QString connectionName = QStringLiteral("vsc_qt_")
-        + QUuid::createUuid().toString(QUuid::WithoutBraces);
-    QSqlDatabase database = QSqlDatabase::addDatabase(dbDriver, connectionName);
-
-    if (!database.isValid()) {
-        removeConnection(database, connectionName);
-
-        return std::unexpected(vsc::SqlError{
-            vsc::SqlError::MessageError::connectionFailed,
-            vsc::SqlError::SourceError::connection,
-            "Qt could not create a database connection",
-            {}
-        });
-    }
-
-    if (parameters.type == vsc::DbTypes::sqlite) {
-        database.setDatabaseName(toQtText(*parameters.pathDb));
-    } else if (parameters.type == vsc::DbTypes::access) {
-        const QString path = toQtText(*parameters.pathDb);
-
-        if (path.contains(u';') || path.contains(u'{') || path.contains(u'}')) {
+        if (!database.isValid()) {
             removeConnection(database, connectionName);
 
             return std::unexpected(vsc::SqlError{
                 vsc::SqlError::MessageError::connectionFailed,
                 vsc::SqlError::SourceError::connection,
-                "Access database path contains unsupported characters",
+                "Qt could not create a database connection",
                 {}
             });
         }
 
-        database.setDatabaseName(
-            QStringLiteral("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%1;")
-                .arg(path));
-    } else {
-        database.setHostName(toQtText(*parameters.host));
-        database.setPort(*parameters.port);
-        database.setDatabaseName(toQtText(*parameters.dataBaseName));
-        database.setUserName(toQtText(*parameters.login));
+        if (parameters.type == vsc::DbTypes::sqlite) {
+            database.setDatabaseName(vsc::qt::toQtText(*parameters.pathDb));
+        } else if (parameters.type == vsc::DbTypes::access) {
+            const QString path = vsc::qt::toQtText(*parameters.pathDb);
 
-        if (parameters.password)
-            database.setPassword(toQtText(*parameters.password));
+            if (path.contains(u';') || path.contains(u'{') || path.contains(u'}')) {
+                removeConnection(database, connectionName);
+
+                return std::unexpected(vsc::SqlError{
+                    vsc::SqlError::MessageError::connectionFailed,
+                    vsc::SqlError::SourceError::connection,
+                    "Access database path contains unsupported characters",
+                    {}
+                });
+            }
+
+            database.setDatabaseName(
+                QStringLiteral("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%1;")
+                    .arg(path));
+        } else {
+            database.setHostName(vsc::qt::toQtText(*parameters.host));
+            database.setPort(*parameters.port);
+            database.setDatabaseName(vsc::qt::toQtText(*parameters.dataBaseName));
+            database.setUserName(vsc::qt::toQtText(*parameters.login));
+
+            if (parameters.password)
+                database.setPassword(vsc::qt::toQtText(*parameters.password));
+        }
+
+        if (!database.open()) {
+            vsc::SqlError error = makeConnectionError(database.lastError());
+            removeConnection(database, connectionName);
+
+            return std::unexpected(std::move(error));
+        }
+
+        return std::make_unique<QtConnection>(std::move(database), connectionName);
     }
-
-    if (!database.open()) {
-        vsc::SqlError error = makeConnectionError(database.lastError());
-        removeConnection(database, connectionName);
-
-        return std::unexpected(std::move(error));
-    }
-
-    return std::make_unique<QtConnection>(std::move(database), connectionName);
-}
-
 }

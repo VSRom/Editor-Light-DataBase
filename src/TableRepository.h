@@ -1,5 +1,5 @@
 #pragma once
-//================================================================================================================
+
 #include <QString>
 #include <QStringList>
 #include <QSqlQueryModel>
@@ -8,20 +8,25 @@
 #include <QList>
 #include <QHash>
 #include <memory>
-//================================================================================================================
+#include <expected>
+
+#include "vsc/connection_params.h"
+#include "vsc/sql_error.h"
+#include "vsc/i_connection.h"
+
 struct Filtration {
     QString colName_;
     QString operator_;
     QString value_;
 };
-//================================================================================================================
+
 typedef QList<Filtration> FilterList;
-//================================================================================================================
+
 Q_DECLARE_METATYPE(FilterList)
-//================================================================================================================
+
 class TableRepository {
 public:
-    explicit TableRepository(const QString &connectionName, const QString& dbType = "sqlite");
+    explicit TableRepository(vsc::IConnection* connection, vsc::DbTypes type);
 
     struct ColumnInfo {
         QString name;
@@ -30,8 +35,8 @@ public:
         bool isPrimaryKey = false;
     };
 
-    QList<ColumnInfo> getColumns(const QString &tableName) const;
-    QStringList getUserTables() const;
+    std::expected<QList<ColumnInfo>, vsc::SqlError> getColumns(const QString &tableName) const;
+    std::expected<QStringList, vsc::SqlError> getUserTables() const;
     QStringList get_types_db() const { return types_db_; }
     std::unique_ptr<QSqlQueryModel> select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
                            , int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {}) const;
@@ -54,10 +59,9 @@ private:
     QString buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
                              , const QStringList& searchableColumns, QStringList& outParams) const;
 
-    QString connectionName_;
-    QString dbType_;
+    vsc::IConnection* connection_ = nullptr;
     QStringList types_db_;
+    vsc::DbTypes type_;
 };
-//================================================================================================================
+
 Q_DECLARE_METATYPE(TableRepository::ColumnInfo)
-//================================================================================================================

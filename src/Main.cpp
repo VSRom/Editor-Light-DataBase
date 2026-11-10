@@ -53,6 +53,8 @@ int main(int argc, char* argv[]) {
     qmlRegisterSingletonInstance("App", 1, 0, "ConnectionController", &connectionController);
     qmlRegisterSingletonInstance("App", 1, 0, "MainController", &mainController);
 
+    QObject::connect(&connectionController, &ConnectionController::sessionRequested, &mainController, &MainController::beginSession);
+
     qmlRegisterSingletonType(QUrl("qrc:/qml_desktop/Theme.qml"), "App", 1, 0, "Theme");
 
     QQmlApplicationEngine engine;

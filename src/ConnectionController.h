@@ -21,8 +21,6 @@ class ConnectionController : public QObject {
 public:
     explicit ConnectionController(QObject* parent = nullptr);
 
-    Q_INVOKABLE QString driverForIndex(int index) const;
-    Q_INVOKABLE QString dbTypeForIndex(int index) const;
     Q_INVOKABLE QString displayTypeForIndex(int index) const;
     Q_INVOKABLE bool    hasConfig(const QString& name) const;
     Q_INVOKABLE void    loadConfig(const QString& name);
@@ -64,10 +62,7 @@ signals:
     void currentConfigChanged();
     void databaseNameChanged();
     void logTextChanged();
-
-    void connected(const QString& driver, const QString& dbType, const QString& host,
-        int port, const QString& login, const QString& password, const QString& dbPath);
-
+    void sessionRequested(vsc::ConnectionParameters params);
     void connectionFailed(const QString& error);
 
 private:
@@ -75,8 +70,7 @@ private:
     QStringList readConfigs() const;
     void reloadConfigs();
     void appendLog(const QString& message);
-    bool tryOpenConnection(const QString& prefix, QString& error, QString& outDriver, QString& outDbType,
-                            QString& outDbPath, QString& outHost, int& outPort, QString& outLogin, QString& outPassword);
+
     std::expected<vsc::ConnectionParameters, QString> makeConnectionParameters() const;
 
     int dbTypeIndex_ = 0;
@@ -91,5 +85,4 @@ private:
     QString logText_;
 
     QStringList configs_;
-    int tempConnectionCounter_ = 0;
 };

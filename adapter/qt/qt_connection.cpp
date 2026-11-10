@@ -1,4 +1,5 @@
 #include "qt_connection.h"
+#include "qt/qt_text_codec.h"
 
 #include <QSqlQuery>
 #include <QSqlError>
@@ -13,27 +14,15 @@
 #include <QSqlDriver>
 
 namespace {
-
-vsc::Text toVscText(const QString& text)
-{
-    const QByteArray utf8 = text.toUtf8();
-
-    return vsc::Text{
-        utf8.constData(),
-        static_cast<std::size_t>(utf8.size())
-    };
-}
-
-vsc::SqlError makeStatementError(const QSqlError& error)
-{
-    return vsc::SqlError{
-        vsc::SqlError::MessageError::internal,
-        vsc::SqlError::SourceError::statement,
-        toVscText(error.text()),
-        toVscText(error.nativeErrorCode())
-    };
-}
-
+    vsc::SqlError makeStatementError(const QSqlError& error)
+    {
+        return vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            vsc::qt::toVscText(error.text()),
+            vsc::qt::toVscText(error.nativeErrorCode())
+        };
+    }
 }
 
 vsc::qt::QtConnection::QtConnection(QSqlDatabase database, QString connectionName)
@@ -62,10 +51,7 @@ std::expected<vsc::ResultSet, vsc::SqlError> vsc::qt::QtConnection::execute(cons
 
     QSqlQuery qtQuery{database_};
 
-    const QString sqlText = QString::fromUtf8(
-        query.sqlText.data(),
-        static_cast<qsizetype>(query.sqlText.size())
-        );
+    const QString sqlText = vsc::qt::toQtText(query.sqlText);
 
     if (!qtQuery.prepare(sqlText))
         return std::unexpected(makeStatementError(qtQuery.lastError()));
@@ -112,8 +98,8 @@ std::expected<vsc::ResultSet, vsc::SqlError> vsc::qt::QtConnection::execute(cons
         const QString typeName = rawTypeName ? QString::fromLatin1(rawTypeName) : QString{};
 
         vsc::ColumnMetaData col { result.allocator().resource() };
-        col.nameColumn = outStringPmr(colName, result.allocator());
-        col.type = outStringPmr(typeName, result.allocator());
+        col.nameColumn = vsc::qt::toVscText(colName, result.allocator());
+        col.type = vsc::qt::toVscText(typeName, result.allocator());
         col.ordinal = i;
         col.isPk = false;
         col.isNullable = field.requiredStatus() != QSqlField::Required;
@@ -284,15 +270,6 @@ std::expected<vsc::Value, vsc::SqlError> vsc::qt::QtConnection::fromQtValue(cons
     }
 }
 
-vsc::Text vsc::qt::QtConnection::outStringPmr(const QString& str, vsc::Text::allocator_type alloc) {
-    vsc::Text output{alloc};
-    const QByteArray utf8 = str.toUtf8();
-
-    output.assign(utf8.constData(), static_cast<std::size_t>(utf8.size()));
-
-    return output;
-}
-
 vsc::IDatabaseMetadata* vsc::qt::QtConnection::metadata() noexcept {
     return this;
 }
@@ -320,7 +297,7 @@ std::expected<vsc::TableList, vsc::SqlError> vsc::qt::QtConnection::listUserTabl
         if (driver == "QOCI" && ( tableName.startsWith("SYS_", Qt::CaseInsensitive) || tableName.startsWith("BIN$", Qt::CaseInsensitive) ))
             continue;
 
-        result.tables.push_back(outStringPmr(tableName, result.allocator()));
+        result.tables.push_back(vsc::qt::toVscText(tableName, result.allocator()));
     }
     return result;
 }
@@ -346,7 +323,7 @@ std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describe
     vsc::TableMetadata result;
     const QString qtTableName = QString::fromUtf8(tableName.data(), static_cast<qsizetype>(tableName.size()));
 
-    result.tableName = outStringPmr(qtTableName, result.allocator());
+    result.tableName = vsc::qt::toVscText(qtTableName, result.allocator());
 
     const QSqlIndex primaryKey = database_.primaryIndex(qtTableName);
     QStringList pkColumns;
@@ -444,8 +421,8 @@ std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describe
             isNullable = query.value(2).toString().compare("YES", Qt::CaseInsensitive) == 0;
 
         vsc::ColumnMetaData column{result.allocator().resource()};
-        column.nameColumn = outStringPmr(columnName, result.allocator());
-        column.type = outStringPmr(typeName, result.allocator());
+        column.nameColumn = vsc::qt::toVscText(columnName, result.allocator());
+        column.type = vsc::qt::toVscText(typeName, result.allocator());
         column.isPk = pkColumns.contains(columnName, Qt::CaseInsensitive);
         column.isNullable = isNullable;
         column.ordinal = ordinal++;

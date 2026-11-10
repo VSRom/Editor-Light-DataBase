@@ -1,12 +1,14 @@
-#include "MainController.h"
-#include "DatabaseWorker.h"
-#include "TableRepository.h"
 #include <QThread>
 #include <QMetaObject>
 #include <QMetaType>
 #include <QTimer>
 #include <QSettings>
 #include <QCoreApplication>
+
+#include "MainController.h"
+#include "DatabaseWorker.h"
+#include "TableRepository.h"
+#include "QtMetaTypes.h"
 
 MainController::MainController(const QStringList& fonts, QObject* parent)
     : QObject(parent), fonts_(fonts) {
@@ -17,6 +19,7 @@ MainController::MainController(const QStringList& fonts, QObject* parent)
     qRegisterMetaType<FilterList>("FilterList");
     qRegisterMetaType<TableRepository::ColumnInfo>("TableRepository::ColumnInfo");
     qRegisterMetaType<QList<TableRepository::ColumnInfo>>("QList<TableRepository::ColumnInfo>");
+    qRegisterMetaType<vsc::ConnectionParameters>("vsc::ConnectionParameters");
 
     tablesModel_ = new StringListModel(this);
     tableModel_ = new TableDataModel(this);
@@ -72,10 +75,18 @@ void MainController::setBusy(bool v) {
 
     emit busyChanged();
 }
-void MainController::beginSession(const QString& driver, const QString& dbType, const QString& host,
-                                  int port, const QString& login, const QString& password, const QString& dbPath) {
+void MainController::beginSession(vsc::ConnectionParameters params) {
     endSession();
-    dbTypeCache_ = dbType;
+
+    switch(params.type) {
+    case vsc::DbTypes::sqlite: dbTypeCache_ = "sqlite"; break;
+    case vsc::DbTypes::mysql:  dbTypeCache_ = "mysql"; break;
+    case vsc::DbTypes::psql:   dbTypeCache_ = "postgresql"; break;
+    case vsc::DbTypes::access: dbTypeCache_ = "access"; break;
+    case vsc::DbTypes::oracle: dbTypeCache_ = "oracle"; break;
+    case vsc::DbTypes::none:   dbTypeCache_.clear(); break;
+
+    }
 
     setBusy(true);
     errorMessage_.clear();
@@ -87,29 +98,27 @@ void MainController::beginSession(const QString& driver, const QString& dbType, 
     emit statusChanged();
 
     workerThread_ = new QThread(this);
-    worker_ = new DatabaseWorker("worker_connection", dbType);
+    worker_ = new DatabaseWorker();
     worker_->moveToThread(workerThread_);
-    connect(worker_, &DatabaseWorker::tablesLoaded,       this, &MainController::onTablesLoaded);
-    connect(worker_, &DatabaseWorker::selectFinished,     this, &MainController::onSelectFinished);
-    connect(worker_, &DatabaseWorker::columnsLoaded,      this, &MainController::onColumnsLoaded);
-    connect(worker_, &DatabaseWorker::typesDbLoaded,      this, &MainController::onTypesDbLoaded);
-    connect(worker_, &DatabaseWorker::operationCompleted, this, &MainController::onOperationCompleted);
-    connect(worker_, &DatabaseWorker::errorOccurred,      this, &MainController::onWorkerError);
+
+    connect(worker_, &DatabaseWorker::tablesLoaded, this, &MainController::onTablesLoaded);
+    connect(worker_, &DatabaseWorker::selectFinished, this, &MainController::onSelectFinished);
+    connect(worker_, &DatabaseWorker::columnsLoaded, this, &MainController::onColumnsLoaded);
+    connect(worker_, &DatabaseWorker::typesDbLoaded, this, &MainController::onTypesDbLoaded);
+    connect(worker_, &DatabaseWorker::operationCompleted,  this, &MainController::onOperationCompleted);
+    connect(worker_, &DatabaseWorker::errorOccurred, this, &MainController::onWorkerError);
+    connect(worker_, &DatabaseWorker::connectionOpened, this, &MainController::onSessionOpened);
+    connect(workerThread_, &QThread::finished, worker_, &QObject::deleteLater);
+
     workerThread_->start();
 
-    QMetaObject::invokeMethod(worker_, "initConnection", Qt::QueuedConnection,
-                              Q_ARG(QString, driver), Q_ARG(QString, dbPath), Q_ARG(QString, dbType),
-                              Q_ARG(QString, host), Q_ARG(int, port), Q_ARG(QString, login), Q_ARG(QString, password));
+    QMetaObject::invokeMethod(worker_, "initConnection", Qt::QueuedConnection, Q_ARG(vsc::ConnectionParameters, params));
 }
 
 void MainController::endSession() {
     if (workerThread_) {
         workerThread_->quit();
         workerThread_->wait(3000);
-    }
-
-    if (worker_) {
-        delete worker_;
         worker_ = nullptr;
     }
 
@@ -200,6 +209,13 @@ void MainController::applyFilters() {
 
 void MainController::flushFilters() {
     applyFilters();
+}
+
+void MainController::onSessionOpened() {
+    statusText_ = "Connection opened. Loading tables...";
+
+    emit statusChanged();
+    emit sessionOpened();
 }
 
 void MainController::prevPage() {

@@ -5,6 +5,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Sql)
 
 set(PUBLIC_HEADERS
     qt/qt_connection_factory.h
+    qt/qt_text_codec.h
 )
 set(PRIVATE_HEADERS
     qt/qt_connection.h

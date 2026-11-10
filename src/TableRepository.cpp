@@ -1,131 +1,104 @@
-#include "TableRepository.h"
 #include <QSqlError>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QDebug>
 #include <QSqlIndex>
-//================================================================================================================
-TableRepository::TableRepository(const QString &connectionName, const QString& dbType) : connectionName_(connectionName), dbType_(dbType)
+#include <string_view>
+#include <utility>
+
+#include "vsc/i_database_metadata.h"
+#include "qt/qt_text_codec.h"
+#include "TableRepository.h"
+
+TableRepository::TableRepository(vsc::IConnection* connection, vsc::DbTypes type)
+    :  connection_(connection), type_(type)
 {
-    if (dbType_ == "sqlite")
+    if (type_ == vsc::DbTypes::sqlite)
         types_db_ = { "INTEGER", "REAL", "TEXT", "BLOB" };
-    else if (dbType_ == "mysql")
+    else if (type_== vsc::DbTypes::mysql)
         types_db_ = { "INT", "BIGINT", "VARCHAR(255)", "TEXT", "BLOB", "DATE", "DATETIME", "BOOLEAN" };
-    else if (dbType_ == "postgresql")
+    else if (type_ == vsc::DbTypes::psql)
         types_db_ = { "INTEGER", "SERIAL", "VARCHAR(255)", "TEXT", "BOOLEAN", "DATE", "TIMESTAMP" };
-    else if (dbType_ == "access")
+    else if (type_ == vsc::DbTypes::access)
         types_db_ = { "INTEGER", "LONG", "TEXT", "MEMO", "YESNO","DATETIME" };
-    else if (dbType_ == "oracle")
+    else if (type_ == vsc::DbTypes::oracle)
         types_db_ = { "NUMBER", "VARCHAR2(255)", "CLOB", "BLOB", "DATE", "TIMESTAMP" };
     else
         types_db_ = { "INTEGER", "TEXT", "REAL", "BLOB" };
 }
-//================================================================================================================
-QStringList TableRepository::getUserTables() const {
-    QSqlDatabase db = QSqlDatabase::database(connectionName_);
-    QStringList AllTables = db.tables(QSql::Tables);
-    QStringList userTables;
 
-    if (dbType_ == "postgresql") {
+std::expected<QStringList, vsc::SqlError> TableRepository::getUserTables() const {
+    if(!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Not connection",
+            {}
+        });
 
-        QSqlQuery query(QSqlDatabase::database(connectionName_));
-        bool success = query.exec(R"(
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_type = 'BASE TABLE'
-            ORDER BY table_name
-        )");
+    auto metadata = connection_->metadata();
 
-        if (!success) {
-            qDebug() << "Ошибка запроса таблиц:" << query.lastError().text();
-            return userTables;
-        }
+    if(!metadata)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::unsupported,
+            vsc::SqlError::SourceError::driver,
+            "Connection does not expose database metadata",
+            {}
+        });
 
-        while (query.next()) {
-            userTables.append(query.value(0).toString());
-        }
-    }
-    else {
-        QStringList AllTables = QSqlDatabase::database(connectionName_).tables(QSql::Tables);
-    }
+    auto coreTables = metadata->listUserTables();
 
-    return userTables;
+    if(!coreTables)
+        return std::unexpected(std::move(coreTables.error()));
+
+    QStringList result{};
+
+    for(const auto& table : std::as_const(coreTables->tables))
+        result += vsc::qt::toQtText(table);
+
+    return result;
 }
-//================================================================================================================
-QList<TableRepository::ColumnInfo> TableRepository::getColumns(const QString &tableName) const {
-    QList<ColumnInfo> cols;
 
-    QString driver = QSqlDatabase::database(connectionName_).driverName();
-    QSqlQuery q(QSqlDatabase::database(connectionName_));
+std::expected<QList<TableRepository::ColumnInfo>, vsc::SqlError> TableRepository::getColumns(const QString &tableName) const {
+    if(!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
 
-    QSqlDatabase db = QSqlDatabase::database(connectionName_);
-    QSqlIndex primaryKey = db.primaryIndex(tableName);
-    QStringList pkColumns;
+    auto metadata = connection_->metadata();
 
-    for (int i = 0; i < primaryKey.count(); i++)
-        pkColumns.append(primaryKey.fieldName(i));  // Получили список колонок первичного ключа
+    if(!metadata)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::unsupported,
+            vsc::SqlError::SourceError::driver,
+            "Connection does not expose database metadata",
+            {}
+        });
 
-    if (driver == "QSQLITE") {
-        q.exec(QString("PRAGMA table_info(%1)").arg(safeName(tableName)));
-        while (q.next()) {
-            QString colName = q.value(1).toString();
-            cols.append({ colName, q.value(2).toString(), !q.value(3).toBool(), pkColumns.contains(colName, Qt::CaseInsensitive)});
-        }
+    auto coreTableName = vsc::qt::toVscText(tableName);
+    auto schema = metadata->describeTable(std::string_view{coreTableName.data(), coreTableName.size()});
+
+    if(!schema)
+        return std::unexpected(std::move(schema.error()));
+
+    QList<ColumnInfo> result{};
+
+    for (const auto& col : std::as_const(schema->columns)) {
+        ColumnInfo tempResult;
+
+        tempResult.name = vsc::qt::toQtText(col.nameColumn);
+        tempResult.type = vsc::qt::toQtText(col.type);
+        tempResult.isNullable = col.isNullable;
+        tempResult.isPrimaryKey = col.isPk;
+
+        result += tempResult;
     }
-
-    else if (driver == "QMYSQL") {
-        q.exec(QString("SHOW COLUMNS FROM %1").arg(safeName(tableName)));
-        while (q.next()) {
-            QString colName = q.value(0).toString();
-            cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive) });
-        }
-    }
-
-    else if (driver == "QPSQL") {
-        q.exec(QString(
-            "SELECT column_name, data_type, is_nullable "
-            "FROM information_schema.columns "
-            "WHERE table_name = ?"));
-        q.bindValue(0, tableName);
-        q.exec();
-
-        while (q.next()) {
-            QString colName = q.value(0).toString();
-            cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive) });
-        }
-    }
-
-    else if (driver == "QOCI") {
-        q.exec(QString(
-            "SELECT column_name, data_type, nullable "
-            "FROM user_tab_columns "
-            "WHERE table_name = ? "
-            "ORDER BY column_id"));
-        q.bindValue(0, tableName.toUpper());
-        q.exec();
-
-        while (q.next()) {
-            QString colName = q.value(0).toString();
-            cols.append({ q.value(0).toString(), q.value(1).toString(), q.value(2).toString() == "Y", pkColumns.contains(colName, Qt::CaseInsensitive) });
-        }
-    }
-    else if (driver == "QODBC") {
-        q.exec(QString(
-            "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE "
-            "FROM INFORMATION_SCHEMA.COLUMNS "
-            "WHERE TABLE_NAME = ?"));
-        q.bindValue(0, tableName);
-        q.exec();
-
-        while (q.next()) {
-            QString colName = q.value(0).toString();
-            cols.append({ colName, q.value(1).toString(), q.value(2).toString() == "YES", pkColumns.contains(colName, Qt::CaseInsensitive)  });
-       }
-    }
-        return cols;
+    return result;
 }
-//================================================================================================================
+
 std::unique_ptr<QSqlQueryModel> TableRepository::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
                                        int offset, const QString& search, const QStringList& searchableColumns) const {
 
@@ -157,7 +130,7 @@ std::unique_ptr<QSqlQueryModel> TableRepository::select(const QString &table, co
     model->setQuery(qs);
     return model;
 }
-//================================================================================================================
+
 bool TableRepository::insert(const QString &table, const QMap<QString, QVariant> &values) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
@@ -193,7 +166,7 @@ bool TableRepository::insert(const QString &table, const QMap<QString, QVariant>
 
     return exe;
 }
-//================================================================================================================
+
 bool TableRepository::insert(const QString& table, const QHash<QString, QVariant>& values) const {
     QMap<QString, QVariant> map;
     for (auto it = values.begin(); it != values.end(); it++)
@@ -201,7 +174,7 @@ bool TableRepository::insert(const QString& table, const QHash<QString, QVariant
 
     return insert(table, map);
 }
-//================================================================================================================
+
 bool TableRepository::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
 {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
@@ -233,7 +206,7 @@ bool TableRepository::update(const QString &table, const QString &idColumn, cons
 
     return exe;
 }
-//================================================================================================================
+
 bool TableRepository::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
@@ -253,7 +226,7 @@ bool TableRepository::remove(const QString &table, const QString &idColumn, cons
 
     return exe;
 }
-//================================================================================================================
+
 bool TableRepository::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
     bool all = true;
 
@@ -262,7 +235,7 @@ bool TableRepository::removeRows(const QString& table, const QString& idColumn, 
 
     return all;
 }
-//================================================================================================================
+
 bool TableRepository::drop_table(const QString& table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
@@ -280,7 +253,7 @@ bool TableRepository::drop_table(const QString& table) const {
 
     return exe;
 }
-//================================================================================================================
+
 bool TableRepository::rename_table(const QString& table, const QString& new_name_table) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
 
@@ -298,13 +271,13 @@ bool TableRepository::rename_table(const QString& table, const QString& new_name
 
     return exe;
 }
-//================================================================================================================
+
 bool TableRepository::exeQuery(const QString& sql) const {
     QSqlQuery qs(QSqlDatabase::database(connectionName_));
     bool exe = qs.exec(sql);
     return exe;
 }
-//================================================================================================================
+
 int TableRepository::countRows(const QString &table, const FilterList &filters,
     const QString& search, const QStringList& searchableColumns) const
 {
@@ -325,7 +298,7 @@ int TableRepository::countRows(const QString &table, const FilterList &filters,
     else
         return 0;
 }
-//================================================================================================================
+
 QString TableRepository::safeName(const QString& name) {
     if (name.isEmpty()) 
         return QString();
@@ -337,30 +310,32 @@ QString TableRepository::safeName(const QString& name) {
 
     return result;
 }
-//================================================================================================================
+
 QString TableRepository::buildSearchCondition(const QString& search, const QStringList& cols, QStringList& outParams) const {
     if (search.isEmpty() || cols.isEmpty()) return QString();
 
     QString esc = search;
-    const bool useEscape = !(dbType_ == "access" || dbType_ == "odbc");
+    const bool useEscape = !(type_ == vsc::DbTypes::access);
+
     if (useEscape) {
         esc.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
+
     const QString pattern = "%" + esc + "%";
-    const QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
+    const QString op = (type_ == vsc::DbTypes::psql) ? "ILIKE" : "LIKE";
     const QString tail = useEscape ? " ESCAPE '\\'" : "";
 
     QStringList ors;
 
     for (const auto& c : std::as_const(cols)) {
         QString castExpr;
-        if (dbType_ == "sqlite" || dbType_ == "postgresql")
+        if (type_ == vsc::DbTypes::sqlite|| type_ == vsc::DbTypes::psql)
             castExpr = QString("CAST(%1 AS TEXT)").arg(safeName(c));
 
-        else if (dbType_ == "mysql")
+        else if (type_ == vsc::DbTypes::mysql)
             castExpr = QString("CAST(%1 AS CHAR)").arg(safeName(c));
 
-        else if (dbType_ == "oracle")
+        else if (type_ == vsc::DbTypes::oracle)
             castExpr = QString("TO_CHAR(%1)").arg(safeName(c));
         else
             castExpr = safeName(c);
@@ -371,7 +346,7 @@ QString TableRepository::buildSearchCondition(const QString& search, const QStri
     }
     return "(" + ors.join(" OR ") + ")";
 }
-//================================================================================================================
+
 QString TableRepository::buildWhereClause(const FilterList& filters, const QString& logic, const QString& search
                                          , const QStringList& searchableColumns, QStringList& outParams) const {
     QStringList conditions;
@@ -379,8 +354,8 @@ QString TableRepository::buildWhereClause(const FilterList& filters, const QStri
 
     for(const auto& f : std::as_const(filters)) {
         if(f.operator_ == "LIKE") {
-            QString op = (dbType_ == "postgresql") ? "ILIKE" : "LIKE";
-            QString collate = (dbType_ == "sqlite") ? " COLLATE NOCASE " : "";
+            QString op = (type_ == vsc::DbTypes::psql) ? "ILIKE" : "LIKE";
+            QString collate = (type_ == vsc::DbTypes::sqlite) ? " COLLATE NOCASE " : "";
 
             conditions << QString("%1 %2 %3").arg(safeName(f.colName_), op, collate);
             outParams << "%" + f.value_ + "%";
@@ -406,4 +381,3 @@ QString TableRepository::buildWhereClause(const FilterList& filters, const QStri
 
     return " WHERE " + conditions.join(joiner);
 }
-//================================================================================================================

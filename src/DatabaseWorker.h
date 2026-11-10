@@ -7,7 +7,12 @@
 #include <QVariantList>
 #include <QMap>
 #include <QHash>
+#include <memory>
+
 #include "TableRepository.h"
+#include "vsc/i_connection.h"
+#include "vsc/connection_params.h"
+
 
 typedef QHash<QString, QVariant> Hash;
 Q_DECLARE_METATYPE(Hash)
@@ -23,8 +28,8 @@ class DatabaseWorker : public QObject {
     Q_OBJECT
 
 public:
-    explicit DatabaseWorker(const QString& connectionName, const QString& dbType, QObject* parent = nullptr);
-    ~DatabaseWorker();
+    explicit DatabaseWorker(QObject* parent = nullptr);
+    ~DatabaseWorker() = default;
 
 public slots:
     void loadTables();
@@ -38,7 +43,7 @@ public slots:
     void removeRow(const QString& table, const QString& idColumn, const QVariant& idValue);
     void removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues);
     void getTypesDb(quint64 requestId);
-    void initConnection(const QString& driver, const QString& dbPath, const QString& db_type, const QString& host, const int port, const QString& log, const QString& pass);
+    void initConnection(const vsc::ConnectionParameters& params);
     void dropTable(const QString& table);
     void renameTable(const QString& oldName, const QString& newName);
 
@@ -49,12 +54,9 @@ signals:
     void columnsLoaded(quint64 requestId, const QString& tableName, QList<TableRepository::ColumnInfo> columns);
     void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);
+    void connectionOpened();
 
 private:
-    // session_
+    std::unique_ptr<vsc::IConnection> connection_ = nullptr;
     std::unique_ptr<TableRepository> explorer_ = nullptr;
-    QString connection_name_;
-    QString driver_;
-    QString db_path_;
-    QString dbType_;
 };

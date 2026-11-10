@@ -1,29 +1,12 @@
 #include "ConnectionController.h"
 #include "qt/qt_connection_factory.h"
+#include "qt/qt_text_codec.h"
 
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDir>
-#include <QFileInfo>
 #include <QSqlDatabase>
-#include <QSqlError>
-#include <QByteArray>
 #include <cstddef>
-
-namespace {
-    vsc::Text toVscText(const QString& text) {
-        const QByteArray utf8 = text.toUtf8();
-
-        return vsc::Text{
-            utf8.constData(),
-            static_cast<std::size_t>(utf8.size())
-        };
-    }
-
-    QString fromVscText(const vsc::Text& text) {
-        return QString::fromUtf8(text.data(), static_cast<qsizetype>(text.size()));
-    }
-}
 
 static const QStringList kDbDisplayNames = { "SQLite", "MySQL", "PostgreSQL", "Access", "Oracle" };
 
@@ -106,28 +89,6 @@ void ConnectionController::setCurrentConfig(const QString& v) {
     emit currentConfigChanged();
 }
 
-QString ConnectionController::driverForIndex(int i) const {
-    switch (i) {
-    case 0: return "QSQLITE";
-    case 1: return "QMYSQL";
-    case 2: return "QPSQL";
-    case 3: return "QODBC";
-    case 4: return "QOCI";
-    }
-
-    return QString();
-}
-QString ConnectionController::dbTypeForIndex(int i) const {
-    switch (i) {
-    case 0: return "sqlite";
-    case 1: return "mysql";
-    case 2: return "postgresql";
-    case 3: return "access";
-    case 4: return "oracle";
-    }
-
-     return QString();
-}
 QString ConnectionController::displayTypeForIndex(int i) const {
     return (i >= 0 && i < kDbDisplayNames.size()) ? kDbDisplayNames.at(i) : QString();
 }
@@ -219,83 +180,6 @@ void ConnectionController::appendLogMessage(const QString& m) {
     appendLog(m);
 }
 
-bool ConnectionController::tryOpenConnection(const QString& prefix, QString& error, QString& outDriver, QString& outDbType,
-    QString& outDbPath, QString& outHost, int& outPort, QString& outLogin, QString& outPassword) {
-
-    outDriver = driverForIndex(dbTypeIndex_);
-    outDbType = dbTypeForIndex(dbTypeIndex_);
-
-    if (outDriver.isEmpty()) {
-        error = tr("Unknown database type");
-        return false;
-    }
-
-    outDbPath = address_.trimmed();
-    outHost = isRemote_ ? address_.trimmed() : QString();
-    outPort = isRemote_ ? port_.toInt() : 0;
-    outLogin = isRemote_ ? login_ : QString();
-    outPassword = isRemote_ ? password_ : QString();
-    if (outDbPath.isEmpty()) { error = isRemote_ ? tr("Host not specified") : tr("Database file path not specified.")
-            ; return false;
-    }
-
-    if (!isRemote_) {
-        QFileInfo fi(outDbPath);
-        if (outDriver != "QSQLITE" && outDriver != "QODBC") {
-            if (!fi.exists()) {
-                error = tr("File not found: ") + outDbPath;
-                return false;
-            }
-
-            if (!fi.isReadable()) {
-                error = tr("No permission to read the file: ") + outDbPath;
-                return false;
-            }
-        }
-    }
-    QString dbName = outDbPath;
-
-    if (outDriver == "QODBC") {
-        if (outDbPath.contains(';') || outDbPath.contains('{') || outDbPath.contains('}')) {
-            error = tr("The path contains invalid characters: ';', '{', '}'");
-            return false;
-        }
-
-        dbName = QString("DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%1;").arg(outDbPath);
-    }
-
-    const QString cn = QString("%1_%2").arg(prefix).arg(++tempConnectionCounter_);
-
-    if (QSqlDatabase::contains(cn)) {
-        QSqlDatabase old = QSqlDatabase::database(cn);
-        old.close();
-        old = QSqlDatabase();
-        QSqlDatabase::removeDatabase(cn);
-    }
-
-    bool ok = false;
-    {
-        QSqlDatabase db = QSqlDatabase::addDatabase(outDriver, cn);
-        db.setDatabaseName(dbName);
-
-        if (isRemote_) {
-            db.setHostName(outHost);
-            db.setPort(outPort);
-            db.setUserName(outLogin);
-            db.setPassword(outPassword);
-        }
-
-        ok = db.open();
-        if (!ok)
-            error = db.lastError().text();
-
-        db.close();
-    }
-
-    QSqlDatabase::removeDatabase(cn);
-    return ok;
-}
-
 std::expected<vsc::ConnectionParameters, QString> ConnectionController::makeConnectionParameters() const {
     vsc::ConnectionParameters params;
 
@@ -328,20 +212,20 @@ std::expected<vsc::ConnectionParameters, QString> ConnectionController::makeConn
         if (!validPort || port < 1 || port > 65535)
             return std::unexpected(tr("Invalid port into database"));
 
-        params.host = toVscText(host);
-        params.dataBaseName = toVscText(databaseName);
-        params.login = toVscText(login);
+        params.host = vsc::qt::toVscText(host);
+        params.dataBaseName = vsc::qt::toVscText(databaseName);
+        params.login = vsc::qt::toVscText(login);
         params.port = port;
 
         if (!password_.isEmpty())
-            params.password = toVscText(password_);
+            params.password = vsc::qt::toVscText(password_);
     } else {
         const QString pathDb = address_.trimmed();
 
         if (pathDb.isEmpty())
             return std::unexpected(tr("Invalid path to db"));
 
-        params.pathDb = toVscText(pathDb);
+        params.pathDb = vsc::qt::toVscText(pathDb);
     }
     return params;
 }
@@ -358,29 +242,23 @@ void ConnectionController::checkConnection() {
         auto connection = factory.open(*params);
 
         if (!connection) {
-            appendLog(tr("Connection error: ") + fromVscText(connection.error().message));
+            appendLog(tr("Connection error: ") + vsc::qt::toQtText(connection.error().message));
             return;
         }
         else
             appendLog(tr("Connected!"));
-
-
     }
 }
 
 void ConnectionController::requestConnect() {
-    QString e, d, t, p, h, l, pw;
-    int pt = 0;
+    auto params = makeConnectionParameters();
 
-    if (!tryOpenConnection("preflight_connection", e, d, t, p, h, pt, l, pw)) {
-        appendLog(tr("Connection error: ") + e);
-
-        emit connectionFailed(e);
-
+    if (!params) {
+        appendLog(tr("Connection error: ") + params.error());
+        emit connectionFailed(params.error());
         return;
     }
 
-    appendLog(tr("Connection successful. Launching the main window..."));
-
-    emit connected(d, t, h, pt, l, pw, p);
+    appendLog(tr("Starting worker session..."));
+    emit sessionRequested(*params);
 }

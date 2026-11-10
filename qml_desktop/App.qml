@@ -53,11 +53,6 @@ ApplicationWindow {
     Connections {
         target: ConnectionController
 
-        function onConnected(driver, dbType, host, port, login, password, dbPath) {
-            MainController.beginSession(driver, dbType, host, port, login, password, dbPath);
-            app.connected = true
-        }
-
         function onConnectionFailed(error) { app.connected = false; }
     }
 
@@ -66,7 +61,11 @@ ApplicationWindow {
 
         function onSessionFailed(error) {
             app.connected = false
-            ConnectionController.appendLogMessage("Ошибка worker: " + error)
+            ConnectionController.appendLogMessage(qsTr("Error worker: ") + error)
+        }
+
+        function onSessionOpened() {
+            app.connected = true
         }
     }
 

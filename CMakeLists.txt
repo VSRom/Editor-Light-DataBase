@@ -42,6 +42,8 @@ set(HEADERS
     src/FilterModel.h
     src/TableRepository.h
     src/DatabaseWorker.h
+
+    src/QtMetaTypes.h
 )
 
 file(GLOB_RECURSE QML_FILES CONFIGURE_DEPENDS
