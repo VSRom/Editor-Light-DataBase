@@ -142,6 +142,7 @@ private slots:
     void onWorkerError(const QString& error);
     void flushFilters();
     void onSessionOpened();
+    void onSelectError(quint64 requestId, const QString& error);
 
 private:
     enum Kind { LoadPk, AddRow, CreateTable, AddColumn, MergeTables, SelectPage };

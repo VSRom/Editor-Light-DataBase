@@ -106,7 +106,7 @@ namespace vsc {
             }, other.v_);
         }
 
-        Value(Value&& other, allocator_type alloc) noexcept {
+        Value(Value&& other, allocator_type alloc) {
             v_ = std::visit([alloc](auto&& val) -> Var {
                 using T = std::remove_cvref_t<decltype(val)>;
 

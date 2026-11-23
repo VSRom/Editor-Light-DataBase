@@ -35,10 +35,15 @@ public:
         bool isPrimaryKey = false;
     };
 
+    struct TablePage {
+        QStringList headers{};
+        QList<QList<QVariant>> rows{};
+    };
+
     std::expected<QList<ColumnInfo>, vsc::SqlError> getColumns(const QString &tableName) const;
     std::expected<QStringList, vsc::SqlError> getUserTables() const;
     QStringList get_types_db() const { return types_db_; }
-    std::unique_ptr<QSqlQueryModel> select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
+    std::expected<TablePage, vsc::SqlError> select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
                            , int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {}) const;
 
     bool insert(const QString &table, const QMap<QString, QVariant> &values) const;
@@ -49,7 +54,7 @@ public:
     bool drop_table(const QString& table) const;
     bool rename_table(const QString& table, const QString& new_name_table) const;
     bool exeQuery(const QString& sql) const;
-    int  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {}
+    std::expected<int, vsc::SqlError>  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {}
                   , const QStringList& searchableColumns = {}) const;
 
     static QString safeName(const QString& name);

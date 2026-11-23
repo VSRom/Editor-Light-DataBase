@@ -37,9 +37,6 @@ namespace vsc::qt {
         QSqlDatabase database_;
         QString connectionName_;
         vsc::ConState state_{ vsc::ConState::closed };
-
-        static std::expected<QVariant, vsc::SqlError> toQtValue(const vsc::Value& value);
-        static std::expected<vsc::Value, vsc::SqlError> fromQtValue(const QVariant& value, vsc::Text::allocator_type alloc);
     };
 
 }

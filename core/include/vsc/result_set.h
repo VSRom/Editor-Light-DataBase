@@ -37,8 +37,8 @@ namespace vsc {
         { }
 
         ResultSet(ResultSet&&) noexcept = default;
-        ResultSet& operator=(ResultSet&&) noexcept = default;
 
+        ResultSet& operator=(ResultSet&&) noexcept = delete;
         ResultSet(const ResultSet&) = delete;
         ResultSet& operator=(const ResultSet&) = delete;
     };

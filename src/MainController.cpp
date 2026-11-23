@@ -103,6 +103,7 @@ void MainController::beginSession(vsc::ConnectionParameters params) {
 
     connect(worker_, &DatabaseWorker::tablesLoaded, this, &MainController::onTablesLoaded);
     connect(worker_, &DatabaseWorker::selectFinished, this, &MainController::onSelectFinished);
+    connect(worker_, &DatabaseWorker::selectError, this, &MainController::onSelectError);
     connect(worker_, &DatabaseWorker::columnsLoaded, this, &MainController::onColumnsLoaded);
     connect(worker_, &DatabaseWorker::typesDbLoaded, this, &MainController::onTypesDbLoaded);
     connect(worker_, &DatabaseWorker::operationCompleted,  this, &MainController::onOperationCompleted);
@@ -617,6 +618,25 @@ void MainController::onSelectFinished(quint64 requestId, const QList<QList<QVari
 
     tableModel_->setTable(headers, data);
     setBusy(false);
+}
+
+void MainController::onSelectError(quint64 requestId, const QString& error) {
+    auto it = pending_.find(requestId);
+
+    if (it == pending_.end() || it->kind != SelectPage)
+        return;
+
+    const auto match = it->table != currentTable_;
+    pending_.erase(it);
+
+    if (match)
+        return;
+
+    else {
+        errorMessage_ = error;
+        emit errorChanged();
+        setBusy(false);
+    }
 }
 
 void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableRepository::ColumnInfo>& cols) {

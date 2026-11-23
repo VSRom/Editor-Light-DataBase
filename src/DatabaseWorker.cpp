@@ -25,29 +25,28 @@ void DatabaseWorker::loadTables() {
 void DatabaseWorker::selectTable(quint64 requestId, const QString& table, const FilterList& filters, int pageSize,
                                   int offset, const QString& search, const QStringList& searchableColumns)
 {
-    if (!explorer_)
+    if (!explorer_) {
+        selectError(requestId, tr("Database repository is not initialized"));
         return;
-
-    std::unique_ptr<QSqlQueryModel> model = explorer_->select(table, filters, " AND ", pageSize, offset, search, searchableColumns);
-
-    int totalRows = explorer_->countRows(table, filters, search, searchableColumns);
-
-    QList<QList<QVariant>> data;
-    QStringList headers;
-
-    for (int i = 0; i < model->columnCount(); i++)
-        headers << model->headerData(i, Qt::Horizontal).toString();
-
-    for (int row = 0; row < model->rowCount(); row++) {
-        QList<QVariant> rowData;
-
-        for (int col = 0; col < model->columnCount(); col++)
-            rowData << model->data(model->index(row, col));
-
-        data << rowData;
     }
 
-    emit selectFinished(requestId, data, headers, totalRows);
+    auto page = explorer_->select(table, filters, " AND ", pageSize, offset, search, searchableColumns);
+
+    if (!page) {
+        QString error = vsc::qt::toQtText(page.error().message);
+        emit selectError(requestId, error);
+        return;
+    }
+
+    auto request = explorer_->countRows(table, filters, search, searchableColumns);
+
+    if (!request) {
+        QString error = vsc::qt::toQtText(request.error().message);
+        emit selectError(requestId, error);
+        return;
+    }
+
+    emit selectFinished(requestId, page->rows, page->headers, *request);
 }
 
 void DatabaseWorker::executeQuery(const QString& sql) {

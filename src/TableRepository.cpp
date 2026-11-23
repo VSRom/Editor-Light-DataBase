@@ -5,7 +5,9 @@
 #include <QSqlIndex>
 #include <string_view>
 #include <utility>
+#include <limits>
 
+#include "qt/qt_value_codec.h"
 #include "vsc/i_database_metadata.h"
 #include "qt/qt_text_codec.h"
 #include "TableRepository.h"
@@ -99,7 +101,7 @@ std::expected<QList<TableRepository::ColumnInfo>, vsc::SqlError> TableRepository
     return result;
 }
 
-std::unique_ptr<QSqlQueryModel> TableRepository::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
+std::expected<TableRepository::TablePage, vsc::SqlError> TableRepository::select(const QString &table, const FilterList &filters, const QString &logic, int pageSize,
                                        int offset, const QString& search, const QStringList& searchableColumns) const {
 
     QStringList params;
@@ -108,31 +110,61 @@ std::unique_ptr<QSqlQueryModel> TableRepository::select(const QString &table, co
     QString sql = QString("SELECT * FROM %1").arg(safeName(table));
     sql += where;
 
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
+
     if (pageSize > 0)
         sql += QString(" LIMIT %1 OFFSET %2").arg(pageSize).arg(offset);
 
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
-    qs.prepare(sql);
+    vsc::CmdQuery query{};
+    query.sqlText = vsc::qt::toVscText(sql);
 
-    for (int i = 0; i < params.size(); i++)
-        qs.bindValue(i, params.at(i));
+    vsc::Text::allocator_type alloc{query.sqlParams.get_allocator().resource()};
 
-    auto model = std::make_unique<QSqlQueryModel>();
+    for (auto& temp : std::as_const(params)) {
+        auto converted = vsc::qt::fromQtValue(QVariant{temp}, alloc);
 
-    if (!qs.exec()) {
-#ifdef QT_DEBUG
-        qDebug() << "Query error:" << qs.lastError().text();
-        qDebug() << "SQL: " << sql;
-        qDebug() << "Params: " << params;
-#endif
+        if (!converted)
+            return std::unexpected(converted.error());
+
+        query.sqlParams.push_back(*converted);
     }
 
-    model->setQuery(qs);
-    return model;
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    TablePage pages{};
+
+    for (const auto& col : std::as_const(coreResult->cols)){
+        QString name = vsc::qt::toQtText(col.nameColumn);
+        pages.headers.push_back(name);
+    }
+
+    for (const auto& row : std::as_const(coreResult->rows)) {
+        QList<QVariant> result{};
+
+        for (const auto& cell : std::as_const(row)) {
+            auto converted = vsc::qt::toQtValue(cell);
+
+            if (!converted)
+                return std::unexpected(converted.error());
+
+            result += *converted;
+        }
+        pages.rows.push_back(result);
+    }
+    return pages;
 }
 
 bool TableRepository::insert(const QString &table, const QMap<QString, QVariant> &values) const {
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+    QSqlQuery qs(QSqlDatabase::database());
 
     QStringList place(values.size(), "?");
     QStringList tempColum = values.keys();
@@ -177,7 +209,7 @@ bool TableRepository::insert(const QString& table, const QHash<QString, QVariant
 
 bool TableRepository::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
 {
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+    QSqlQuery qs(QSqlDatabase::database());
 
     QStringList list{};
 
@@ -208,7 +240,7 @@ bool TableRepository::update(const QString &table, const QString &idColumn, cons
 }
 
 bool TableRepository::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+    QSqlQuery qs(QSqlDatabase::database());
 
     QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(safeName(table), safeName(idColumn));
     qs.prepare(sql);
@@ -237,7 +269,7 @@ bool TableRepository::removeRows(const QString& table, const QString& idColumn, 
 }
 
 bool TableRepository::drop_table(const QString& table) const {
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+    QSqlQuery qs(QSqlDatabase::database());
 
     if (table.isEmpty()) return false;
 
@@ -255,7 +287,7 @@ bool TableRepository::drop_table(const QString& table) const {
 }
 
 bool TableRepository::rename_table(const QString& table, const QString& new_name_table) const {
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+    QSqlQuery qs(QSqlDatabase::database());
 
     if (table.isEmpty() || new_name_table.isEmpty()) return false;
 
@@ -273,12 +305,12 @@ bool TableRepository::rename_table(const QString& table, const QString& new_name
 }
 
 bool TableRepository::exeQuery(const QString& sql) const {
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
+    QSqlQuery qs(QSqlDatabase::database());
     bool exe = qs.exec(sql);
     return exe;
 }
 
-int TableRepository::countRows(const QString &table, const FilterList &filters,
+std::expected<int, vsc::SqlError> TableRepository::countRows(const QString &table, const FilterList &filters,
     const QString& search, const QStringList& searchableColumns) const
 {
 
@@ -287,16 +319,60 @@ int TableRepository::countRows(const QString &table, const FilterList &filters,
     QString sql = QString("SELECT COUNT(*) FROM %1").arg(safeName(table));
     sql += where;
 
-    QSqlQuery qs(QSqlDatabase::database(connectionName_));
-    qs.prepare(sql);
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
 
-    for (int i = 0; i < params.size(); i++)
-        qs.bindValue(i, params.at(i));
+    vsc::CmdQuery query{};
+    query.sqlText = vsc::qt::toVscText(sql);
+    vsc::Text::allocator_type alloc{query.sqlParams.get_allocator().resource()};
 
-    if (qs.exec() && qs.next())
-        return qs.value(0).toInt();
+    for (auto& temp : std::as_const(params)) {
+        auto converted = vsc::qt::fromQtValue(QVariant{temp}, alloc);
+
+        if (!converted)
+            return std::unexpected(converted.error());
+
+        query.sqlParams.push_back(*converted);
+    }
+
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    if(!coreResult->rows.empty() && !coreResult->rows[0].empty()) {
+        auto count = coreResult->rows[0][0].asInt64();
+
+        if (!count)
+            return std::unexpected(vsc::SqlError{
+                vsc::SqlError::MessageError::internal,
+                vsc::SqlError::SourceError::statement,
+                "COUNT returned no value",
+                {}
+            });
+
+        if (*count < 0 || *count > std::numeric_limits<int>::max())
+            return std::unexpected(vsc::SqlError{
+                vsc::SqlError::MessageError::internal,
+                vsc::SqlError::SourceError::statement,
+                "COUNT returned no value",
+                {}
+            });
+        else
+            return static_cast<int>(*count);
+    }
     else
-        return 0;
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "COUNT returned no value",
+            {}
+        });
 }
 
 QString TableRepository::safeName(const QString& name) {
@@ -357,7 +433,7 @@ QString TableRepository::buildWhereClause(const FilterList& filters, const QStri
             QString op = (type_ == vsc::DbTypes::psql) ? "ILIKE" : "LIKE";
             QString collate = (type_ == vsc::DbTypes::sqlite) ? " COLLATE NOCASE " : "";
 
-            conditions << QString("%1 %2 %3").arg(safeName(f.colName_), op, collate);
+            conditions << QString("%1 %2 ?%3").arg(safeName(f.colName_), op, collate);
             outParams << "%" + f.value_ + "%";
         }
         else {

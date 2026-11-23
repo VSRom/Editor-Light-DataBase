@@ -6,6 +6,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Sql)
 set(PUBLIC_HEADERS
     qt/qt_connection_factory.h
     qt/qt_text_codec.h
+    qt/qt_value_codec.h
 )
 set(PRIVATE_HEADERS
     qt/qt_connection.h
@@ -13,9 +14,11 @@ set(PRIVATE_HEADERS
 set(SOURCES
     qt/qt_connection.cpp
     qt/qt_connection_factory.cpp
+    qt/qt_value_codec.cpp
 )
 
 add_library(vsc_qt_adapter STATIC ${PUBLIC_HEADERS} ${PRIVATE_HEADERS} ${SOURCES})
+
 add_library(vsc::qt_adapter ALIAS vsc_qt_adapter)
 
 target_include_directories(vsc_qt_adapter
@@ -24,8 +27,8 @@ target_include_directories(vsc_qt_adapter
 )
 
 target_link_libraries(vsc_qt_adapter
-    PUBLIC  vsc::core
-    PRIVATE Qt6::Sql Qt6::Core
+    PUBLIC  vsc::core Qt6::Core
+    PRIVATE Qt6::Sql
 )
 
 target_compile_features(vsc_qt_adapter PUBLIC cxx_std_23)
