@@ -52,6 +52,7 @@ signals:
     void selectFinished(quint64 requestId, QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void selectError(quint64 requestId, const QString& error);
     void operationCompleted(bool success, const QString& message);
+    void rowsMayHaveChanged(const QString& table);
     void columnsLoaded(quint64 requestId, const QString& tableName, QList<TableRepository::ColumnInfo> columns);
     void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);

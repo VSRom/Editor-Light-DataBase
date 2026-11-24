@@ -73,39 +73,72 @@ void DatabaseWorker::getColumns(quint64 requestId, const QString& table) {
 }
 
 void DatabaseWorker::insertRow(const QString& table, const Hash& values) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit operationCompleted(false, tr("Database repository is not initialized"));
         return;
+    }
 
-    bool success = explorer_->insert(table, values);
+    auto result = explorer_->insert(table, values);
 
-    emit operationCompleted(success, success ? tr("Row added") : tr("Failed to add row"));
+    if(!result) {
+        QString error = vsc::qt::toQtText(result.error().message);
+        emit operationCompleted(false, error);
+        return;
+    }
+
+    emit operationCompleted(true, tr("Row added"));
 }
 
 void DatabaseWorker::updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit operationCompleted(false, tr("Database repository is not initialized"));
         return;
+    }
 
-    bool success = explorer_->update(table, idColumn, idValue, newValues);
+    auto result = explorer_->update(table, idColumn, idValue, newValues);
 
-    emit operationCompleted(success, success ? tr("Row updated") : tr("Failed to update row"));
+    if(!result) {
+        QString error = vsc::qt::toQtText(result.error().message);
+        emit operationCompleted(false, error);
+        return;
+    }
+
+    emit operationCompleted(true, tr("Row updated"));
 }
 
 void DatabaseWorker::removeRow(const QString& table, const QString& idColumn, const QVariant& idValue) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit operationCompleted(false, tr("Database repository is not initialized"));
         return;
+    }
 
-    bool success = explorer_->remove(table, idColumn, idValue);
+    auto result = explorer_->remove(table, idColumn, idValue);
 
-    emit operationCompleted(success, success ? tr("Row deleted") : tr("Failed to delete row"));
+    if(!result) {
+        QString error = vsc::qt::toQtText(result.error().message);
+        emit operationCompleted(false, error);
+        return;
+    }
+
+    emit operationCompleted(true, tr("Row deleted"));
 }
 
 void DatabaseWorker::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit operationCompleted(false, tr("Database repository is not initialized"));
         return;
+    }
 
-    bool success = explorer_->removeRows(table, idColumn, idValues);
+    auto result = explorer_->removeRows(table, idColumn, idValues);
 
-    emit operationCompleted(success, success ? tr("Rows deleted") : tr("Failed to delete rows"));
+    if(!result) {
+        QString error = vsc::qt::toQtText(result.error().message);
+        emit operationCompleted(false, tr("Failed to delete rows; some rows may have already been deleted: ") + error);
+        emit rowsMayHaveChanged(table);
+        return;
+    }
+
+    emit operationCompleted(true, tr("Rows deleted"));
 }
 
 void DatabaseWorker::getTypesDb(quint64 requestId) {

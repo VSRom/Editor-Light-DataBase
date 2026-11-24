@@ -142,10 +142,8 @@ std::expected<TableRepository::TablePage, vsc::SqlError> TableRepository::select
 
     TablePage pages{};
 
-    for (const auto& col : std::as_const(coreResult->cols)){
-        QString name = vsc::qt::toQtText(col.nameColumn);
-        pages.headers.push_back(name);
-    }
+    for (const auto& col : std::as_const(coreResult->cols))
+        pages.headers.push_back(vsc::qt::toQtText(col.nameColumn));
 
     for (const auto& row : std::as_const(coreResult->rows)) {
         QList<QVariant> result{};
@@ -163,8 +161,22 @@ std::expected<TableRepository::TablePage, vsc::SqlError> TableRepository::select
     return pages;
 }
 
-bool TableRepository::insert(const QString &table, const QMap<QString, QVariant> &values) const {
-    QSqlQuery qs(QSqlDatabase::database());
+std::expected<void, vsc::SqlError> TableRepository::insert(const QString &table, const QMap<QString, QVariant> &values) const {
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
+
+    if (values.isEmpty())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "Values is empty",
+            {}
+        });
 
     QStringList place(values.size(), "?");
     QStringList tempColum = values.keys();
@@ -180,26 +192,30 @@ bool TableRepository::insert(const QString &table, const QMap<QString, QVariant>
 
     QString sql = QString("INSERT INTO %1 (%2) VALUES (%3)").arg(safeName(table), colum, placer);
 
-    qs.prepare(sql);
+    vsc::CmdQuery query{};
 
-    const QList<QVariant> val = values.values();
+    query.sqlText = vsc::qt::toVscText(sql);
+    query.mode = vsc::CmdQuery::Mode::write;
+    vsc::Text::allocator_type alloc{query.sqlParams.get_allocator().resource()};
 
-    for (int i = 0; i < val.size(); ++i)
-        qs.bindValue(i, val.at(i));
+    for (const auto& value : values) {
+        auto converted = vsc::qt::fromQtValue(QVariant{value}, alloc);
 
-    bool exe = qs.exec();
+        if (!converted)
+            return std::unexpected(converted.error());
 
-    if (!exe) {
-#ifdef QT_DEBUG
-        qDebug() << "Query error:" << qs.lastError().text();
-#endif
-        return false;
+        query.sqlParams.push_back(*converted);
     }
 
-    return exe;
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    return {};
 }
 
-bool TableRepository::insert(const QString& table, const QHash<QString, QVariant>& values) const {
+std::expected<void, vsc::SqlError> TableRepository::insert(const QString& table, const QHash<QString, QVariant>& values) const {
     QMap<QString, QVariant> map;
     for (auto it = values.begin(); it != values.end(); it++)
         map[it.key()] = it.value();
@@ -207,9 +223,22 @@ bool TableRepository::insert(const QString& table, const QHash<QString, QVariant
     return insert(table, map);
 }
 
-bool TableRepository::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const
-{
-    QSqlQuery qs(QSqlDatabase::database());
+std::expected<void, vsc::SqlError> TableRepository::update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const {
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
+
+    if (newValues.isEmpty() || table.isEmpty() || idColumn.isEmpty() || idValue.isNull() || !idValue.isValid())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "Values is empty",
+            {}
+        });
 
     QStringList list{};
 
@@ -219,56 +248,96 @@ bool TableRepository::update(const QString &table, const QString &idColumn, cons
     QString result = list.join(", ");
     QString sql = QString("UPDATE %1 SET %2 WHERE %3 = ?").arg(safeName(table), result, safeName(idColumn));
 
-    qs.prepare(sql);
+    vsc::CmdQuery query{};
+    query.sqlText = vsc::qt::toVscText(sql);
+    query.mode = vsc::CmdQuery::Mode::write;
+    vsc::Text::allocator_type alloc{query.sqlParams.get_allocator().resource()};
 
-    const QList<QVariant> val = newValues.values();
-    for (int i = 0; i < val.size(); ++i)
-        qs.bindValue(i, val.at(i));
+    for (const auto& value : newValues) {
+        auto converted = vsc::qt::fromQtValue(QVariant{value}, alloc);
 
-    qs.bindValue(newValues.size(), idValue);
+        if (!converted)
+            return std::unexpected(converted.error());
 
-    bool exe = qs.exec();
-
-    if (!exe) {
-#ifdef QT_DEBUG
-        qDebug() << "Query error:" << qs.lastError().text();
-#endif
-        return false;
+        query.sqlParams.push_back(*converted);
     }
 
-    return exe;
+    auto resus = vsc::qt::fromQtValue(idValue, alloc);
+
+    if (!resus)
+        return std::unexpected(resus.error());
+
+    query.sqlParams.push_back(*resus);
+
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    return{};
 }
 
-bool TableRepository::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
-    QSqlQuery qs(QSqlDatabase::database());
+std::expected<void, vsc::SqlError> TableRepository::remove(const QString &table, const QString &idColumn, const QVariant &idValue) const {
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
+
+    if (table.isEmpty() || idColumn.isEmpty() || idValue.isNull() || !idValue.isValid())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "Values is empty",
+            {}
+        });
 
     QString sql = QString("DELETE FROM %1 WHERE %2 = ?").arg(safeName(table), safeName(idColumn));
-    qs.prepare(sql);
 
-    qs.bindValue(0, idValue);               // привязка значения к (= ?[0])
+    vsc::CmdQuery query{};
 
-    bool exe = qs.exec();
+    query.sqlText = vsc::qt::toVscText(sql);
+    query.mode = vsc::CmdQuery::Mode::write;
 
-    if (!exe) {
-#ifdef QT_DEBUG
-        qDebug() << "Query error:" << qs.lastError().text();
-#endif
-        return false;
+    vsc::Text::allocator_type alloc{query.sqlParams.get_allocator().resource()};
+
+    auto resus = vsc::qt::fromQtValue(idValue, alloc);
+
+    if (!resus)
+        return std::unexpected(resus.error());
+
+    query.sqlParams.push_back(*resus);
+
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    return{};
+}
+
+std::expected<void, vsc::SqlError> TableRepository::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
+    if (idValues.isEmpty())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "No rows selected for deletion",
+            {}
+        });
+
+    for (const QVariant& v : idValues) {
+        auto result = remove(table, idColumn, v);
+
+        if (!result)
+            return std::unexpected(result.error());
     }
 
-    return exe;
+    return {};
 }
 
-bool TableRepository::removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const {
-    bool all = true;
-
-    for (const QVariant& v : idValues)
-        all = remove(table, idColumn, v) && all;
-
-    return all;
-}
-
-bool TableRepository::drop_table(const QString& table) const {
+std::expected<void, vsc::SqlError> TableRepository::drop_table(const QString& table) const {
     QSqlQuery qs(QSqlDatabase::database());
 
     if (table.isEmpty()) return false;
@@ -286,7 +355,7 @@ bool TableRepository::drop_table(const QString& table) const {
     return exe;
 }
 
-bool TableRepository::rename_table(const QString& table, const QString& new_name_table) const {
+std::expected<void, vsc::SqlError> TableRepository::rename_table(const QString& table, const QString& new_name_table) const {
     QSqlQuery qs(QSqlDatabase::database());
 
     if (table.isEmpty() || new_name_table.isEmpty()) return false;

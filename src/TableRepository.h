@@ -46,13 +46,13 @@ public:
     std::expected<TablePage, vsc::SqlError> select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
                            , int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {}) const;
 
-    bool insert(const QString &table, const QMap<QString, QVariant> &values) const;
-    bool insert(const QString& table, const QHash<QString, QVariant>& values) const;
-    bool update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const;
-    bool remove(const QString &table, const QString &idColumn, const QVariant &idValue) const;
-    bool removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const;
-    bool drop_table(const QString& table) const;
-    bool rename_table(const QString& table, const QString& new_name_table) const;
+    std::expected<void, vsc::SqlError> insert(const QString &table, const QMap<QString, QVariant> &values) const;
+    std::expected<void, vsc::SqlError> insert(const QString& table, const QHash<QString, QVariant>& values) const;
+    std::expected<void, vsc::SqlError> update(const QString &table, const QString &idColumn, const QVariant &idValue, const QMap<QString, QVariant> &newValues) const;
+    std::expected<void, vsc::SqlError> remove(const QString &table, const QString &idColumn, const QVariant &idValue) const;
+    std::expected<void, vsc::SqlError> removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const;
+    std::expected<void, vsc::SqlError> drop_table(const QString& table) const;
+    std::expected<void, vsc::SqlError> rename_table(const QString& table, const QString& new_name_table) const;
     bool exeQuery(const QString& sql) const;
     std::expected<int, vsc::SqlError>  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {}
                   , const QStringList& searchableColumns = {}) const;

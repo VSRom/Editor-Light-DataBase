@@ -107,6 +107,10 @@ void MainController::beginSession(vsc::ConnectionParameters params) {
     connect(worker_, &DatabaseWorker::columnsLoaded, this, &MainController::onColumnsLoaded);
     connect(worker_, &DatabaseWorker::typesDbLoaded, this, &MainController::onTypesDbLoaded);
     connect(worker_, &DatabaseWorker::operationCompleted,  this, &MainController::onOperationCompleted);
+    connect(worker_, &DatabaseWorker::rowsMayHaveChanged, this, [this](const QString& table) {
+        if (table == currentTable_)
+            reloadCurrentPage();
+    });
     connect(worker_, &DatabaseWorker::errorOccurred, this, &MainController::onWorkerError);
     connect(worker_, &DatabaseWorker::connectionOpened, this, &MainController::onSessionOpened);
     connect(workerThread_, &QThread::finished, worker_, &QObject::deleteLater);
@@ -335,7 +339,7 @@ void MainController::deleteSelectedRowsRequested() {
         return;
     }
 
-    const quint64 rid = startRequest(AddRow, currentTable_, {}, { {"ids",QVariant(ids)} });
+    const quint64 rid = startRequest(AddRow, currentTable_, {}, { {"ids",QVariant(ids)}, {"idColumn",pkName()} });
 
     emit askConfirm(tr("Confirm deletion"), tr("Delete the selected row(s)?"), (int)rid);
 }
@@ -349,9 +353,15 @@ void MainController::confirmResult(int requestId, bool accepted) {
     PendingReq r = it.value(); pending_.erase(it);
 
     if (r.kind == AddRow && r.payload.contains("ids")) {
-        if (accepted && worker_)
-            QMetaObject::invokeMethod(worker_, "removeRows", Qt::QueuedConnection, Q_ARG(QString, currentTable_)
-                                      , Q_ARG(QString, pkName()), Q_ARG(QVariantList, r.payload.value("ids").toList()));
+        if (accepted && worker_) {
+            if (r.table != currentTable_) {
+                emit showError(tr("Table changed; select rows again before deleting"));
+                return;
+            }
+
+            QMetaObject::invokeMethod(worker_, "removeRows", Qt::QueuedConnection, Q_ARG(QString, r.table)
+                                      , Q_ARG(QString, r.payload.value("idColumn").toString()), Q_ARG(QVariantList, r.payload.value("ids").toList()));
+        }
         else emit showInfo(tr("Operation canceled"));
     }
     else emit showInfo(tr("Operation canceled"));
