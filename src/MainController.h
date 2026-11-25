@@ -143,9 +143,12 @@ private slots:
     void flushFilters();
     void onSessionOpened();
     void onSelectError(quint64 requestId, const QString& error);
+    void onTableDropped(const QString& table);
+    void onTableRenamed(const QString& oldName, const QString& newName);
+    void onColumnsError(quint64 requestId, const QString& error);
 
 private:
-    enum Kind { LoadPk, AddRow, CreateTable, AddColumn, MergeTables, SelectPage };
+    enum Kind { LoadPk, AddRow, CreateTable, AddColumn, MergeTables, SelectPage, RefreshColumnsAfterDdl };
 
     struct PendingReq {
         Kind kind;

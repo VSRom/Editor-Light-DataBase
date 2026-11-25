@@ -338,45 +338,93 @@ std::expected<void, vsc::SqlError> TableRepository::removeRows(const QString& ta
 }
 
 std::expected<void, vsc::SqlError> TableRepository::drop_table(const QString& table) const {
-    QSqlQuery qs(QSqlDatabase::database());
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
 
-    if (table.isEmpty()) return false;
+    if (table.isEmpty())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "Table name is empty",
+            {}
+        });
 
     QString sql = QString("DROP TABLE %1").arg(safeName(table));
-    bool exe = qs.exec(sql);
 
-    if (!exe) {
-#ifdef QT_DEBUG
-        qDebug() << "Query error:" << qs.lastError().text();
-#endif
-        return false;
-    }
+    vsc::CmdQuery query{};
+    query.sqlText = vsc::qt::toVscText(sql);
+    query.mode = vsc::CmdQuery::Mode::ddl;
 
-    return exe;
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    return {};
 }
 
 std::expected<void, vsc::SqlError> TableRepository::rename_table(const QString& table, const QString& new_name_table) const {
-    QSqlQuery qs(QSqlDatabase::database());
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
 
-    if (table.isEmpty() || new_name_table.isEmpty()) return false;
+    if (table.isEmpty() || new_name_table.isEmpty())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "Table name is empty",
+            {}
+        });
 
     QString sql = QString("ALTER TABLE %1 RENAME TO %2").arg(safeName(table), safeName(new_name_table));
-    bool exe = qs.exec(sql);
 
-    if (!exe) {
-#ifdef QT_DEBUG
-        qDebug() << "Query error:" << qs.lastError().text();
-#endif
-        return false;
-    }
+    vsc::CmdQuery query{};
+    query.sqlText = vsc::qt::toVscText(sql);
+    query.mode = vsc::CmdQuery::Mode::ddl;
 
-    return exe;
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    return {};
 }
 
-bool TableRepository::exeQuery(const QString& sql) const {
-    QSqlQuery qs(QSqlDatabase::database());
-    bool exe = qs.exec(sql);
-    return exe;
+std::expected<void, vsc::SqlError> TableRepository::exeQuery(const QString& sql) const
+{
+    if (!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
+
+    if (sql.isEmpty())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::internal,
+            vsc::SqlError::SourceError::statement,
+            "Table name is empty",
+            {}
+        });
+
+    vsc::CmdQuery query{};
+    query.sqlText = vsc::qt::toVscText(sql);
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    return {};
 }
 
 std::expected<int, vsc::SqlError> TableRepository::countRows(const QString &table, const FilterList &filters,

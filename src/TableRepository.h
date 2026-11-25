@@ -53,7 +53,7 @@ public:
     std::expected<void, vsc::SqlError> removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues) const;
     std::expected<void, vsc::SqlError> drop_table(const QString& table) const;
     std::expected<void, vsc::SqlError> rename_table(const QString& table, const QString& new_name_table) const;
-    bool exeQuery(const QString& sql) const;
+    std::expected<void, vsc::SqlError> exeQuery(const QString& sql) const;
     std::expected<int, vsc::SqlError>  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {}
                   , const QStringList& searchableColumns = {}) const;
 

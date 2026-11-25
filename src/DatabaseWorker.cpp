@@ -50,22 +50,32 @@ void DatabaseWorker::selectTable(quint64 requestId, const QString& table, const 
 }
 
 void DatabaseWorker::executeQuery(const QString& sql) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit operationCompleted(false, tr("Database repository is not initialized"));
         return;
+    }
 
-    bool success = explorer_->exeQuery(sql);
+    auto result = explorer_->exeQuery(sql);
 
-    emit operationCompleted(success, success ? tr("Query executed") : tr("Error: ") + sql);
+    if(!result) {
+        QString error = vsc::qt::toQtText(result.error().message);
+        emit operationCompleted(false, error);
+        return;
+    }
+
+    emit operationCompleted(true, tr("Query executed"));
 }
 
 void DatabaseWorker::getColumns(quint64 requestId, const QString& table) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit columnsError(requestId, tr("Database repository is not initialized"));
         return;
+    }
 
     auto result = explorer_->getColumns(table);
 
     if (!result) {
-        emit errorOccurred("Failed to load columns: " + vsc::qt::toQtText(result.error().message));
+        emit columnsError(requestId, vsc::qt::toQtText(result.error().message));
         return;
     }
 
@@ -149,20 +159,37 @@ void DatabaseWorker::getTypesDb(quint64 requestId) {
 }
 
 void DatabaseWorker::dropTable(const QString& table) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit operationCompleted(false, tr("Database repository is not initialized"));
         return;
+    }
 
-    bool success = explorer_->drop_table(table);
+    auto result = explorer_->drop_table(table);
 
-    emit operationCompleted(success, success ? tr("Table deleted") : tr("Failed to delete table"));
+    if(!result) {
+        QString error = vsc::qt::toQtText(result.error().message);
+        emit operationCompleted(false, error);
+        return;
+    }
+
+    emit tableDropped(table);
 }
 
 void DatabaseWorker::renameTable(const QString& oldName, const QString& newName) {
-    if (!explorer_)
+    if (!explorer_) {
+        emit operationCompleted(false, tr("Database repository is not initialized"));
         return;
-    bool success = explorer_->rename_table(oldName, newName);
+    }
 
-    emit operationCompleted(success, success ? tr("Table renamed") : tr("Failed to rename table"));
+    auto result = explorer_->rename_table(oldName, newName);
+
+    if(!result) {
+        QString error = vsc::qt::toQtText(result.error().message);
+        emit operationCompleted(false, error);
+        return;
+    }
+
+    emit tableRenamed(oldName, newName);
 }
 
 void DatabaseWorker::initConnection(const vsc::ConnectionParameters& params) {

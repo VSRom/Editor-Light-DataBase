@@ -99,11 +99,12 @@ QStringList FilterModel::operators() const {
 void FilterModel::setColumnNames(const QStringList& cols) {
     columnNames_ = cols;
 
-    for (auto& r : rows_)
-        if (!columnNames_.contains(r.column))
-            r.column = columnNames_.value(0);
+    for (int i = 0; i < rows_.size(); ++i) {
+        if(!columnNames_.contains(rows_[i].column))
+            setColumn(i, columnNames_.value(0));
+    }
 
-    emit filtersChanged();
+    emit columnNamesChanged();
 }
 
 FilterList FilterModel::collect() const {

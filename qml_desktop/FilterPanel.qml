@@ -18,9 +18,9 @@ ColumnLayout {
 
             ThemedComboBox {
                 Layout.preferredWidth: 140
-                model: fm.columnNames()
-                currentIndex: Math.max(0, fm.columnNames().indexOf(model.column))
-                onActivated: function(i) { fm.setColumn(index, fm.columnNames()[i]) }
+                model: fm.columnNames
+                currentIndex: Math.max(0, fm.columnNames.indexOf(model.column))
+                onActivated: function(i) { fm.setColumn(index, fm.columnNames[i]) }
             }
 
             ThemedComboBox {

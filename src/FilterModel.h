@@ -6,6 +6,7 @@
 class FilterModel : public QAbstractListModel {
     Q_OBJECT
         Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+        Q_PROPERTY(QStringList columnNames READ columnNames NOTIFY columnNamesChanged);
 public:
     enum Roles {
         ColumnRole = Qt::DisplayRole,
@@ -33,13 +34,14 @@ public:
     Q_INVOKABLE void clearAll();
     Q_INVOKABLE QStringList operators() const;
     Q_INVOKABLE void setColumnNames(const QStringList& cols);
-    Q_INVOKABLE QStringList columnNames() const { return columnNames_; }
 
+    QStringList columnNames() const { return columnNames_; }
     FilterList collect() const;
 
 signals:
     void countChanged();
     void filtersChanged();
+    void columnNamesChanged();
 
 private:
     QList<Row> rows_;

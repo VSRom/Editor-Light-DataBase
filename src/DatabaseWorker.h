@@ -54,9 +54,12 @@ signals:
     void operationCompleted(bool success, const QString& message);
     void rowsMayHaveChanged(const QString& table);
     void columnsLoaded(quint64 requestId, const QString& tableName, QList<TableRepository::ColumnInfo> columns);
+    void columnsError(quint64 requestId, const QString& error);
     void typesDbLoaded(quint64 requestId, QStringList types);
     void errorOccurred(const QString& error);
     void connectionOpened();
+    void tableDropped(const QString& table);
+    void tableRenamed(const QString& oldName, const QString& newName);
 
 private:
     std::unique_ptr<vsc::IConnection> connection_ = nullptr;

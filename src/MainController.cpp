@@ -107,10 +107,14 @@ void MainController::beginSession(vsc::ConnectionParameters params) {
     connect(worker_, &DatabaseWorker::columnsLoaded, this, &MainController::onColumnsLoaded);
     connect(worker_, &DatabaseWorker::typesDbLoaded, this, &MainController::onTypesDbLoaded);
     connect(worker_, &DatabaseWorker::operationCompleted,  this, &MainController::onOperationCompleted);
+    connect(worker_, &DatabaseWorker::tableDropped, this, &MainController::onTableDropped);
+    connect(worker_, &DatabaseWorker::tableRenamed, this, &MainController::onTableRenamed);
+
     connect(worker_, &DatabaseWorker::rowsMayHaveChanged, this, [this](const QString& table) {
         if (table == currentTable_)
             reloadCurrentPage();
     });
+
     connect(worker_, &DatabaseWorker::errorOccurred, this, &MainController::onWorkerError);
     connect(worker_, &DatabaseWorker::connectionOpened, this, &MainController::onSessionOpened);
     connect(workerThread_, &QThread::finished, worker_, &QObject::deleteLater);
@@ -649,6 +653,63 @@ void MainController::onSelectError(quint64 requestId, const QString& error) {
     }
 }
 
+void MainController::onTableDropped(const QString& table)
+{
+    if(table != currentTable_)
+        refreshTables();
+    else {
+        setCurrentTable(QString());
+        tableModel_->clearTable();
+        columns_.clear();
+
+        emit columnsChanged();
+
+        filtersModel_->clearAll();
+        filtersModel_->setColumnNames({});
+        setSearchText(QString());
+        currentPage_ = 0;
+        totalRows_ = 0;
+
+        emit pageInfoChanged();
+        refreshTables();
+    }
+}
+
+void MainController::onTableRenamed(const QString& oldName, const QString& newName)
+{
+    if(currentTable_ != oldName)
+        refreshTables();
+    else {
+        tableModel_->clearTable();
+        columns_.clear();
+
+        emit columnsChanged();
+
+        selectTable(newName);
+        refreshTables();
+    }
+}
+
+void MainController::onColumnsError(quint64 requestId, const QString& error)
+{
+    auto it = pending_.find(requestId);
+
+    if (it == pending_.end())
+        return;
+
+    PendingReq r = it.value();
+
+    if (r.kind == LoadPk || r.kind == RefreshColumnsAfterDdl || r.kind == MergeTables || r.kind == AddRow) {
+        pending_.erase(it);
+        if (r.kind == LoadPk || r.kind == RefreshColumnsAfterDdl && r.table != currentTable_)
+            return;
+        else {
+            errorMessage_ = error;
+            emit errorChanged();
+        }
+    }
+}
+
 void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableRepository::ColumnInfo>& cols) {
     auto it = pending_.find(requestId);
 
@@ -656,14 +717,15 @@ void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName
         return;
 
     PendingReq r = it.value();
-    if (r.kind == LoadPk) {
+
+    if (r.kind == LoadPk || r.kind == RefreshColumnsAfterDdl) {
         if (tableName == currentTable_) {
             columns_.clear();
             for (const auto& c : cols)
                 columns_ << QVariantMap{ {"name",c.name}
-                    ,{"type",c.type}
-                    ,{"isNullable",c.isNullable}
-                    ,{"isPrimaryKey",c.isPrimaryKey}
+                                        ,{"type",c.type}
+                                        ,{"isNullable",c.isNullable}
+                                        ,{"isPrimaryKey",c.isPrimaryKey}
                 };
 
             int pk = -1;
@@ -676,13 +738,22 @@ void MainController::onColumnsLoaded(quint64 requestId, const QString& tableName
             tableModel_->setColumnsMeta(columns_, pk);
             filtersModel_->setColumnNames([&] {
                 QStringList n;
+
                 for (const auto& c : cols)
                     n << c.name;
                 return n; }());
 
+
+
             emit columnsChanged();
         }
-        pending_.erase(it); return;
+        const bool needReload = r.kind == RefreshColumnsAfterDdl && tableName == currentTable_;
+        pending_.erase(it);
+
+        if (needReload && !filterTimer_->isActive())
+            reloadCurrentPage();
+
+        return;
     }
     if (r.kind == AddRow) {
         pending_.erase(it);
@@ -753,8 +824,11 @@ void MainController::onOperationCompleted(bool success, const QString& message) 
 
     refreshTables();
 
-    if (!currentTable_.isEmpty())
-        reloadCurrentPage();
+    if (!currentTable_.isEmpty()) {
+        const quint64 id = startRequest(RefreshColumnsAfterDdl, currentTable_);
+
+        QMetaObject::invokeMethod(worker_, "getColumns", Qt::QueuedConnection, Q_ARG(quint64, id), Q_ARG(QString, currentTable_));
+    }
 }
 
 void MainController::onWorkerError(const QString& error) {
