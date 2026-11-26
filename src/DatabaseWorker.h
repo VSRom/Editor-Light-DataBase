@@ -33,9 +33,8 @@ public:
 
 public slots:
     void loadTables();
-    void selectTable(quint64 requestId, const QString& table, const FilterList& filters = {}, int pageSize = 0, int offset = 0,
-        const QString& search = {}, const QStringList& searchableColumns = {});
-
+    void selectTable(quint64 requestId, const QString& table, const FilterList& filters = {}, int pageSize = 0, int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {});
+    void queryConsole(quint64 requestId, const QString& textQuery, vsc::CmdQuery::Mode m);
     void executeQuery(const QString& sql);
     void getColumns(quint64 requestId, const QString& table);
     void insertRow(const QString& table, const Hash& values);
@@ -49,6 +48,7 @@ public slots:
 
 signals:
     void tablesLoaded(QStringList tables);
+    void tablesError(const QString& error);
     void selectFinished(quint64 requestId, QList<QList<QVariant>> data, QStringList headers, int totalRows);
     void selectError(quint64 requestId, const QString& error);
     void operationCompleted(bool success, const QString& message);
@@ -60,6 +60,10 @@ signals:
     void connectionOpened();
     void tableDropped(const QString& table);
     void tableRenamed(const QString& oldName, const QString& newName);
+    void queryError(quint64 requestId, const QString& error);
+    void queryRowsReady(quint64 requestId, const QStringList& headers, const QList<QList<QVariant>>& rows);
+    void queryAffected(quint64 requestId, qint64 affectedRows);
+    void queryFinished(quint64 requestId);
 
 private:
     std::unique_ptr<vsc::IConnection> connection_ = nullptr;

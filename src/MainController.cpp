@@ -23,6 +23,7 @@ MainController::MainController(const QStringList& fonts, QObject* parent)
 
     tablesModel_ = new StringListModel(this);
     tableModel_ = new TableDataModel(this);
+    consoleModel_ = new TableDataModel(this);
     filtersModel_ = new FilterModel(this);
     connect(filtersModel_, &FilterModel::filtersChanged, this, [this] {
         if (filterTimer_) filterTimer_->start();
@@ -102,13 +103,19 @@ void MainController::beginSession(vsc::ConnectionParameters params) {
     worker_->moveToThread(workerThread_);
 
     connect(worker_, &DatabaseWorker::tablesLoaded, this, &MainController::onTablesLoaded);
+    connect(worker_, &DatabaseWorker::tablesError, this, &MainController::onTablesError);
     connect(worker_, &DatabaseWorker::selectFinished, this, &MainController::onSelectFinished);
     connect(worker_, &DatabaseWorker::selectError, this, &MainController::onSelectError);
     connect(worker_, &DatabaseWorker::columnsLoaded, this, &MainController::onColumnsLoaded);
+    connect(worker_, &DatabaseWorker::columnsError, this, &MainController::onColumnsError);
     connect(worker_, &DatabaseWorker::typesDbLoaded, this, &MainController::onTypesDbLoaded);
     connect(worker_, &DatabaseWorker::operationCompleted,  this, &MainController::onOperationCompleted);
     connect(worker_, &DatabaseWorker::tableDropped, this, &MainController::onTableDropped);
     connect(worker_, &DatabaseWorker::tableRenamed, this, &MainController::onTableRenamed);
+    connect(worker_, &DatabaseWorker::queryRowsReady, this, &MainController::onQueryRowsReady);
+    connect(worker_, &DatabaseWorker::queryAffected, this, &MainController::onQueryAffected);
+    connect(worker_, &DatabaseWorker::queryFinished, this, &MainController::onQueryFinished);
+    connect(worker_, &DatabaseWorker::queryError, this, &MainController::onQueryError);
 
     connect(worker_, &DatabaseWorker::rowsMayHaveChanged, this, [this](const QString& table) {
         if (table == currentTable_)
@@ -138,6 +145,7 @@ void MainController::endSession() {
 
     tablesModel_->clearStrings();
     tableModel_->clearTable();
+    consoleModel_->clearTable();
     filtersModel_->clearAll();
     columns_.clear();
 
@@ -221,10 +229,12 @@ void MainController::flushFilters() {
 }
 
 void MainController::onSessionOpened() {
-    statusText_ = "Connection opened. Loading tables...";
+    statusText_ = tr("Connection opened. Loading tables...");
 
     emit statusChanged();
     emit sessionOpened();
+
+    setBusy(false);
 }
 
 void MainController::prevPage() {
@@ -620,6 +630,14 @@ void MainController::onTablesLoaded(const QStringList& tables) {
         setCurrentTable(QString());
 }
 
+void MainController::onTablesError(const QString& error)
+{
+    errorMessage_ = error;
+    emit errorChanged();
+    statusText_ = errorMessage_;
+    emit statusChanged();
+}
+
 void MainController::onSelectFinished(quint64 requestId, const QList<QList<QVariant>>& data, const QStringList& headers, int totalRows) {
     auto it = pending_.find(requestId);
 
@@ -701,7 +719,7 @@ void MainController::onColumnsError(quint64 requestId, const QString& error)
 
     if (r.kind == LoadPk || r.kind == RefreshColumnsAfterDdl || r.kind == MergeTables || r.kind == AddRow) {
         pending_.erase(it);
-        if (r.kind == LoadPk || r.kind == RefreshColumnsAfterDdl && r.table != currentTable_)
+        if ((r.kind == LoadPk || r.kind == RefreshColumnsAfterDdl) && r.table != currentTable_)
             return;
         else {
             errorMessage_ = error;
@@ -840,3 +858,49 @@ void MainController::onWorkerError(const QString& error) {
 
     emit sessionFailed(error);
 }
+
+void MainController::onQueryRowsReady(quint64 requestId, const QStringList& headers, const QList<QList<QVariant>>& data)
+{
+    auto it = pending_.find(requestId);
+
+    if (it == pending_.end() || it->kind != ConsoleQuery)
+        return;
+
+    pending_.erase(it);
+    consoleModel_->setTable(headers, data);
+    setBusy(false);
+}
+
+void MainController::onQueryAffected(quint64 requestId, qint64 affectedRows)
+{
+    auto it = pending_.find(requestId);
+
+    if (it == pending_.end() || it->kind != ConsoleQuery) {
+        pending_.erase(it);
+        return;
+    }
+}
+
+void MainController::onQueryFinished(quint64 requestId)
+{
+    auto it = pending_.find(requestId);
+
+    if (it == pending_.end() || it->kind != ConsoleQuery)
+        return;
+
+    pending_.erase(it);
+
+}
+
+void MainController::onQueryError(quint64 requestId, const QString& error)
+{
+    auto it = pending_.find(requestId);
+
+    if (it == pending_.end() || it->kind != ConsoleQuery)
+        return;
+
+    pending_.erase(it);
+
+    emit onQueryError(requestId, error);
+}
+

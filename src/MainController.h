@@ -40,6 +40,7 @@ class MainController : public QObject {
         Q_PROPERTY(QString          noteFont READ noteFont WRITE setUserNoteFont NOTIFY noteFontChanged)
         Q_PROPERTY(int              noteSize READ noteSize NOTIFY noteSizeChanged)
         Q_PROPERTY(bool             noteDirty READ noteDirty NOTIFY noteDirtyChanged)
+        Q_PROPERTY(TableDataModel*  consoleModel READ consoleModel CONSTANT)
 
 public:
     explicit MainController(const QStringList& fonts, QObject* parent = nullptr);
@@ -66,6 +67,7 @@ public:
     QString          noteFont() const     { return noteFont_; }
     int              noteSize() const     { return noteSize_; }
     bool             noteDirty() const    { return noteDirty_; }
+    TableDataModel*  consoleModel() const { return consoleModel_; }
 
 public slots:
     void setCurrentTable(const QString& v);
@@ -135,6 +137,7 @@ signals:
 
 private slots:
     void onTablesLoaded(const QStringList& tables);
+    void onTablesError(const QString& error);
     void onSelectFinished(quint64 requestId, const QList<QList<QVariant>>& data, const QStringList& headers, int totalRows);
     void onColumnsLoaded(quint64 requestId, const QString& tableName, const QList<TableRepository::ColumnInfo>& cols);
     void onTypesDbLoaded(quint64 requestId, const QStringList& types);
@@ -146,9 +149,22 @@ private slots:
     void onTableDropped(const QString& table);
     void onTableRenamed(const QString& oldName, const QString& newName);
     void onColumnsError(quint64 requestId, const QString& error);
+    void onQueryRowsReady(quint64 requestId, const QStringList& headers, const QList<QList<QVariant>>& data);
+    void onQueryAffected(quint64 requestId, qint64 affectedRows);
+    void onQueryFinished(quint64 requestId);
+    void onQueryError(quint64 requestId, const QString& error);
 
 private:
-    enum Kind { LoadPk, AddRow, CreateTable, AddColumn, MergeTables, SelectPage, RefreshColumnsAfterDdl };
+    enum Kind {
+                LoadPk,
+                AddRow,
+                CreateTable,
+                AddColumn,
+                MergeTables,
+                SelectPage,
+                RefreshColumnsAfterDdl,
+                ConsoleQuery
+    };
 
     struct PendingReq {
         Kind kind;
@@ -170,6 +186,7 @@ private:
 
     StringListModel* tablesModel_ = nullptr;
     TableDataModel* tableModel_ = nullptr;
+    TableDataModel* consoleModel_ = nullptr;
     FilterModel* filtersModel_ = nullptr;
     QThread* workerThread_ = nullptr;
     DatabaseWorker* worker_ = nullptr;

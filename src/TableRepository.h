@@ -54,8 +54,8 @@ public:
     std::expected<void, vsc::SqlError> drop_table(const QString& table) const;
     std::expected<void, vsc::SqlError> rename_table(const QString& table, const QString& new_name_table) const;
     std::expected<void, vsc::SqlError> exeQuery(const QString& sql) const;
-    std::expected<int, vsc::SqlError>  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {}
-                  , const QStringList& searchableColumns = {}) const;
+    std::expected<int, vsc::SqlError>  countRows(const QString& table, const FilterList& filters = {}, const QString& search = {} , const QStringList& searchableColumns = {}) const;
+    std::expected<vsc::ResultSet, vsc::SqlError> querySql(const QString& query, vsc::CmdQuery::Mode mode);
 
     static QString safeName(const QString& name);
 

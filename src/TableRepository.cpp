@@ -413,12 +413,13 @@ std::expected<void, vsc::SqlError> TableRepository::exeQuery(const QString& sql)
         return std::unexpected(vsc::SqlError{
             vsc::SqlError::MessageError::internal,
             vsc::SqlError::SourceError::statement,
-            "Table name is empty",
+            "SQL query is empty",
             {}
         });
 
     vsc::CmdQuery query{};
     query.sqlText = vsc::qt::toVscText(sql);
+    query.mode = vsc::CmdQuery::Mode::ddl;
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
@@ -490,6 +491,36 @@ std::expected<int, vsc::SqlError> TableRepository::countRows(const QString &tabl
             "COUNT returned no value",
             {}
         });
+}
+
+std::expected<vsc::ResultSet, vsc::SqlError> TableRepository::querySql(const QString& q, vsc::CmdQuery::Mode m)
+{
+    if(!connection_)
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::connectionFailed,
+            vsc::SqlError::SourceError::connection,
+            "Connection is missing",
+            {}
+        });
+
+    if(q.trimmed().isEmpty())
+        return std::unexpected(vsc::SqlError{
+            vsc::SqlError::MessageError::syntax,
+            vsc::SqlError::SourceError::statement,
+            "Query is empty",
+            {}
+        });
+
+    vsc::CmdQuery query{};
+    query.sqlText = vsc::qt::toVscText(q);
+    query.mode = m;
+
+    auto coreResult = connection_->execute(query);
+
+    if (!coreResult)
+        return std::unexpected(coreResult.error());
+
+    return coreResult;
 }
 
 QString TableRepository::safeName(const QString& name) {
