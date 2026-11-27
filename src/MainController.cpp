@@ -25,6 +25,7 @@ MainController::MainController(const QStringList& fonts, QObject* parent)
     tableModel_ = new TableDataModel(this);
     consoleModel_ = new TableDataModel(this);
     filtersModel_ = new FilterModel(this);
+
     connect(filtersModel_, &FilterModel::filtersChanged, this, [this] {
         if (filterTimer_) filterTimer_->start();
     });

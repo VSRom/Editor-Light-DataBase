@@ -26,7 +26,7 @@ Q_DECLARE_METATYPE(FilterList)
 
 class TableRepository {
 public:
-    explicit TableRepository(vsc::IConnection* connection, vsc::DbTypes type);
+    TableRepository(vsc::IConnection* connection, vsc::DbTypes type);
 
     struct ColumnInfo {
         QString name;
@@ -42,7 +42,7 @@ public:
 
     std::expected<QList<ColumnInfo>, vsc::SqlError> getColumns(const QString &tableName) const;
     std::expected<QStringList, vsc::SqlError> getUserTables() const;
-    QStringList get_types_db() const { return types_db_; }
+    const QStringList get_types_db() const noexcept { return types_db_; }
     std::expected<TablePage, vsc::SqlError> select(const QString& table, const FilterList& filters = {}, const QString& logic = {},int pageSize = 0
                            , int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {}) const;
 

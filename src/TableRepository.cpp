@@ -130,7 +130,7 @@ std::expected<TableRepository::TablePage, vsc::SqlError> TableRepository::select
         auto converted = vsc::qt::fromQtValue(QVariant{temp}, alloc);
 
         if (!converted)
-            return std::unexpected(converted.error());
+            return std::unexpected(std::move(converted.error()));
 
         query.sqlParams.push_back(*converted);
     }
@@ -138,7 +138,7 @@ std::expected<TableRepository::TablePage, vsc::SqlError> TableRepository::select
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     TablePage pages{};
 
@@ -152,7 +152,7 @@ std::expected<TableRepository::TablePage, vsc::SqlError> TableRepository::select
             auto converted = vsc::qt::toQtValue(cell);
 
             if (!converted)
-                return std::unexpected(converted.error());
+                return std::unexpected(std::move(converted.error()));
 
             result += *converted;
         }
@@ -202,7 +202,7 @@ std::expected<void, vsc::SqlError> TableRepository::insert(const QString &table,
         auto converted = vsc::qt::fromQtValue(QVariant{value}, alloc);
 
         if (!converted)
-            return std::unexpected(converted.error());
+            return std::unexpected(std::move(converted.error()));
 
         query.sqlParams.push_back(*converted);
     }
@@ -210,7 +210,7 @@ std::expected<void, vsc::SqlError> TableRepository::insert(const QString &table,
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     return {};
 }
@@ -257,7 +257,7 @@ std::expected<void, vsc::SqlError> TableRepository::update(const QString &table,
         auto converted = vsc::qt::fromQtValue(QVariant{value}, alloc);
 
         if (!converted)
-            return std::unexpected(converted.error());
+            return std::unexpected(std::move(converted.error()));
 
         query.sqlParams.push_back(*converted);
     }
@@ -265,14 +265,14 @@ std::expected<void, vsc::SqlError> TableRepository::update(const QString &table,
     auto resus = vsc::qt::fromQtValue(idValue, alloc);
 
     if (!resus)
-        return std::unexpected(resus.error());
+        return std::unexpected(std::move(resus.error()));
 
     query.sqlParams.push_back(*resus);
 
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     return{};
 }
@@ -313,7 +313,7 @@ std::expected<void, vsc::SqlError> TableRepository::remove(const QString &table,
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     return{};
 }
@@ -331,7 +331,7 @@ std::expected<void, vsc::SqlError> TableRepository::removeRows(const QString& ta
         auto result = remove(table, idColumn, v);
 
         if (!result)
-            return std::unexpected(result.error());
+            return std::unexpected(std::move(result.error()));
     }
 
     return {};
@@ -363,7 +363,7 @@ std::expected<void, vsc::SqlError> TableRepository::drop_table(const QString& ta
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     return {};
 }
@@ -394,7 +394,7 @@ std::expected<void, vsc::SqlError> TableRepository::rename_table(const QString& 
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     return {};
 }
@@ -423,7 +423,7 @@ std::expected<void, vsc::SqlError> TableRepository::exeQuery(const QString& sql)
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     return {};
 }
@@ -453,7 +453,7 @@ std::expected<int, vsc::SqlError> TableRepository::countRows(const QString &tabl
         auto converted = vsc::qt::fromQtValue(QVariant{temp}, alloc);
 
         if (!converted)
-            return std::unexpected(converted.error());
+            return std::unexpected(std::move(converted.error()));
 
         query.sqlParams.push_back(*converted);
     }
@@ -461,7 +461,7 @@ std::expected<int, vsc::SqlError> TableRepository::countRows(const QString &tabl
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     if(!coreResult->rows.empty() && !coreResult->rows[0].empty()) {
         auto count = coreResult->rows[0][0].asInt64();
@@ -518,7 +518,7 @@ std::expected<vsc::ResultSet, vsc::SqlError> TableRepository::querySql(const QSt
     auto coreResult = connection_->execute(query);
 
     if (!coreResult)
-        return std::unexpected(coreResult.error());
+        return std::unexpected(std::move(coreResult.error()));
 
     return coreResult;
 }

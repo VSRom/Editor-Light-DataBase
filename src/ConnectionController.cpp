@@ -191,7 +191,7 @@ std::expected<vsc::ConnectionParameters, QString> ConnectionController::makeConn
         case 4: params.type = vsc::DbTypes::oracle; break;
 
             default:
-                return std::unexpected(tr("Unknown database type"));
+                return std::unexpected(std::move(tr("Unknown database type")));
     }
 
     const bool netDatabase = params.type == vsc::DbTypes::mysql
@@ -204,13 +204,13 @@ std::expected<vsc::ConnectionParameters, QString> ConnectionController::makeConn
         const QString login = login_.trimmed();
 
         if (host.isEmpty() || databaseName.isEmpty() || login.isEmpty())
-            return std::unexpected(tr("Fill in host, database name, and login"));
+            return std::unexpected(std::move(tr("Fill in host, database name, and login")));
 
         bool validPort = false;
         const int port = port_.trimmed().toInt(&validPort);
 
         if (!validPort || port < 1 || port > 65535)
-            return std::unexpected(tr("Invalid port into database"));
+            return std::unexpected(std::move(tr("Invalid port into database")));
 
         params.host = vsc::qt::toVscText(host);
         params.dataBaseName = vsc::qt::toVscText(databaseName);
@@ -223,7 +223,7 @@ std::expected<vsc::ConnectionParameters, QString> ConnectionController::makeConn
         const QString pathDb = address_.trimmed();
 
         if (pathDb.isEmpty())
-            return std::unexpected(tr("Invalid path to db"));
+            return std::unexpected(std::move(tr("Invalid path to db")));
 
         params.pathDb = vsc::qt::toVscText(pathDb);
     }

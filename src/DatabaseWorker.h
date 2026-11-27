@@ -8,6 +8,7 @@
 #include <QMap>
 #include <QHash>
 #include <memory>
+#include <utility>
 
 #include "TableRepository.h"
 #include "vsc/i_connection.h"
@@ -35,16 +36,18 @@ public slots:
     void loadTables();
     void selectTable(quint64 requestId, const QString& table, const FilterList& filters = {}, int pageSize = 0, int offset = 0, const QString& search = {}, const QStringList& searchableColumns = {});
     void queryConsole(quint64 requestId, const QString& textQuery, vsc::CmdQuery::Mode m);
-    void executeQuery(const QString& sql);
     void getColumns(quint64 requestId, const QString& table);
+    void getTypesDb(quint64 requestId);
+    void initConnection(const vsc::ConnectionParameters& params);
+
+    void executeQuery(const QString& sql);
     void insertRow(const QString& table, const Hash& values);
     void updateRow(const QString& table, const QString& idColumn, const QVariant& idValue, const QMap<QString, QVariant>& newValues);
     void removeRow(const QString& table, const QString& idColumn, const QVariant& idValue);
     void removeRows(const QString& table, const QString& idColumn, const QVariantList& idValues);
-    void getTypesDb(quint64 requestId);
-    void initConnection(const vsc::ConnectionParameters& params);
     void dropTable(const QString& table);
     void renameTable(const QString& oldName, const QString& newName);
+
 
 signals:
     void tablesLoaded(QStringList tables);
@@ -66,6 +69,12 @@ signals:
     void queryFinished(quint64 requestId);
 
 private:
+    template<typename Operation, typename OnSuccess, typename OnError>
+    void runCommand(Operation&&, OnError&&, OnSuccess&&);
+
+    template<typename Operation, typename OnSuccess>
+    void runCommand(Operation&&, OnSuccess&&);
+
     std::unique_ptr<vsc::IConnection> connection_ = nullptr;
     std::unique_ptr<TableRepository> explorer_ = nullptr;
 };

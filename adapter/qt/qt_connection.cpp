@@ -55,20 +55,20 @@ std::expected<vsc::ResultSet, vsc::SqlError> vsc::qt::QtConnection::execute(cons
     const QString sqlText = vsc::qt::toQtText(query.sqlText);
 
     if (!qtQuery.prepare(sqlText))
-        return std::unexpected(makeStatementError(qtQuery.lastError()));
+        return std::unexpected(std::move(makeStatementError(qtQuery.lastError())));
 
     //  vsc::Value -> QVariant
     for (qsizetype i = 0; i < query.sqlParams.size(); i++) {
         auto value = toQtValue(query.sqlParams[i]);
 
         if (!value)
-            return std::unexpected(value.error());
+            return std::unexpected(std::move(value.error()));
 
         qtQuery.bindValue(static_cast<int>(i), *value);
     }
 
     if (!qtQuery.exec())
-        return std::unexpected(makeStatementError(qtQuery.lastError()));
+        return std::unexpected(std::move(makeStatementError(qtQuery.lastError())));
 
     vsc::ResultSet result;
 
@@ -99,6 +99,7 @@ std::expected<vsc::ResultSet, vsc::SqlError> vsc::qt::QtConnection::execute(cons
         const QString typeName = rawTypeName ? QString::fromLatin1(rawTypeName) : QString{};
 
         vsc::ColumnMetaData col { result.allocator().resource() };
+
         col.nameColumn = vsc::qt::toVscText(colName, result.allocator());
         col.type = vsc::qt::toVscText(typeName, result.allocator());
         col.ordinal = i;
@@ -118,7 +119,7 @@ std::expected<vsc::ResultSet, vsc::SqlError> vsc::qt::QtConnection::execute(cons
             auto convertCell = fromQtValue(cell, result.allocator());
 
             if (!convertCell)
-                return std::unexpected(convertCell.error());
+                return std::unexpected(std::move(convertCell.error()));
 
             row.push_back(std::move(*convertCell));
         }
@@ -228,7 +229,7 @@ std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describe
             );
 
         if (!query.exec(QString("PRAGMA table_info(%1)").arg(escapedTable)))
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
     }
     else if (driver == "QMYSQL") {
         const QString escapedTable = database_.driver()->escapeIdentifier(
@@ -237,7 +238,7 @@ std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describe
             );
 
         if (!query.exec(QString("SHOW COLUMNS FROM %1").arg(escapedTable)))
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
     }
     else if (driver == "QPSQL") {
         if (!query.prepare(
@@ -247,12 +248,12 @@ std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describe
                 "AND table_schema = 'public' "
                 "ORDER BY ordinal_position"
                 ))
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
 
         query.bindValue(":tableName", qtTableName);
 
         if (!query.exec())
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
     }
     else if (driver == "QOCI") {
         if (!query.prepare(
@@ -261,12 +262,12 @@ std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describe
                 "WHERE table_name = :tableName "
                 "ORDER BY column_id"
                 ))
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
 
         query.bindValue(":tableName", qtTableName.toUpper());
 
         if (!query.exec())
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
     }
     else if (driver == "QODBC") {
         if (!query.prepare(
@@ -275,12 +276,12 @@ std::expected<vsc::TableMetadata, vsc::SqlError> vsc::qt::QtConnection::describe
                 "WHERE TABLE_NAME = :tableName "
                 "ORDER BY ORDINAL_POSITION"
                 ))
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
 
         query.bindValue(":tableName", qtTableName);
 
         if (!query.exec())
-            return std::unexpected(makeStatementError(query.lastError()));
+            return std::unexpected(std::move(makeStatementError(query.lastError())));
     }
     else {
         return std::unexpected(vsc::SqlError{
